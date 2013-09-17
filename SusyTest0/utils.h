@@ -13,7 +13,7 @@
 std::string mkdirIfNeeded(const std::string &dirname);
 
 bool endswith(const std::string &s, const std::string &end);
-
+bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
 
 #endif

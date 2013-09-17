@@ -1,5 +1,6 @@
 #include "SusyTest0/utils.h"
 
+#include <cstdlib> // strtol
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -23,10 +24,20 @@ std::string mkdirIfNeeded(const std::string &dirname)
 }
 
 
-//http://stackoverflow.com/questions/874134/find-if-string-endswith-another-string-in-c
+// http://stackoverflow.com/questions/874134/find-if-string-endswith-another-string-in-c
 bool endswith(const std::string &s, const std::string &end) {
   if(s.length()<end.length()) return false;
   else return (0==s.compare(s.length() - end.length(), end.length(), end));
+}
+
+// http://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
+bool isInt(const std::string &s)
+{
+  // DG 2013-09-17: we might want to strip the leading/trailing whitespaces (now returns false)
+  if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+  char * p ;
+  strtol(s.c_str(), &p, 10) ;
+  return (*p == 0) ;
 }
 
 bool fileExists(const std::string &filename)
