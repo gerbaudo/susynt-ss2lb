@@ -7,12 +7,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+//----------------------------------------------------------
 std::string basedir(const std::string &path)
 {
   size_t found = path.find_last_of('/');
   return path.substr(0, found+1);
 }
-
+//----------------------------------------------------------
 // from : http://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux
 std::string mkdirIfNeeded(const std::string &dirname)
 {
@@ -31,24 +32,32 @@ std::string mkdirIfNeeded(const std::string &dirname)
     return isDir ? dirname : string("");
   }
 }
-
-
+//----------------------------------------------------------
 // http://stackoverflow.com/questions/874134/find-if-string-endswith-another-string-in-c
 bool endswith(const std::string &s, const std::string &end) {
   if(s.length()<end.length()) return false;
   else return (0==s.compare(s.length() - end.length(), end.length(), end));
 }
-
+//----------------------------------------------------------
+std::string rmLeadingTrailingWhitespaces(const std::string &str)
+{
+  using std::string;
+  size_t startpos = str.find_first_not_of(" \t");
+  size_t endpos = str.find_last_not_of(" \t");
+  if(( string::npos == startpos ) || ( string::npos == endpos)) return string("");
+  else return str.substr(startpos, endpos-startpos+1);
+}
+//----------------------------------------------------------
 // http://stackoverflow.com/questions/2844817/how-do-i-check-if-a-c-string-is-an-int
 bool isInt(const std::string &s)
 {
-  // DG 2013-09-17: we might want to strip the leading/trailing whitespaces (now returns false)
-  if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false ;
+  std::string rs(rmLeadingTrailingWhitespaces(s));
+  if(rs.empty() || ((!isdigit(rs[0])) && (rs[0] != '-') && (rs[0] != '+'))) return false ;
   char * p ;
-  strtol(s.c_str(), &p, 10) ;
+  strtol(rs.c_str(), &p, 10) ;
   return (*p == 0) ;
 }
-
+//----------------------------------------------------------
 bool fileExists(const std::string &filename)
 {
   std::ifstream file(filename.c_str());
@@ -56,7 +65,7 @@ bool fileExists(const std::string &filename)
   file.close();
   return doesExists;
 }
-
+//----------------------------------------------------------
 std::string vdouble2str(const std::vector<double> &v)
 {
   std::ostringstream oss;
@@ -64,3 +73,4 @@ std::string vdouble2str(const std::vector<double> &v)
   std::copy(v.begin(), v.end(), it);
   return oss.str();
 }
+//----------------------------------------------------------
