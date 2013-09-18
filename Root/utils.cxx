@@ -1,6 +1,9 @@
 #include "SusyTest0/utils.h"
 
+#include <algorithm>    // std::copy
 #include <cstdlib> // strtol
+#include <iterator>     // std::ostream_iterator
+#include <sstream>      // std::ostringstream
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -52,4 +55,12 @@ bool fileExists(const std::string &filename)
   bool doesExists = file;
   file.close();
   return doesExists;
+}
+
+std::string vdouble2str(const std::vector<double> &v)
+{
+  std::ostringstream oss;
+  std::ostream_iterator<int> it (oss,", ");
+  std::copy(v.begin(), v.end(), it);
+  return oss.str();
 }

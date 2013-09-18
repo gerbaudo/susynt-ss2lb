@@ -8,6 +8,7 @@
  */
 #include <fstream>
 #include <string>
+#include <vector>
 
 // mkdir if it is not already there. Return dir path; return empty string if there was a problem
 std::string mkdirIfNeeded(const std::string &dirname);
@@ -16,5 +17,6 @@ std::string basedir(const std::string &path);
 bool endswith(const std::string &s, const std::string &end);
 bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
+std::string vdouble2str(const std::vector<double> &v);
 
 #endif
