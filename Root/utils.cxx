@@ -60,7 +60,7 @@ bool fileExists(const std::string &filename)
 std::string vdouble2str(const std::vector<double> &v)
 {
   std::ostringstream oss;
-  std::ostream_iterator<int> it (oss,", ");
+  std::ostream_iterator<double> it (oss,", ");
   std::copy(v.begin(), v.end(), it);
   return oss.str();
 }
