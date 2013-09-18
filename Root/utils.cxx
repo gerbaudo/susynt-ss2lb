@@ -4,6 +4,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+std::string basedir(const std::string &path)
+{
+  size_t found = path.find_last_of('/');
+  return path.substr(0, found+1);
+}
+
 // from : http://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux
 std::string mkdirIfNeeded(const std::string &dirname)
 {
