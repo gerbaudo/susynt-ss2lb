@@ -39,6 +39,14 @@ bool endswith(const std::string &s, const std::string &end) {
   else return (0==s.compare(s.length() - end.length(), end.length(), end));
 }
 //----------------------------------------------------------
+// http://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
+bool replace(std::string& str, const std::string& from, const std::string& to) {
+  size_t start_pos = str.find(from);
+  if(start_pos == std::string::npos) return false;
+  str.replace(start_pos, from.length(), to);
+  return true;
+}
+//----------------------------------------------------------
 std::string rmLeadingTrailingWhitespaces(const std::string &str)
 {
   using std::string;

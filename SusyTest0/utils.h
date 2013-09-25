@@ -15,6 +15,7 @@ std::string mkdirIfNeeded(const std::string &dirname);
 
 std::string basedir(const std::string &path);
 bool endswith(const std::string &s, const std::string &end);
+bool replace(std::string& str, const std::string& from, const std::string& to);
 std::string rmLeadingTrailingWhitespaces(const std::string &str);
 bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
