@@ -92,3 +92,11 @@ std::string vdouble2str(const std::vector<double> &v)
   return oss.str();
 }
 //----------------------------------------------------------
+std::string vfloat2str(const std::vector<float> &v)
+{
+  std::ostringstream oss;
+  std::ostream_iterator<float> it (oss,", ");
+  std::copy(v.begin(), v.end(), it);
+  return oss.str();
+}
+//----------------------------------------------------------

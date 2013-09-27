@@ -21,5 +21,6 @@ std::string rmLeadingTrailingWhitespaces(const std::string &str);
 bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
 std::string vdouble2str(const std::vector<double> &v);
+std::string vfloat2str(const std::vector<float> &v);
 
 #endif
