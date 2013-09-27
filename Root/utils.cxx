@@ -38,6 +38,11 @@ std::string mkdirIfNeeded(const std::string &dirname)
   return result;
 }
 //----------------------------------------------------------
+bool contains(const std::string &s, const std::string &sub)
+{
+  return (s.find(sub) != std::string::npos);
+}
+//----------------------------------------------------------
 // http://stackoverflow.com/questions/874134/find-if-string-endswith-another-string-in-c
 bool endswith(const std::string &s, const std::string &end) {
   if(s.length()<end.length()) return false;

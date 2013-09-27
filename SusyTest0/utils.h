@@ -14,6 +14,7 @@ bool dirExists(const std::string &dirname);
 // mkdir if it is not already there. Return dir path; return empty string if there was a problem
 std::string mkdirIfNeeded(const std::string &dirname);
 std::string basedir(const std::string &path);
+bool contains(const std::string &s, const std::string &sub);
 bool endswith(const std::string &s, const std::string &end);
 bool replace(std::string& str, const std::string& from, const std::string& to);
 std::string rmLeadingTrailingWhitespaces(const std::string &str);
