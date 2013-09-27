@@ -14,23 +14,28 @@ std::string basedir(const std::string &path)
   return path.substr(0, found+1);
 }
 //----------------------------------------------------------
+bool dirExists(const std::string &dirname)
+{
+  bool doesExist(false);
+  if(dirname.length()<1) return doesExist;
+  typedef struct stat Stat; Stat st;
+  doesExist = (0==stat(dirname.c_str(), &st));
+  bool isDir(S_ISDIR(st.st_mode));
+  return doesExist && isDir;
+}
+//----------------------------------------------------------
 // from : http://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux
 std::string mkdirIfNeeded(const std::string &dirname)
 {
-  using std::string;
-  if(dirname.length()<1) return string("");
-  typedef struct stat Stat;
-  Stat st;
-  int status;
-  bool doesnotExist(stat(dirname.c_str(), &st) != 0);
-  if(doesnotExist) {
-    status = mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  std::string result;
+  if(dirname.length()<1)      result = "";
+  else if(dirExists(dirname)) result = dirname;
+  else {
+    int status(mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     bool success(status==0);
-    return success ? dirname : string("");
-  } else {
-    bool isDir(S_ISDIR(st.st_mode));
-    return isDir ? dirname : string("");
+    result = (success ? dirname : "");
   }
+  return result;
 }
 //----------------------------------------------------------
 // http://stackoverflow.com/questions/874134/find-if-string-endswith-another-string-in-c
