@@ -3,6 +3,7 @@
 #include <algorithm>    // std::copy
 #include <cstdlib> // strtol
 #include <iterator>     // std::ostream_iterator
+#include <iostream>
 #include <sstream>      // std::ostringstream
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -82,6 +83,17 @@ bool fileExists(const std::string &filename)
   bool doesExists = file;
   file.close();
   return doesExists;
+}
+//----------------------------------------------------------
+std::string getRootCoreDir()
+{
+  using namespace std;
+  string dir;
+  char* rootcoredir = getenv("ROOTCOREDIR");
+  bool envvarDefined(rootcoredir!=0);
+  if (envvarDefined) { dir = rootcoredir; }
+  else               { cout<<"getRootCoreDir: ROOTCOREDIR not defined"<<endl; }
+  return dir;
 }
 //----------------------------------------------------------
 std::string vdouble2str(const std::vector<double> &v)

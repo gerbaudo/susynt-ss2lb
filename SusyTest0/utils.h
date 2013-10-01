@@ -20,6 +20,7 @@ bool replace(std::string& str, const std::string& from, const std::string& to);
 std::string rmLeadingTrailingWhitespaces(const std::string &str);
 bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
+std::string getRootCoreDir(); //!< return empty string if env var not defined
 std::string vdouble2str(const std::vector<double> &v);
 std::string vfloat2str(const std::vector<float> &v);
 
