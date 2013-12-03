@@ -6,6 +6,8 @@
   davide.gerbaudo@gmail.com
   Aug 2013
  */
+
+#include <algorithm>    // std::set_intersection
 #include <fstream>
 #include <string>
 #include <vector>
@@ -23,5 +25,20 @@ bool fileExists(const std::string &filename);
 std::string getRootCoreDir(); //!< return empty string if env var not defined
 std::string vdouble2str(const std::vector<double> &v);
 std::string vfloat2str(const std::vector<float> &v);
+
+
+// Build a vector that is the difference between two vectors.
+// Caveat1: computing the difference triggers copies of the vectors
+// Caveat2: the result is not guaranteed to be sorted
+// Caveat3: a-b != b-a
+// Based on: http://stackoverflow.com/questions/14175858/c-subtract-vectors
+template <typename T>
+std::vector<T> subtract_vector(std::vector<T>& a, const std::vector<T>& b)
+{
+  std::vector<T> difference;
+  std::set_difference(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter( difference ));
+  return difference;
+}
+
 
 #endif
