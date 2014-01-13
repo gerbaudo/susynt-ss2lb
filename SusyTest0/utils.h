@@ -43,17 +43,12 @@ std::vector<T> subtract_vector(std::vector<T>& a, const std::vector<T>& b)
 // Filter a container with a predicate
 // Lifted from:
 // http://stackoverflow.com/questions/2797142/higher-order-function-filter-in-c
-template <
-  template <typename,typename> class Container,
-  typename Predicate,
-  typename Allocator,
-  typename A
-  > Container<A, Allocator> filter(Container<A, Allocator> const & container, Predicate const & pred) {
-  Container<A, Allocator> filtered(container);
-  filtered.erase(std::remove_if(filtered.begin(), filtered.end(), pred), filtered.end());
+template <typename C, typename P>
+  C filter(C const & container, P pred) {
+  C filtered(container);
+  filtered.erase(remove_if(filtered.begin(), filtered.end(), pred), filtered.end());
   return filtered;
 }
-
 
 
 #endif
