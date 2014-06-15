@@ -9,8 +9,8 @@
 #pragma link off all functions;
 #pragma link C++ nestedclass;
 
-#pragma link C++ namespace hlvf;
-#pragma link C++ class hlvf::Selector+;
+#pragma link C++ namespace hlfv;
+#pragma link C++ class hlfv::Selector+;
 /* #pragma link C++ namespace susywh; */
 /* #pragma link C++ struct susy::wh::FourMom+; */
 /* #pragma link C++ struct susy::wh::EventParameters+; */

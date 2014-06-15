@@ -7,7 +7,7 @@
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
 
-#include "SusyTest0/ProgressPrinter.h"
+#include "SusyntHlfv/ProgressPrinter.h"
 
 #include <utility> // std::pair
 
@@ -27,11 +27,11 @@ class Selector : public SusyNtAna
     virtual void    Init(TTree *tree);       ///< called when the TChain is attached
     virtual void    Terminate();             ///< called after looping is finished
     virtual Bool_t  Process(Long64_t entry); ///< called at each event
-
+    bool initMcWeighter(TTree *tree);
  protected:
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
-    susy::ProgressPrinter m_printer;
+    hlvf::ProgressPrinter m_printer;
 
     ClassDef(Selector, 1);
 };

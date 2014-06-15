@@ -1,11 +1,13 @@
 #include "SusyntHlfv/Selector.h"
 
-#include "SusyntHlfv/EventFlags.h"
-#include "SusyntHlfv/criteria.h"
-#include "SusyntHlfv/kinematic.h"
-#include "SusyntHlfv/utils.h"
+// #include "SusyntHlfv/EventFlags.h"
+// #include "SusyntHlfv/criteria.h"
+// #include "SusyntHlfv/kinematic.h"
+// #include "SusyntHlfv/utils.h"
 
 #include "SusyNtuple/MCWeighter.h"
+#include "SusyNtuple/DilTrigLogic.h"
+#include "SusyNtuple/string_utils.h"
 
 #include "TSystem.h"
 #include "TVector2.h"
@@ -22,7 +24,7 @@ using hlfv::Selector;
 //-----------------------------------------
 Selector::Selector() :
   m_trigObj(NULL),
-  m_mcWeighter(NULL),
+  m_mcWeighter(NULL)
 {
   setAnaType(Ana_2Lep);
   setSelectTaus(true);
@@ -48,12 +50,12 @@ Bool_t Selector::Process(Long64_t entry)
     m_printer.countAndPrint(cout);
     GetEntry(entry);
     clearObjects();
-    cacheStaticWeightComponents();
+//    cacheStaticWeightComponents();
 //  increment(n_readin, m_weightComponents);
-    bool removeLepsFromIso(false), allowQflip(true);
-    selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
-    swh::EventFlags eventFlags(computeEventFlags());
-    incrementCounters(eventFlags, m_weightComponents);
+    // bool removeLepsFromIso(false), allowQflip(true);
+    // selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
+    // swh::EventFlags eventFlags(computeEventFlags());
+    // incrementCounters(eventFlags, m_weightComponents);
   // if(eventFlags.failAny()) return kTRUE;
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
 
@@ -92,7 +94,7 @@ bool Selector::initMcWeighter(TTree *tree)
     if(tree){
         string xsecDir = gSystem->ExpandPathName("$ROOTCOREBIN/data/SUSYTools/mc12_8TeV/");
         m_mcWeighter = new MCWeighter(tree, xsecDir);
-        bool isPmssmSample(contains(sampleName(), "Herwigpp_UEEE3_CTEQ6L1_DGnoSL_TB10"));
+        bool isPmssmSample(susy::utils::contains(sampleName(), "Herwigpp_UEEE3_CTEQ6L1_DGnoSL_TB10"));
         if(isPmssmSample) m_mcWeighter->setLabelBinCounter("Initial").clearAndRebuildSumwMap(m_tree);
         if(m_dbg) cout<<"Selector: MCWeighter has been initialized"<<endl;
     } else {
