@@ -1,0 +1,14 @@
+# travis-ci.org build & test configuration
+language: cpp
+
+python:
+  - "2.7"
+
+env:
+  global:
+
+script:
+  - echo "running script"
+
+after_success:
+  - echo "after success"
