@@ -31,11 +31,11 @@ class Selector : public SusyNtAna
  protected:
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
-    hlvf::ProgressPrinter m_printer;
+    hlfv::ProgressPrinter m_printer;
 
     ClassDef(Selector, 1);
 };
 
-} // hlvf
+} // hlfv
 
 #endif // HLVF_SELECTOR_H

@@ -3,7 +3,7 @@
 #include <ctime>   // time_t, time
 #include <iomanip> // setw 
 
-using hlvf::ProgressPrinter;
+using hlfv::ProgressPrinter;
 //-----------------------------------------
 void ProgressPrinter::countAndPrint(std::ostream& oo)
 {
