@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 
     for(size_t i=0; i<10; ++i){
         counter.nextEvent();
-        counter.pass();
+        counter.pass(0.1);
         if(i%2) counter.pass();
         else    counter.fail();
         if(i%3) {

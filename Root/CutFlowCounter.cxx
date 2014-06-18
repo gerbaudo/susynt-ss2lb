@@ -1,6 +1,6 @@
 #include "SusyntHlfv/CutFlowCounter.h"
 
-#include <iostream>
+#include <iomanip>
 #include <stdio.h>
 
 using hlfv::CutFlowCounter;
@@ -76,6 +76,36 @@ CutFlowCounter& CutFlowCounter::fail()
     return *this;
 }
 //-----------------------------------------
+void CutFlowCounter::printTableRaw     (std::ostream& oo) const
+{
+    int col1Width(12), col2Width(24);
+    oo<<std::setw(col1Width)<<"Cut "<<std::setw(col2Width)<<"raw counts"<<endl;
+    if(m_raw_counts.size()==m_cut_names.size()){
+        for(size_t i=0; i<m_raw_counts.size(); ++i)
+            oo<<std::setw(col1Width)<<m_cut_names[i]<<std::setw(col2Width)<<m_raw_counts[i]<<endl;
+    } else {
+        oo<<"CutFlowCounter::printTableRaw: invalid vector size"
+          <<" (names["<<m_cut_names.size()<<"]"
+          <<", counts["<<m_raw_counts.size()<<"])"
+          <<endl;
+    }
+}
+//-----------------------------------------
+void CutFlowCounter::printTableWeighted(std::ostream& oo) const
+{
+    int col1Width(12), col2Width(24);
+    oo<<std::setw(col1Width)<<"Cut "<<std::setw(col2Width)<<"weighted counts"<<endl;
+    if(m_raw_counts.size()==m_cut_names.size()){
+        for(size_t i=0; i<m_weighted_counts.size(); ++i)
+            oo<<std::setw(col1Width)<<m_cut_names[i]<<std::setw(col2Width)<<m_weighted_counts[i]<<endl;
+    } else {
+        oo<<"CutFlowCounter::printTableWeighted: invalid vector size"
+          <<" (names["<<m_cut_names.size()<<"]"
+          <<", counts["<<m_weighted_counts.size()<<"])"
+          <<endl;
+    }
+}
+//-----------------------------------------
 std::string CutFlowCounter::defaultCutName(const size_t cutindex)
 {
     const int bufsize=512;
@@ -88,7 +118,7 @@ std::string CutFlowCounter::defaultCutName(const size_t cutindex)
 //-----------------------------------------
 void CutFlowCounter::addCut()
 {
-    addCut(defaultCutName(m_iCut)); 
+    addCut(defaultCutName(m_iCut));
 }
 //-----------------------------------------
 void CutFlowCounter::addCut(const std::string &cutname)

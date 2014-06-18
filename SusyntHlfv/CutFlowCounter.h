@@ -2,8 +2,10 @@
 #ifndef HLVF_CUTFLOWCOUNTER_H
 #define HLVF_CUTFLOWCOUNTER_H
 
+#include <iostream>
 #include <string>
 #include <vector>
+
 
 namespace hlfv
 {
@@ -46,6 +48,8 @@ public:
     std::vector<std::string> cutNames() const { return m_cut_names; }
     std::vector<int> rawCounts() const { return m_raw_counts; }
     std::vector<double> weightedCounts() const { return m_weighted_counts; }
+    void printTableRaw     (std::ostream& oo) const;
+    void printTableWeighted(std::ostream& oo) const;
 private:
     std::string defaultCutName(const size_t cutindex);
     void addCut();
