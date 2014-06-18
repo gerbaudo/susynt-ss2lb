@@ -1,6 +1,17 @@
 #!/bin/bash
 
-if [ "$TRAVIS_REPO_SLUG" == "gerbaudo/SusyntHlfv" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then
+# Most of this script is taken from
+#
+#  http://benlimmer.com/2013/12/26/automatically-publish-javadoc-to-gh-pages-with-travis-ci/
+#  and
+#  https://github.com/ReadyTalk/swt-bling/blob/master/.utility/push-javadoc-to-gh-pages.sh
+#
+# davide.gerbaudo@gmail.com
+# June 2014
+
+# trigger doxygen build only when the commit message title contains "[build-doxygen]"
+LAST_COMMIT_MESSAGE=$(git log  --pretty=oneline  -n 1)
+if [[ "${LAST_COMMIT_MSG}" == *\[build-doxygen\]* ]] && [ "$TRAVIS_REPO_SLUG" == "gerbaudo/SusyntHlfv" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then
 
   echo -e "Publishing doxygen...\n"
   doxygen  doc/doxygen.conf
@@ -19,5 +30,6 @@ if [ "$TRAVIS_REPO_SLUG" == "gerbaudo/SusyntHlfv" ] && [ "$TRAVIS_PULL_REQUEST" 
   git push -fq origin gh-pages > /dev/null
 
   echo -e "Published doxygen doc to gh-pages.\n"
-  
+else
+  echo -e "Skipping doxygen build.\n"
 fi
