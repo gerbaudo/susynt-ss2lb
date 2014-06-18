@@ -12,6 +12,9 @@ if [ "$TRAVIS_REPO_SLUG" == "gerbaudo/SusyntHlfv" ] && [ "$TRAVIS_PULL_REQUEST" 
   git clone --quiet --branch=gh-pages https://${GH_TOKEN}@github.com/gerbaudo/SusyntHlfv gh-pages > /dev/null
 
   cd gh-pages
+  ls -lth
+  ls -ltrh doc
+  ls -ltrh doc/doxygen
   git rm -rf ./doc/doxygen/html
   cp -Rf $HOME/doxygen-latest ./doc/doxygen/html
   git add -f .
