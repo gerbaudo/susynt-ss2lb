@@ -1,6 +1,5 @@
 StandAlone/
 bin/
 obj/
-doc/doxygen/
 *.pyc
 *~
