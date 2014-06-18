@@ -1,4 +1,6 @@
 #include "SusyntHlfv/Selector.h"
+#include "SusyntHlfv/WeightComponents.h"
+#include "SusyntHlfv/EventFlags.h"
 
 // #include "SusyntHlfv/EventFlags.h"
 // #include "SusyntHlfv/criteria.h"
@@ -20,6 +22,8 @@
 
 using namespace std;
 using hlfv::Selector;
+using hlfv::WeightComponents;
+using hlfv::EventFlags;
 
 //-----------------------------------------
 Selector::Selector() :
@@ -47,16 +51,19 @@ void Selector::Init(TTree* tree)
 //-----------------------------------------
 Bool_t Selector::Process(Long64_t entry)
 {
+    m_counter.nextEvent();
     m_printer.countAndPrint(cout);
     GetEntry(entry);
+    m_chainEntry++; // SusyNtAna counter
     clearObjects();
-//    cacheStaticWeightComponents();
-//  increment(n_readin, m_weightComponents);
-    // bool removeLepsFromIso(false), allowQflip(true);
-    // selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
-    // swh::EventFlags eventFlags(computeEventFlags());
-    // incrementCounters(eventFlags, m_weightComponents);
-  // if(eventFlags.failAny()) return kTRUE;
+    WeightComponents weightComponents;
+    assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
+    m_counter.pass(weightComponents.product());
+    bool removeLepsFromIso(false);
+    selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
+    hlfv::EventFlags eventFlags = computeEventFlags();
+    incrementEventCounters(eventFlags, weightComponents);
+    if(eventFlags.failAny()) return false;
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
 
   // const JetVector&   bj = m_baseJets;
@@ -84,7 +91,8 @@ Bool_t Selector::Process(Long64_t entry)
 void Selector::Terminate()
 {
     SusyNtAna::Terminate();
-    // dumpEventCounters();
+    m_counter.printTableRaw     (cout);
+    m_counter.printTableWeighted(cout);
     if(m_mcWeighter) delete m_mcWeighter;
 }
 //-----------------------------------------
@@ -101,5 +109,81 @@ bool Selector::initMcWeighter(TTree *tree)
         cout<<"Selector::initMcWeighter: error, invalid input tree, cannot initialize Mcweighter"<<endl;
     }
     return success;
+}
+//-----------------------------------------
+void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
+                                            /*const*/ MCWeighter &weighter,
+                                            WeightComponents &weightComponents)
+{
+    if(ntobj.evt()->isMC) {
+        weightComponents.gen = ntobj.evt()->w;
+        weightComponents.pileup = ntobj.evt()->wPileup;
+        // for now just nom since we're handling the syst variation when filling trees
+        const MCWeighter::WeightSys wSys = MCWeighter::Sys_NOM;
+        weightComponents.susynt = weighter.getMCWeight(ntobj.evt(), LUMI_A_L, wSys);
+        // getMCWeight provides gen * pu * xsec * lumi / sumw, so norm is xsec * lumi / sumw = susynt/(gen*pu)
+        float genpu(weightComponents.gen*weightComponents.pileup);
+        weightComponents.norm = (genpu != 0.0 ? weightComponents.susynt/genpu : 1.0);
+    }
+}
+//-----------------------------------------
+bool Selector::passEventCriteria()
+{
+    bool pass=true;
+
+    return pass;
+}
+//-----------------------------------------
+hlfv::EventFlags Selector::computeEventFlags()
+{
+    EventFlags f;
+    if(m_dbg) cout<<"Selector::computeEventFlags"<<endl;
+    int flag = nt.evt()->cutFlags[NtSys_NOM];
+    const LeptonVector &bleps = m_baseLeptons;
+    const JetVector     &jets = m_baseJets;
+    const JetVector    &pjets = m_preJets;
+    const Susy::Met      *met = m_met;
+    uint run = nt.evt()->run;
+    bool mc = nt.evt()->isMC;
+    float mllMin(20);
+    bool has2lep(bleps.size()>1 && bleps[0] && bleps[1]);
+    float mll(has2lep ? (*bleps[0] + *bleps[1]).M() : 0.0);
+    const int killHfor(4); // inheriting hardcoded magic values from HforToolD3PD.cxx
+    if(passGRL        (flag           ))  f.grl         = true;
+    if(passLarErr     (flag           ))  f.larErr      = true;
+    if(passTileErr    (flag           ))  f.tileErr     = true;
+    if(passTTCVeto    (flag           ))  f.ttcVeto     = true;
+    if(passGoodVtx    (flag           ))  f.goodVtx     = true;
+    if(passTileTripCut(flag           ))  f.tileTrip    = true;
+    if(passLAr        (flag           ))  f.lAr         = true;
+    if(!hasBadJet     (jets           ))  f.badJet      = true;
+    if(passDeadRegions(pjets,met,run,mc)) f.deadRegions = true;
+    if(!hasBadMuon    (m_preMuons     ))  f.badMuon     = true;
+    if(!hasCosmicMuon (m_baseMuons    ))  f.cosmicMuon  = true;
+    if(nt.evt()->hfor != killHfor      )  f.hfor        = true;
+    if(bleps.size() >= 2               )  f.ge2blep     = true;
+    if(bleps.size() == 2               )  f.eq2blep     = true;
+    if(mll>mllMin                      )  f.mllMin      = true;
+    return f;
+}
+//-----------------------------------------
+void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
+{
+    double weight = w.product();
+    if(f.grl        ) m_counter.pass(weight); else return;
+    if(f.larErr     ) m_counter.pass(weight); else return;
+    if(f.tileErr    ) m_counter.pass(weight); else return;
+    if(f.ttcVeto    ) m_counter.pass(weight); else return;
+    if(f.goodVtx    ) m_counter.pass(weight); else return;
+    if(f.tileTrip   ) m_counter.pass(weight); else return;
+    if(f.lAr        ) m_counter.pass(weight); else return;
+    if(f.badJet     ) m_counter.pass(weight); else return;
+    if(f.deadRegions) m_counter.pass(weight); else return;
+    if(f.badMuon    ) m_counter.pass(weight); else return;
+    if(f.cosmicMuon ) m_counter.pass(weight); else return;
+    if(f.hfor       ) m_counter.pass(weight); else return;
+    if(f.ge2blep    ) m_counter.pass(weight); else return;
+    if(f.eq2blep    ) m_counter.pass(weight); else return;
+    if(f.mllMin     ) m_counter.pass(weight); else return;
 }
 //-----------------------------------------
