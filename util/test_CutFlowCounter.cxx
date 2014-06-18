@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
         if(i%2) counter.pass();
         else    counter.fail();
         if(i%3) {
-            counter.pass();
+            counter.pass(0.1); // test weighted counter
             counter.pass(); // test automatic extension of internal vectors
         }
     }

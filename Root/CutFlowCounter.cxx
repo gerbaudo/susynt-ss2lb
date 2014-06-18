@@ -1,11 +1,9 @@
 #include "SusyntHlfv/CutFlowCounter.h"
-#include "SusyntHlfv/WeightComponents.h"
 
 #include <iostream>
 #include <stdio.h>
 
 using hlfv::CutFlowCounter;
-using hlfv::WeightComponents;
 
 using std::cout;
 using std::endl;
@@ -56,17 +54,17 @@ CutFlowCounter& CutFlowCounter::pass()
     return *this;
 }
 //-----------------------------------------
-CutFlowCounter& CutFlowCounter::pass(const WeightComponents &w)
+CutFlowCounter& CutFlowCounter::pass(const double &w)
 {
     addCutIfNecessary();
     if(m_debug)
         cout<<"CutFlowCounter: increment"
             <<" raw["<<m_cut_names[m_iCut]<<"] ("<<m_raw_counts[m_iCut]<<"+1)"
             <<" and"
-            <<" weighted["<<m_cut_names[m_iCut]<<"] ("<<m_weighted_counts[m_iCut]<<"+"<<w.product()<<")"
+            <<" weighted["<<m_cut_names[m_iCut]<<"] ("<<m_weighted_counts[m_iCut]<<"+"<<w<<")"
             <<endl;
     m_raw_counts[m_iCut] += 1;
-    m_weighted_counts[m_iCut] += w.product();
+    m_weighted_counts[m_iCut] += w;
     m_iCut++;
     return *this;
 }

@@ -8,8 +8,6 @@
 namespace hlfv
 {
 
-class WeightComponents;
-
 /// A counter to keep track of the event counts in the cutflow.
 /**
    Example usage:
@@ -32,7 +30,7 @@ public:
     CutFlowCounter& setDebug(bool v); ///< toggle debug
     CutFlowCounter& nextEvent(); ///< inform the counter that you are considering a new event
     CutFlowCounter& pass(); ///< increment the raw counts for the current cut stage
-    CutFlowCounter& pass(const WeightComponents &w); ///< increment the raw and weighted counts for this cut stage
+    CutFlowCounter& pass(const double &w); ///< increment the raw and weighted counts for this cut stage
     ///
     /**
       You need to call this function only for a selection criterion
