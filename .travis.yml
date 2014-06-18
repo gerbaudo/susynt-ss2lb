@@ -1,14 +1,12 @@
-# travis-ci.org build & test configuration
 language: cpp
 
-python:
-  - "2.7"
-
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq  texlive texlive-extra-utils libxml2-utils perl dot
 env:
   global:
-
+    secure: jWjuPTMLiE8AmgFLg+vZljW7niTg4yjKMmXMyBiGcGKng906pIJNLFNZ5YzvezRCnvY5DLVar4PLplZRUJYMxE4hO5UKYE9gOafeEQtZTbn+uO2O2VAmhlk8oB+2O7GXwN3w75TuRFXdcZ+/5wdTGpzD2sfLvf7QsOgMegSvZlA=
 script:
-  - echo "running script"
-
+- echo "running script"
 after_success:
-  - echo "after success"
+- doc/run_doxygen.sh
