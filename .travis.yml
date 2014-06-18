@@ -2,7 +2,7 @@ language: cpp
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq  texlive texlive-extra-utils libxml2-utils perl dot
+    - sudo apt-get install -qq  texlive texlive-extra-utils libxml2-utils perl graphviz
 env:
   global:
     secure: jWjuPTMLiE8AmgFLg+vZljW7niTg4yjKMmXMyBiGcGKng906pIJNLFNZ5YzvezRCnvY5DLVar4PLplZRUJYMxE4hO5UKYE9gOafeEQtZTbn+uO2O2VAmhlk8oB+2O7GXwN3w75TuRFXdcZ+/5wdTGpzD2sfLvf7QsOgMegSvZlA=
