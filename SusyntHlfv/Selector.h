@@ -2,13 +2,12 @@
 #ifndef HLVF_SELECTOR_H
 #define HLVF_SELECTOR_H
 
-
+#include "SusyntHlfv/ProgressPrinter.h"
+#include "SusyntHlfv/CutFlowCounter.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
-
-#include "SusyntHlfv/ProgressPrinter.h"
-#include "SusyntHlfv/CutFlowCounter.h"
+#include "SusyNtuple/EventlistHandler.h"
 
 
 // fw decl
@@ -34,6 +33,8 @@ public:
        This function also increments the cutflow counters
      */
     virtual bool passEventCriteria();
+    Selector& setEventListFilename(const std::string filename);
+    virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
 protected:
     /// assign the weight components that depend only on event-level variables
     /**
@@ -56,11 +57,25 @@ protected:
 private:
     /// initialize weighter used for normalization
     bool initMcWeighter(TTree *tree);
+    /// convention: we're using an event list if its filename was specified
+    bool usingEventList() const { return m_eventListFilename.size()>0; }
+    /// initialize event list
+    /**
+       To be called within Init(), after SusyNtAna::Begin() and after
+       initMcWeighter().  Otherwise MCWeighter will get only a subset
+       of the events and compute sumw incorrectly.
+       Note to self: I am not sure that this feature would work on
+       proof. We're not using proof, so who cares.
+     */
+    bool initEventList(TTree *tree);
 protected:
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress
     hlfv::CutFlowCounter m_counter; ///< counters for cutflow
+    std::string m_eventListFilename; ///< name of the file with the eventlist (empty string means don't use this feature)
+    bool m_useExistingList;        ///< to keep track of whether there is already an event list
+    Susy::EventlistHandler m_eventList; ///< the actual event list
     ClassDef(Selector, 1);
 };
 

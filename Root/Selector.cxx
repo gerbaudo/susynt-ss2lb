@@ -28,7 +28,8 @@ using hlfv::EventFlags;
 //-----------------------------------------
 Selector::Selector() :
   m_trigObj(NULL),
-  m_mcWeighter(NULL)
+  m_mcWeighter(NULL),
+  m_useExistingList(false)
 {
   setAnaType(Ana_2Lep);
   setSelectTaus(true);
@@ -47,6 +48,8 @@ void Selector::Init(TTree* tree)
 {
     SusyNtAna::Init(tree);
     initMcWeighter(tree);
+    // note: the event list must be initialized after sumw has been computed by mcweighter
+    if(usingEventList()) initEventList(tree);
 }
 //-----------------------------------------
 Bool_t Selector::Process(Long64_t entry)
@@ -63,7 +66,11 @@ Bool_t Selector::Process(Long64_t entry)
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
     hlfv::EventFlags eventFlags = computeEventFlags();
     incrementEventCounters(eventFlags, weightComponents);
-    if(eventFlags.failAny()) return false;
+    bool isSelectedEvent = !eventFlags.failAny();
+    if(isSelectedEvent) {
+        if(usingEventList() && !m_useExistingList)
+            m_eventList.addEvent(entry);
+    }
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
 
   // const JetVector&   bj = m_baseJets;
@@ -111,6 +118,19 @@ bool Selector::initMcWeighter(TTree *tree)
     return success;
 }
 //-----------------------------------------
+bool Selector::initEventList(TTree *tree)
+{
+   bool success = false;
+   // check if the event list is there; if so, fetch it and loop only on those events
+   m_useExistingList = m_eventList.cacheDoesExists();
+   if(m_useExistingList) {
+       tree->SetEventList(m_eventList.fetchEventList());
+       if(m_dbg) cout<<"using existing event list from "<<m_eventList.cacheFilename()<<endl;
+       success = true;
+   }
+   return success;
+}
+//-----------------------------------------
 void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
                                             /*const*/ MCWeighter &weighter,
                                             WeightComponents &weightComponents)
@@ -132,6 +152,22 @@ bool Selector::passEventCriteria()
     bool pass=true;
 
     return pass;
+}
+//-----------------------------------------
+Selector& Selector::setEventListFilename(const std::string filename)
+{
+    m_eventListFilename = filename;
+    if(usingEventList()) {
+        m_eventList.setListName("hlfv_event_list");
+        m_eventList.setCacheFilename(filename);
+    }
+    return *this;
+}
+//-----------------------------------------
+void Selector::setDebug(int dbg)
+{
+    SusyNtAna::setDebug(dbg);
+    m_eventList.setVerbose(dbg>0);
 }
 //-----------------------------------------
 hlfv::EventFlags Selector::computeEventFlags()
