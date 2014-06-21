@@ -24,6 +24,9 @@ def getCommandOutput(command):
 def filterWithRegexp(stringList, regexp, func=lambda x : x) :
     return [d for d in stringList if re.search(regexp, func(d))]
 
+def excludeWithRegexp(stringList, regexp, func=lambda x : x) :
+    return [d for d in stringList if not re.search(regexp, func(d))]
+
 def findLatestOneOrTwoRootFiles(dir) :
     files = filter(os.path.isfile, glob.glob(dir + "*.root"))
     files.sort(key=lambda x: os.path.getmtime(x))

@@ -18,6 +18,7 @@ def main():
     inputdf = options.input
     outdir  = options.output_dir
     regexp  = options.sample_regexp
+    exclude = options.exclude_regexp
     tag     = options.tag
     verbose = options.verbose
     debug   = options.debug
@@ -25,7 +26,8 @@ def main():
     if debug : dataset.Dataset.verbose_parsing = True
     datasets = (dataset.Dataset.parse_files_in_dir(inputdf) if os.path.isdir(inputdf) else
                 dataset.Dataset.parse_datasets_from_file(inputdf))
-    datasets = utils.filterWithRegexp(datasets, regexp, lambda _: _.name)
+    datasets = utils.filterWithRegexp (datasets, regexp, lambda _: _.name) if regexp else datasets
+    datasets = utils.excludeWithRegexp(datasets, exclude, lambda _: _.name) if exclude else datasets
     counter = {'fail':0, 'pass':0}
     for d in datasets:
         outcome = 'pass' if  d.build_filelist(gpatlas_dir(d, tag), './filelist/', verbose) else 'fail'
@@ -48,7 +50,8 @@ def parse_options():
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-i', '--input', default='samples/', help='input directory or file (default: ./samples/)')
     parser.add_option('-o', '--output-dir', default='filelist/', help='output directory')
-    parser.add_option('-s', '--sample-regexp', default='.*', help="create filelists only for matching samples (default '.*')")
+    parser.add_option('-s', '--sample-regexp', help="create filelists only for matching samples (default '.*')")
+    parser.add_option('-e', '--exclude-regexp', help="exclude matching samples")
     parser.add_option('-t', '--tag', help='SusyNt production tag')
     parser.add_option('-v', '--verbose', action='store_true', default=False, help='print more details about what is going on')
     parser.add_option('-d', '--debug', action='store_true', default=False, help='print even more details, only useful to debug problems')
