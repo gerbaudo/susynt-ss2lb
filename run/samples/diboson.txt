@@ -10,19 +10,19 @@ mc12_8TeV.169478.gg2wwJimmy_AUET2CT10_WpWmtaunuenu
 mc12_8TeV.169479.gg2wwJimmy_AUET2CT10_WpWmtaunumunu
 
 # Sherpa_VVtollqq_MassiveCB
-mc12_8TeV.183585.Sherpa_CT10_ZWtoeeqq_MassiveCB
-mc12_8TeV.183586.Sherpa_CT10_ZZtoeeqq_MassiveCB
-mc12_8TeV.183587.Sherpa_CT10_ZWtomumuqq_MassiveCB
-mc12_8TeV.183588.Sherpa_CT10_ZZtomumuqq_MassiveCB
-mc12_8TeV.183589.Sherpa_CT10_ZWtotautauqq_MassiveCB
-mc12_8TeV.183590.Sherpa_CT10_ZZtotautauqq_MassiveCB
-mc12_8TeV.183591.Sherpa_CT10_ZWtonunuqq_MassiveCB
-mc12_8TeV.183734.Sherpa_CT10_WWtoenuqq_MassiveCB
-mc12_8TeV.183735.Sherpa_CT10_WZtoenuqq_MassiveCB
-mc12_8TeV.183736.Sherpa_CT10_WWtomunuqq_MassiveCB
-mc12_8TeV.183737.Sherpa_CT10_WZtomunuqq_MassiveCB
-mc12_8TeV.183738.Sherpa_CT10_WWtotaunuqq_MassiveCB
-mc12_8TeV.183739.Sherpa_CT10_WZtotaunuqq_MassiveCB
+# mc12_8TeV.183585.Sherpa_CT10_ZWtoeeqq_MassiveCB
+# mc12_8TeV.183586.Sherpa_CT10_ZZtoeeqq_MassiveCB
+# mc12_8TeV.183587.Sherpa_CT10_ZWtomumuqq_MassiveCB
+# mc12_8TeV.183588.Sherpa_CT10_ZZtomumuqq_MassiveCB
+# mc12_8TeV.183589.Sherpa_CT10_ZWtotautauqq_MassiveCB
+# mc12_8TeV.183590.Sherpa_CT10_ZZtotautauqq_MassiveCB
+# mc12_8TeV.183591.Sherpa_CT10_ZWtonunuqq_MassiveCB
+# mc12_8TeV.183734.Sherpa_CT10_WWtoenuqq_MassiveCB
+# mc12_8TeV.183735.Sherpa_CT10_WZtoenuqq_MassiveCB
+# mc12_8TeV.183736.Sherpa_CT10_WWtomunuqq_MassiveCB
+# mc12_8TeV.183737.Sherpa_CT10_WZtomunuqq_MassiveCB
+# mc12_8TeV.183738.Sherpa_CT10_WWtotaunuqq_MassiveCB
+# mc12_8TeV.183739.Sherpa_CT10_WZtotaunuqq_MassiveCB
 
 # Triboson
 mc12_8TeV.167006.MadGraphPythia_AUET2BCTEQ6L1_WWWStar_lnulnulnu
@@ -38,10 +38,10 @@ mc12_8TeV.126856.Sherpa_CT10_taunugammaPt10
 mc12_8TeV.179396.gg2ZZJimmy_AUET2CT10_ZZ4lep_2lepFilt
 
 # Sherpa_llnunu_MassiveCB
-mc12_8TeV.177997.Sherpa_CT10_llnunu_WW_MassiveCB
-mc12_8TeV.177999.Sherpa_CT10_llnunu_ZZ_MassiveCB
-mc12_8TeV.179974.Sherpa_CT10_lllnu_WZ_MassiveCB
-mc12_8TeV.179975.Sherpa_CT10_lnununu_WZ_MassiveCB
+# mc12_8TeV.177997.Sherpa_CT10_llnunu_WW_MassiveCB
+# mc12_8TeV.177999.Sherpa_CT10_llnunu_ZZ_MassiveCB
+# mc12_8TeV.179974.Sherpa_CT10_lllnu_WZ_MassiveCB
+# mc12_8TeV.179975.Sherpa_CT10_lnununu_WZ_MassiveCB
 
 # Sherpa_llnunu
 mc12_8TeV.126988.Sherpa_CT10_llnunu_SS_EW6
