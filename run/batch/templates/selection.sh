@@ -14,7 +14,7 @@
 
 #SBATCH -p atlas_all
 #SBATCH --mem-per-cpu=1gb
-#SBATCH --time=24:00
+#SBATCH --time=04:00
 #SBATCH -o %(logfile)s
 #SBATCH --job-name=%(jobname)s
 
@@ -24,7 +24,7 @@ echo "Starting on `hostname`, `date`"
 mkdir -p ${SCRATCH}
 cd       ${SCRATCH}
 echo "Working from ${PWD}"
-run_Selector -f ${SLURM_SUBMIT_DIR}/%(filelist)s  -s %(samplename)s
+run_Selector -i ${SLURM_SUBMIT_DIR}/%(filelist)s  -s %(samplename)s  %(opt)s
 echo "${PWD} contentents:"
 ls -ltrh
 # cp -p ${SCRATCH}/susyNt.root ${SLURM_SUBMIT_DIR}/%(outfilename)s # right now no output
