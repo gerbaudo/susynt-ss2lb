@@ -21,8 +21,8 @@ def getCommandOutput(command):
     stdout,stderr = p.communicate()
     return {"stdout":stdout, "stderr":stderr, "returncode":p.returncode}
 
-def filterWithRegexp(stringList, regexp) :
-    return [d for d in stringList if re.search(regexp, d)]
+def filterWithRegexp(stringList, regexp, func=lambda x : x) :
+    return [d for d in stringList if re.search(regexp, func(d))]
 
 def findLatestOneOrTwoRootFiles(dir) :
     files = filter(os.path.isfile, glob.glob(dir + "*.root"))

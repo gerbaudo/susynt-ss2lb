@@ -8,10 +8,10 @@
 
 import optparse
 import os
-import re
 import sys
 
 import dataset
+import utils
 
 def main():
     options = parse_options()
@@ -25,7 +25,7 @@ def main():
     if debug : dataset.Dataset.verbose_parsing = True
     datasets = (dataset.Dataset.parse_files_in_dir(inputdf) if os.path.isdir(inputdf) else
                 dataset.Dataset.parse_datasets_from_file(inputdf))
-    datasets = [d for d in datasets if re.search(regexp, d.name)]
+    datasets = utils.filterWithRegexp(datasets, regexp, lambda _: _.name)
     counter = {'fail':0, 'pass':0}
     for d in datasets:
         outcome = 'pass' if  d.build_filelist(gpatlas_dir(d, tag), './filelist/', verbose) else 'fail'
