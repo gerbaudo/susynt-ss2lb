@@ -8,6 +8,7 @@ import os
 import re
 import tempfile
 import unittest
+import utils
 
 class Dataset(object):
     """
@@ -79,9 +80,25 @@ class Dataset(object):
             self.is_valid = True
         elif Dataset.verbose_parsing:
             print "Cannot parse '%s'; attributes not set"%name
-
-
-
+    def build_filelist(self, base_input_dir, out_dir, verbose=False):
+        success = False
+        getCommandOutput = utils.getCommandOutput
+        cmd = 'find '+base_input_dir+' -maxdepth 1 -name "*'+self.name+'*"'
+        directories = getCommandOutput(cmd)['stdout'].split()
+        dest_filename = out_dir+'/'+self.name+'.txt'
+        if len(directories)==1:
+            directory = directories[0]
+            if verbose and os.path.exists(dest_filename) : print "overwriting %s"%dest_filename
+            cmd = 'ls '+directory+'/*.root* > '+dest_filename
+            out = getCommandOutput(cmd)
+            success = out['returncode']==0
+        elif len(directories)>1:
+            print "build_filelist: ambiguous output for '%s'"%self.name
+            print '\n\t : '.join(directories)
+            print "you need to generate it by hand: %s"%('ls '+base_input_dir+'/[dir]/*.root* > '+self.name+'.txt')
+        else:
+            print "build_filelist: missing '%s' from %s"%(self.name, base_input_dir)
+        return success
 
 # testing
 #_____________________________________
