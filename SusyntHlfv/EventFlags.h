@@ -24,6 +24,7 @@ struct EventFlags {
     return  (grl && larErr && tileErr && ttcVeto && goodVtx && tileTrip && lAr &&
              badJet && deadRegions && badMuon && cosmicMuon && hfor && ge2blep && eq2blep && mllMin);
   }
+  bool passAllEventCriteria() { return allTrue(); }
   bool failAny() { return !allTrue(); }
   std::string str() const;
 };
