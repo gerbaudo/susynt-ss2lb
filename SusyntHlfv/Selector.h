@@ -21,6 +21,7 @@ namespace hlfv{
 
 class WeightComponents;
 class EventFlags;
+class DileptonVariables;
 
 class Selector : public SusyNtAna
 {
@@ -39,6 +40,8 @@ public:
     Selector& setEventListFilename(const std::string filename);
     virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
     static std::vector<std::string> defaultCutNames(); ///< provide the list of default counter names (just labelling)
+    /// provide the list of default counter names after emu/mue separation (just labelling)
+    static std::vector<std::string> defaultCutNamesSplit();
 protected:
     /// assign the weight components that depend only on event-level variables
     /**
@@ -67,6 +70,8 @@ protected:
     hlfv::EventFlags computeEventFlags();
     /// incremement the event-level counters
     void incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
+    /// incremement the event counters after the emu/mue splitting
+    void incrementEventSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w);
     /// dilepton trigger weight
     /**
        Need access to several internal variables, so cannot be static
@@ -104,6 +109,8 @@ protected:
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress
     hlfv::CutFlowCounter m_counter; ///< counters for cutflow
+    hlfv::CutFlowCounter m_counterEmu; ///< counters for cutflow (after channel split, only emu)
+    hlfv::CutFlowCounter m_counterMue; ///< counters for cutflow (after channel split, only mue)
     std::string m_eventListFilename; ///< name of the file with the eventlist (empty string means don't use this feature)
     bool m_useExistingList;        ///< to keep track of whether there is already an event list
     Susy::EventlistHandler m_eventList; ///< the actual event list

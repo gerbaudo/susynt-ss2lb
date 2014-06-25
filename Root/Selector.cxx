@@ -33,6 +33,8 @@ Selector::Selector() :
   m_trigObj(NULL),
   m_mcWeighter(NULL),
   m_counter(Selector::defaultCutNames()),
+  m_counterEmu(Selector::defaultCutNamesSplit()),
+  m_counterMue(Selector::defaultCutNamesSplit()),
   m_useExistingList(false)
 {
   setAnaType(Ana_2Lep);
@@ -59,6 +61,8 @@ void Selector::Init(TTree* tree)
 Bool_t Selector::Process(Long64_t entry)
 {
     m_counter.nextEvent();
+    m_counterEmu.nextEvent();
+    m_counterMue.nextEvent();
     m_printer.countAndPrint(cout);
     GetEntry(entry);
     m_chainEntry++; // SusyNtAna counter
@@ -78,28 +82,12 @@ Bool_t Selector::Process(Long64_t entry)
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, weightComponents);
-            //incrementObjectCounters(ssf, weightComponents);
-            // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, lowPtLep, jets);
+            incrementEventSplitCounters(vars, weightComponents);
+            // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
         }
     }
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
-
-  // VarFlag_t varsFlags = computeSsFlags(m_signalLeptons, m_signalTaus, m_signalJets2Lep, m_met, susy::wh::WH_CENTRAL, allowQflip);
-  // const SsPassFlags &ssf = varsFlags.second;
-  // incrementSsCounters(ssf, m_weightComponents);
-  // if(ssf.lepPt) {
-  //     if(m_writeTuple) {
-  //         double weight(m_weightComponents.product());
-  //         unsigned int run(nt.evt()->run), event(nt.evt()->event);
-  //         LeptonVector anyLep(getAnyElOrMu(nt));
-  //         LeptonVector lowPtLep(subtract_vector(anyLep, m_baseLeptons));
-  //         const Lepton *l0 = m_signalLeptons[0];
-  //         const Lepton *l1 = m_signalLeptons[1];
-  //
-  //         m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, lowPtLep, clJets);
-  //     }
-  // }
     return kTRUE;
 }
 //-----------------------------------------
@@ -108,6 +96,12 @@ void Selector::Terminate()
     SusyNtAna::Terminate();
     m_counter.printTableRaw     (cout);
     m_counter.printTableWeighted(cout);
+    cout<<"--- emu ---"<<endl;
+    m_counterEmu.printTableRaw     (cout);
+    m_counterEmu.printTableWeighted(cout);
+    cout<<"--- mue ---"<<endl;
+    m_counterMue.printTableRaw     (cout);
+    m_counterMue.printTableWeighted(cout);
     if(m_mcWeighter) delete m_mcWeighter;
 }
 //-----------------------------------------
@@ -253,6 +247,21 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.mllMin     ) m_counter.pass(weight); else return;
 }
 //-----------------------------------------
+void Selector::incrementEventSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w)
+{
+    double weight = w.product();
+    if(v.isEmu() || v.isMue()) {
+        CutFlowCounter &counter = (v.isEmu() ? m_counterEmu : m_counterMue);
+        if(true                 ) counter.pass(weight); else return;
+        if(v.isOs()             ) counter.pass(weight); else return;
+        if(v.passL0Pt()         ) counter.pass(weight); else return;
+        if(v.passL1Pt()         ) counter.pass(weight); else return;
+        if(v.passJetVeto()      ) counter.pass(weight); else return;
+        if(v.passDeltaPhiLl()   ) counter.pass(weight); else return;
+        if(v.passDeltaPhiL1Met()) counter.pass(weight); else return;
+    }
+}
+//-----------------------------------------
 double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys)
 {
     double trigW = 1.0;
@@ -322,6 +331,19 @@ std::vector<std::string> Selector::defaultCutNames()
     labels.push_back("ge2blep"    );
     labels.push_back("eq2blep"    );
     labels.push_back("mllMin"     );
+    return labels;
+}
+//-----------------------------------------
+std::vector<std::string> Selector::defaultCutNamesSplit()
+{
+    vector<string> labels;
+    labels.push_back("flavor");
+    labels.push_back("opp-sign");
+    labels.push_back("pt0");
+    labels.push_back("pt1");
+    labels.push_back("jet-veto");
+    labels.push_back("dphi-l0l1");
+    labels.push_back("dphi-l1met");
     return labels;
 }
 //-----------------------------------------
