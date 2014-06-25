@@ -4,6 +4,7 @@
 
 #include "SusyntHlfv/ProgressPrinter.h"
 #include "SusyntHlfv/CutFlowCounter.h"
+#include "SusyntHlfv/Systematic.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -13,6 +14,7 @@
 // fw decl
 class DilTrigLogic;
 class MCWeighter;
+namespace Susy{ class Event; }
 
 namespace hlfv{
 
@@ -35,6 +37,7 @@ public:
     virtual bool passEventCriteria();
     Selector& setEventListFilename(const std::string filename);
     virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
+    static std::vector<std::string> defaultCutNames(); ///< provide the list of default counter names (just labelling)
 protected:
     /// assign the weight components that depend only on event-level variables
     /**
@@ -46,6 +49,15 @@ protected:
     static void assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
                                              /*const*/ MCWeighter &weighter,
                                              hlfv::WeightComponents &weightComponents);
+    /// assign the weight components that depend on the object-level variables
+    /**
+       The output values are assigned to weightcomponents; need access
+       to trigger and btag tools, so cannot be static.
+    */
+    bool assignNonStaticWeightComponents(const LeptonVector& leptons,
+                                         const JetVector& jets,
+                                         const hlfv::Systematic::Value sys,
+                                         hlfv::WeightComponents &weightcomponents);
     /// compute the event-level flags
     /**
        Note that some of these quantities actually depend on the
@@ -54,6 +66,20 @@ protected:
     hlfv::EventFlags computeEventFlags();
     /// incremement the event-level counters
     void incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
+    /// dilepton trigger weight
+    /**
+       Need access to several internal variables, so cannot be static
+     */
+    double computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys);
+    /// btag scale factor
+    /**
+       Need access to several internal variables, so cannot be static
+     */
+    double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
+    /// lepton efficiency data/simulation scale factor
+    static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
+    /// exactly one electron and one muon
+    static bool eventIsEmu(const LeptonVector &leptons);
 private:
     /// initialize weighter used for normalization
     bool initMcWeighter(TTree *tree);

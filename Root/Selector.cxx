@@ -24,11 +24,13 @@ using namespace std;
 using hlfv::Selector;
 using hlfv::WeightComponents;
 using hlfv::EventFlags;
+using hlfv::Systematic;
 
 //-----------------------------------------
 Selector::Selector() :
   m_trigObj(NULL),
   m_mcWeighter(NULL),
+  m_counter(Selector::defaultCutNames()),
   m_useExistingList(false)
 {
   setAnaType(Ana_2Lep);
@@ -63,20 +65,23 @@ Bool_t Selector::Process(Long64_t entry)
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
     m_counter.pass(weightComponents.product());
     bool removeLepsFromIso(false);
-    selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium);
-    hlfv::EventFlags eventFlags = computeEventFlags();
+    selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    EventFlags eventFlags = computeEventFlags();
     incrementEventCounters(eventFlags, weightComponents);
-    bool isSelectedEvent = !eventFlags.failAny();
-    if(isSelectedEvent) {
-        if(usingEventList() && !m_useExistingList)
-            m_eventList.addEvent(entry);
+    if(eventFlags.passAllEventCriteria()) {
+        const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
+        const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
+        const LeptonVector& l = m_signalLeptons;
+        if(eventIsEmu(l)) {
+            assignNonStaticWeightComponents(l, bj, sys, weightComponents);
+            //EventVars vars = computeAllEventVariables(l, bj);
+            //incrementObjectCounters(ssf, weightComponents);
+
+        if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
+        }
     }
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
 
-  // const JetVector&   bj = m_baseJets;
-  // const LeptonVector& l = m_signalLeptons;
-  // if(l.size()>1) assignNonStaticWeightComponents(computeNonStaticWeightComponents(l, bj, susy::wh::WH_CENTRAL));
-  // else return false;
   // VarFlag_t varsFlags = computeSsFlags(m_signalLeptons, m_signalTaus, m_signalJets2Lep, m_met, susy::wh::WH_CENTRAL, allowQflip);
   // const SsPassFlags &ssf = varsFlags.second;
   // incrementSsCounters(ssf, m_weightComponents);
@@ -133,7 +138,7 @@ bool Selector::initEventList(TTree *tree)
 //-----------------------------------------
 void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
                                             /*const*/ MCWeighter &weighter,
-                                            WeightComponents &weightComponents)
+                                            hlfv::WeightComponents &weightComponents)
 {
     if(ntobj.evt()->isMC) {
         weightComponents.gen = ntobj.evt()->w;
@@ -145,6 +150,28 @@ void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
         float genpu(weightComponents.gen*weightComponents.pileup);
         weightComponents.norm = (genpu != 0.0 ? weightComponents.susynt/genpu : 1.0);
     }
+}
+//-----------------------------------------
+
+bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
+                                               const JetVector& jets,
+                                               const hlfv::Systematic::Value sys,
+                                               hlfv::WeightComponents &weightcomponents)
+{
+    bool success=false;
+    WeightComponents &wc = weightcomponents;
+    if(leptons.size()>1) {
+        const Lepton &l0 = *(leptons[0]);
+        const Lepton &l1 = *(leptons[1]);
+        if(nt.evt()->isMC) {
+            wc.lepSf   = (computeLeptonEfficiencySf(l0, sys)*
+                          computeLeptonEfficiencySf(l1, sys));
+            wc.trigger = computeDileptonTriggerWeight(leptons, sys);
+            wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
+        }
+        success = true;
+    }
+    return success;
 }
 //-----------------------------------------
 bool Selector::passEventCriteria()
@@ -221,5 +248,77 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.ge2blep    ) m_counter.pass(weight); else return;
     if(f.eq2blep    ) m_counter.pass(weight); else return;
     if(f.mllMin     ) m_counter.pass(weight); else return;
+}
+//-----------------------------------------
+double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys)
+{
+    double trigW = 1.0;
+    if(leptons.size()==2){
+
+        trigW = m_trigObj->getTriggerWeight(leptons, nt.evt()->isMC, m_met->Et,
+                                            m_signalJets2Lep.size(),
+                                            nt.evt()->nVtx, hlfv::sys2ntsys(sys));
+        bool twIsInvalid(isnan(trigW) || trigW<0.0);
+        if(twIsInvalid){
+            if(m_dbg) cout<<"SusySelection::getTriggerWeight: invalid weight "<<trigW<<", using 0.0"<<endl;
+            trigW = (twIsInvalid ? 0.0 : trigW);
+        }
+        assert(!twIsInvalid); // is this still necessary? DG-2014-06-24
+    }
+    return trigW;
+}
+//-----------------------------------------
+double Selector::computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys)
+{
+    JetVector taggableJets = SusyNtTools::getBTagSFJets2Lep(jets);
+    return SusyNtTools::bTagSF(evt, taggableJets, evt->mcChannel, hlfv::sys2ntbsys(sys));
+}
+//-----------------------------------------
+double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys)
+{
+    float effFactor = 1.0;
+    float sf(lep.effSF), delta(0.0);
+    if     (lep.isEle() && sys==hlfv::Systematic::ESFUP   ) delta = (+lep.errEffSF);
+    else if(lep.isEle() && sys==hlfv::Systematic::ESFDOWN ) delta = (-lep.errEffSF);
+    else if(lep.isMu()  && sys==hlfv::Systematic::MEFFUP  ) delta = (+lep.errEffSF);
+    else if(lep.isMu()  && sys==hlfv::Systematic::MEFFDOWN) delta = (-lep.errEffSF);
+    effFactor = (sf + delta);
+    return effFactor;
+}
+//-----------------------------------------
+bool Selector::eventIsEmu(const LeptonVector &leptons)
+{
+    bool isEmu = false;
+    if(leptons.size()==2) {
+        const Lepton &l0 = *(leptons[0]);
+        const Lepton &l1 = *(leptons[1]);
+        isEmu = ((l0.isEle() && l1.isMu()) ||
+                 (l0.isMu() && l1.isEle()) );
+    }
+    return isEmu;
+}
+//-----------------------------------------
+std::vector<std::string> Selector::defaultCutNames()
+{ // note to self: these labels must match the calls of
+  // m_counter.pass() (i.e. the first one and the subsequent ones in
+  // incrementEventCounters
+    vector<string> labels;
+    labels.push_back("input"      );
+    labels.push_back("grl"        );
+    labels.push_back("larErr"     );
+    labels.push_back("tileErr"    );
+    labels.push_back("ttcVeto"    );
+    labels.push_back("goodVtx"    );
+    labels.push_back("tileTrip"   );
+    labels.push_back("lAr"        );
+    labels.push_back("badJet"     );
+    labels.push_back("deadRegions");
+    labels.push_back("badMuon"    );
+    labels.push_back("cosmicMuon" );
+    labels.push_back("hfor"       );
+    labels.push_back("ge2blep"    );
+    labels.push_back("eq2blep"    );
+    labels.push_back("mllMin"     );
+    return labels;
 }
 //-----------------------------------------
