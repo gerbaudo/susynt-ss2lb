@@ -33,6 +33,7 @@ namespace hlfv
     float phi0, phi1;
     float eta0, eta1;
     float mll, detall;
+    float mcoll01, mcoll10, mcoll;
     size_t numCentralLightJets;
     float j0pt,  j1pt,  j2pt;
     float j0eta, j1eta, j2eta;
@@ -56,6 +57,7 @@ namespace hlfv
       eta0 = eta1 = 0.0;
       phi0 = phi1 = 0.0;
       mll = detall = 0.0;
+      mcoll01 = mcoll10 = mcoll = 0.0;
       numCentralLightJets = 0;
       j0pt  = j1pt  = j2pt  = 0.0;
       j0eta = j1eta = j2eta = 0.0;
@@ -76,6 +78,22 @@ namespace hlfv
                                              const JetVector &jets);
   /// transverse W mass variable
   float transverseMass(const TLorentzVector &lep, const TLorentzVector &met);
+  /// invariant mass under the assumption that one lepton is from a leptonic tau
+  /**
+     The second lepton (l1) is assumed to be the one from the tau.
+     See definition in  hep-ph/1405.4545.
+   */
+  float computeCollinearMzLepTau(const TLorentzVector &l0,
+                                 const TLorentzVector &l1,
+                                 const TLorentzVector &met);
+  /// invariant mass under the assumption that both leptons are from leptonic taus
+  /**
+     Apply the collinear approximation to both decays.
+     Re-written based on HWWlvlvCode::calculate_METBasedVariables
+   */
+  float computeCollinearMzTauTau(const TLorentzVector &l0,
+                                 const TLorentzVector &l1,
+                                 const TLorentzVector &met);
 } // hlfv
 
 #endif

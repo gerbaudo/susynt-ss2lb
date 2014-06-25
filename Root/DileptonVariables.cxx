@@ -36,6 +36,9 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
         v.phi1 = l1.Phi();
         TLorentzVector ll(l0+l1);
         v.mll = ll.M();
+        v.mcoll01 = hlfv::computeCollinearMzLepTau(l0, l1, met->lv());
+        v.mcoll10 = hlfv::computeCollinearMzLepTau(l1, l0, met->lv());
+        v.mcoll   = hlfv::computeCollinearMzTauTau(l0, l1, met->lv());
         v.detall = fabs(l0.Eta() - l1.Eta());
         LeptonVector lepts;
         lepts.push_back(&l0);
@@ -80,3 +83,29 @@ bool DileptonVariables::passDeltaPhiL1Met() const
                                                 .DeltaPhi(TVector2(1.0, 0.0).Rotate(metPhi))));
     return dphil1met <0.5;
 }
+//-----------------------------------------
+float hlfv::computeCollinearMzLepTau(const TLorentzVector &l0,
+                                     const TLorentzVector &l1,
+                                     const TLorentzVector &met)
+{
+    return std::sqrt(2.0 * l0.Pt() *
+                     (l1.Pt() + met.Et()) *
+                     (cosh(l0.Eta() - l1.Eta()) - cos(l0.DeltaPhi(l1))));
+}
+//-----------------------------------------
+float hlfv::computeCollinearMzTauTau(const TLorentzVector &l0,
+                                     const TLorentzVector &l1,
+                                     const TLorentzVector &met)
+{
+    float px0(l0.Px()), py0(l0.Py());
+    float px1(l1.Px()), py1(l1.Py());
+    float pxm(met.Px()), pym(met.Py());
+    float num( px0*py1 - py0*px1 );
+    float den1( py1*pxm - px1*pym + px0*py1 - py0*px1 );
+    float den2( px0*pym - py0*pxm + px0*py1 - py0*px1 );
+    float x1 = ( den1 != 0.0  ? (num/den1) : 0.0);
+    float x2 = ( den2 != 0.0  ? (num/den2) : 0.0);
+    bool kinematicallyPossible(x1*x2 > 0.0);
+    return (kinematicallyPossible ? (l0+l1).M() / std::sqrt(x1*x2) : -1.0);
+}
+//-----------------------------------------
