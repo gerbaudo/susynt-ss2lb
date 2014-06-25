@@ -1,6 +1,7 @@
 #include "SusyntHlfv/Selector.h"
 #include "SusyntHlfv/WeightComponents.h"
 #include "SusyntHlfv/EventFlags.h"
+#include "SusyntHlfv/DileptonVariables.h"
 
 // #include "SusyntHlfv/EventFlags.h"
 // #include "SusyntHlfv/criteria.h"
@@ -25,6 +26,7 @@ using hlfv::Selector;
 using hlfv::WeightComponents;
 using hlfv::EventFlags;
 using hlfv::Systematic;
+using hlfv::DileptonVariables;
 
 //-----------------------------------------
 Selector::Selector() :
@@ -73,8 +75,8 @@ Bool_t Selector::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(eventIsEmu(l)) {
+            DileptonVariables vars = computeDileptonVariables(l, m_met, m_signalJets2Lep);
             assignNonStaticWeightComponents(l, bj, sys, weightComponents);
-            //EventVars vars = computeAllEventVariables(l, bj);
             //incrementObjectCounters(ssf, weightComponents);
 
         if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
