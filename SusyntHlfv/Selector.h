@@ -14,6 +14,7 @@
 // fw decl
 class DilTrigLogic;
 class MCWeighter;
+class JVFUncertaintyTool;
 namespace Susy{ class Event; }
 
 namespace hlfv{
@@ -76,6 +77,10 @@ protected:
        Need access to several internal variables, so cannot be static
      */
     double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
+    /// select the jets we are interested in (central, high-pt)
+    static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
+                                const hlfv::Systematic::Value sys,
+                                AnalysisType anaType);
     /// lepton efficiency data/simulation scale factor
     static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
     /// exactly one electron and one muon

@@ -75,11 +75,12 @@ Bool_t Selector::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(eventIsEmu(l)) {
-            DileptonVariables vars = computeDileptonVariables(l, m_met, m_signalJets2Lep);
+            const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
+            DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, weightComponents);
             //incrementObjectCounters(ssf, weightComponents);
-
-        if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
+            // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, lowPtLep, jets);
+            if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
         }
     }
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
@@ -95,7 +96,7 @@ Bool_t Selector::Process(Long64_t entry)
   //         LeptonVector lowPtLep(subtract_vector(anyLep, m_baseLeptons));
   //         const Lepton *l0 = m_signalLeptons[0];
   //         const Lepton *l1 = m_signalLeptons[1];
-  //         const JetVector clJets(Selector::filterClJets(m_signalJets2Lep, m_jvfTool, NtSys_NOM, m_anaType));
+  //
   //         m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, lowPtLep, clJets);
   //     }
   // }
@@ -322,5 +323,17 @@ std::vector<std::string> Selector::defaultCutNames()
     labels.push_back("eq2blep"    );
     labels.push_back("mllMin"     );
     return labels;
+}
+//-----------------------------------------
+JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
+                               const hlfv::Systematic::Value sys,
+                               AnalysisType anaType)
+{
+    JetVector outjets;
+    for(size_t i=0; i<jets.size(); ++i){
+        if(SusyNtTools::isCentralLightJet(jets[i], jvfTool, hlfv::sys2ntsys(sys), anaType))
+            outjets.push_back(jets[i]);
+    }
+    return outjets;
 }
 //-----------------------------------------
