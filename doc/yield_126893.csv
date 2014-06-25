@@ -1,0 +1,69 @@
+         Cut,              raw counts,,
+       input,                 1165777,,
+         grl,                 1165777,,
+      larErr,                 1165777,,
+     tileErr,                 1165777,,
+     ttcVeto,                 1165777,,
+     goodVtx,                 1165777,,
+    tileTrip,                 1165777,,
+         lAr,                 1165777,,
+      badJet,                 1164290,,
+ deadRegions,                 1164000,,
+     badMuon,                 1163983,,
+  cosmicMuon,                 1155605,,
+        hfor,                 1155605,,
+     ge2blep,                  334107,,
+     eq2blep,                  288979,,
+      mllMin,                  172391,,
+            ,                     emu,              mue,
+      flavor,                   20587,            19317,
+    opp-sign,                   10286,             9723,
+         pt0,                    6634,             6064,
+         pt1,                    3798,             3560,
+    jet-veto,                    1348,             1322,
+   dphi-l0l1,                     562,              564,
+  dphi-l1met,                     126,              165,
+
+
+         Cut,         weighted counts,,
+       input,                 89780.4,,
+         grl,                 89780.4,,
+      larErr,                 89780.4,,
+     tileErr,                 89780.4,,
+     ttcVeto,                 89780.4,,
+     goodVtx,                 89780.4,,
+    tileTrip,                 89780.4,,
+         lAr,                 89780.4,,
+      badJet,                 89682.6,,
+ deadRegions,                 89660.6,,
+     badMuon,                 89659.3,,
+  cosmicMuon,                 89079.6,,
+        hfor,                 89079.6,,
+     ge2blep,                 26030.6,,
+     eq2blep,                 22517.4,,
+      mllMin,                 13396.4,,
+            ,                     emu,              mue,     
+      flavor,                 1177.52,          1004.71,
+    opp-sign,                 595.374,          501.728,
+         pt0,                 394.078,          338.544,
+         pt1,                 220.785,          205.086,
+    jet-veto,                 83.6311,          81.8963,
+   dphi-l0l1,                 33.9599,          35.2577,
+  dphi-l1met,                 7.53796,          10.8039,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
