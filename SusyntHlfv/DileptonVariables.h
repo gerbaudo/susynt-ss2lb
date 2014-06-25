@@ -26,7 +26,7 @@ namespace hlfv
      Jun 2014
    */
   struct DileptonVariables {
-    DileptonVariables() { reset(); }    
+    DileptonVariables() { reset(); }
     bool isMu0, isMu1;
     float q0, q1;
     float pt0, pt1;
@@ -68,6 +68,8 @@ namespace hlfv
     }
     /// pass all selection criteria below
     bool passAllSelectionCriteria() const;
+    bool passL0Pt() const;
+    bool passL1Pt() const;
     bool passLeptonPt() const;
     bool passJetVeto() const;
     bool passDeltaPhiLl() const;

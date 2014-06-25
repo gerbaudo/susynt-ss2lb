@@ -67,7 +67,9 @@ bool DileptonVariables::passAllSelectionCriteria() const
     return passLeptonPt() && passJetVeto() && passDeltaPhiLl() && passDeltaPhiL1Met();
 }
 //-----------------------------------------
-bool DileptonVariables::passLeptonPt() const { return pt0>30.0 && pt1>20.0; }
+bool DileptonVariables::passL0Pt() const { return pt0>30.0; }
+bool DileptonVariables::passL1Pt() const { return pt1>20.0; }
+bool DileptonVariables::passLeptonPt() const { return passL0Pt() && passL1Pt(); }
 bool DileptonVariables::passJetVeto() const { return numCentralLightJets==0; }
 //-----------------------------------------
 bool DileptonVariables::passDeltaPhiLl() const
