@@ -47,7 +47,7 @@ void Selector::Begin(TTree* /*tree*/)
   string period = "Moriond";
   bool useReweightUtils = false;
   m_trigObj = new DilTrigLogic(period, useReweightUtils);
-//  if(m_useMCTrig) m_trigObj->useMCTrigger();
+//  if(m_useMCTrig) m_trigObj->useMCTrigger);
 }
 //-----------------------------------------
 void Selector::Init(TTree* tree)
@@ -112,7 +112,9 @@ bool Selector::initMcWeighter(TTree *tree)
         string xsecDir = gSystem->ExpandPathName("$ROOTCOREBIN/data/SUSYTools/mc12_8TeV/");
         m_mcWeighter = new MCWeighter(tree, xsecDir);
         bool isPmssmSample(susy::utils::contains(sampleName(), "Herwigpp_UEEE3_CTEQ6L1_DGnoSL_TB10"));
+        m_mcWeighter->parseAdditionalXsecFile("${ROOTCOREBIN}/data/SusyntHlfv/LFV.txt", m_dbg);
         if(isPmssmSample) m_mcWeighter->setLabelBinCounter("Initial").clearAndRebuildSumwMap(m_tree);
+
         if(m_dbg) cout<<"Selector: MCWeighter has been initialized"<<endl;
     } else {
         cout<<"Selector::initMcWeighter: error, invalid input tree, cannot initialize Mcweighter"<<endl;
@@ -223,6 +225,11 @@ hlfv::EventFlags Selector::computeEventFlags()
     if(nt.evt()->hfor != killHfor      )  f.hfor        = true;
     if(bleps.size() >= 2               )  f.ge2blep     = true;
     if(bleps.size() == 2               )  f.eq2blep     = true;
+
+    // const LeptonVector& leptons, DilTrigLogic *dtl, float met, Event* evt
+    // dtl->passDilEvtTrig(leptons, met, evt);
+    // dtl->passDilTrigMatch(leptons, met, evt);
+
     if(mll>mllMin                      )  f.mllMin      = true;
     return f;
 }
