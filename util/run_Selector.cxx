@@ -28,6 +28,7 @@ void print_usage(const char *exeName) {
         <<"\t -v [--verbose]                : toggle verbose \n"
         <<"\t -d [--debug]                  : toggle debug \n"
         <<"\t -i [--input]   <file.txt>     : input root file (or filelist or dir) \n"
+        <<"\t -n [--num-events] <int>       : number of events to be processed \n"
         <<"\t -s [--sample]  <samplename>   : sample name \n"
         <<"\t -e [--event-list] <file.root> : file where the eventlist is cached \n"
         <<"Example: \n"
@@ -40,7 +41,7 @@ void print_usage(const char *exeName) {
 //----------------------------------------------------------
 int main(int argc, char** argv) {
     ROOT::Cintex::Cintex::Enable();
-    int nEvt = -1;
+    int num_events = -1;
     int nSkip = 0;
     bool verbose=false;
     bool debug=false;
@@ -55,16 +56,18 @@ int main(int argc, char** argv) {
         {"verbose",    no_argument,       0, 'v'},
         {"debug",      no_argument,       0, 'd'},
         {"input",      required_argument, 0, 'i'},
+        {"num-events", required_argument, 0, 'n'},
         {"sample",     required_argument, 0, 's'},
         {"event-list", required_argument, 0, 'e'},
         {0, 0, 0, 0}
     };
-    while ((opt=getopt_long (argc, argv, "hvd:i:e:s:", long_options, NULL)) != -1) {
+    while ((opt=getopt_long (argc, argv, "hvd:i:n:e:s:", long_options, NULL)) != -1) {
         switch (opt) {
         case 'h' : print_usage(argv[0]); exit(0);
         case 'v' : verbose=true; break;
         case 'd' : debug=true; break;
         case 'i' : input = optarg; break;
+        case 'n' : num_events = atoi(optarg); break;
         case 's' : sample = optarg; break;
         case 'e' : eventlist = optarg; break;
         default: cout<<"unknown option "<<argv[optind]<<endl; exit(1);
@@ -75,11 +78,12 @@ int main(int argc, char** argv) {
         while (optind < argc) cout<<argv[optind++]<<endl;
     }
     if(verbose)
-        cout<<"verbose   '"<<verbose  <<"'"<<endl
-            <<"debug     '"<<debug    <<"'"<<endl
-            <<"input     '"<<input    <<"'"<<endl
-            <<"sample    '"<<sample   <<"'"<<endl
-            <<"eventlist '"<<eventlist<<"'"<<endl;
+        cout<<"verbose   '"<<verbose   <<"'"<<endl
+            <<"debug     '"<<debug     <<"'"<<endl
+            <<"input     '"<<input     <<"'"<<endl
+            <<"num-events'"<<num_events<<"'"<<endl
+            <<"sample    '"<<sample    <<"'"<<endl
+            <<"eventlist '"<<eventlist <<"'"<<endl;
 
     TChain* chain = new TChain("susyNt");
     bool inputIsFile = susy::utils::endswith(input, ".root");
@@ -97,8 +101,8 @@ int main(int argc, char** argv) {
     if(inputIsFile) ChainHelper::addFile    (chain, input);
     if(inputIsList) ChainHelper::addFileList(chain, input);
     if(inputIsDir ) ChainHelper::addFileDir (chain, input);
-    Long64_t nEntries = chain->GetEntries();
-    nEvt = (nEvt<0 ? nEntries : nEvt);
+    Long64_t tot_num_events = chain->GetEntries();
+    num_events = (num_events<0 ? tot_num_events : num_events);
     if(debug) chain->ls();
 
     hlfv::Selector selector;
@@ -106,7 +110,7 @@ int main(int argc, char** argv) {
     selector.setSampleName(sample);
     cout<<"eventlist : "<<eventlist<<endl;
     selector.setEventListFilename(eventlist); // setting the event list to '' is disabling it
-    chain->Process(&selector, sample.c_str(), nEvt, nSkip);
+    chain->Process(&selector, sample.c_str(), num_events, nSkip);
 
     delete chain;
     return 0;
