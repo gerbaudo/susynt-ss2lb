@@ -21,9 +21,8 @@ typedef std::vector<Susy::Jet*>    JetVector;
 
 namespace hlfv
 {
-/*!
-  A class to save the information from SusyNt to a simpler ntuple.
-
+/// A class to save the information from SusyNt to a simpler ntuple.
+/**
   Details:
   This class is meant to create small ntuples for faster turnaround.
   The nutples store the information relative to the following objects:

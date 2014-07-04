@@ -24,6 +24,16 @@ class WeightComponents;
 class EventFlags;
 class DileptonVariables;
 
+/// TSelector implementing the HLFV event selection
+/**
+   This TSelector reads in the SusyNtuple events and selects the ones
+   passing the selection criteria we used for the Higgs lepton flavor
+   violation (HLFV) study. It can also write out our analysis
+   ntuples. For an example of its usage, see util/run_Selector.cxx.
+
+   davide.gerbaudo@gmail.com
+   June 2014
+ */
 class Selector : public SusyNtAna
 {
 public:

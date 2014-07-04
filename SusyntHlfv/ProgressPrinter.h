@@ -7,15 +7,14 @@
 
 namespace hlfv
 {
-/*!
-  A simple struct to print a timestamped line with the number of processed events.
+  /// A simple struct to print a timestamped line with the number of processed events.
+  /**
+     Details:
+     Based on github.com/elaird/supy/steps/printer.py.
 
-  Details:
-  Based on github.com/elaird/supy/steps/printer.py.
-
-  davide.gerbaudo@gmail.com
-  Oct 2013
-*/
+     davide.gerbaudo@gmail.com
+     Oct 2013
+  */
   struct ProgressPrinter {
     ProgressPrinter(int suppressionFactor=2, int suppressionOffset=300, bool quiet=false):
       m_suppressionFactor(suppressionFactor),
