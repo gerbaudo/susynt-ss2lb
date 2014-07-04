@@ -1,5 +1,5 @@
 #include "SusyntHlfv/Selector.h"
-/* #include "SusyntHlfv/TupleMakerObjects.h" */
+#include "SusyntHlfv/TupleMakerObjects.h"
 /* #include "SusyntHlfv/kinematic.h" */
 
 #ifdef __CINT__
@@ -11,10 +11,11 @@
 
 #pragma link C++ namespace hlfv;
 #pragma link C++ class hlfv::Selector+;
-/* #pragma link C++ namespace susywh; */
-/* #pragma link C++ struct susy::wh::FourMom+; */
-/* #pragma link C++ struct susy::wh::EventParameters+; */
-/* #pragma link C++ class vector<susy::wh::FourMom>+; */
+#pragma link C++ struct hlfv::FourMom+;
+#pragma link C++ struct hlfv::EventParameters+;
+#pragma link C++ enum hlfv::Systematic;
+#pragma link C++ class vector<hlfv::FourMom>+;
+
 /* #pragma link C++ namespace susy::wh::kin; */
 /* #pragma link C++ struct susy::wh::kin::DilepVars+; */
 #endif
