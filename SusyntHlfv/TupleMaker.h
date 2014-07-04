@@ -67,9 +67,9 @@ private: // rule of three
     TupleMaker(const TupleMaker&);
     TupleMaker& operator=(const TupleMaker&);
 private:
-    bool initFile(const std::string &outFilename);
-    bool initTree(const std::string &treename);
-    bool initTreeBranches();
+    bool initFile(const std::string &outFilename); ///< init output file
+    bool initTree(const std::string &treename); ///< init output tree
+    bool initTreeBranches(); ///< create branches
 private:
     TFile *file_;
     TTree *tree_;
