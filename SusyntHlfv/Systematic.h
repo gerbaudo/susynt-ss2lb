@@ -2,23 +2,24 @@
 #ifndef SUSYNTHLVF_SYSTEMATICS_H
 #define SUSYNTHLVF_SYSTEMATICS_H
 
+#include "SusyNtuple/SusyDefs.h"
+#include <string>
+
+namespace hlfv {
+
 ///   List of possible systematic uncertainties for the hlfv study
 /**
    Essentially a copy of what we used for susy::wh, with a few additional
    helper functions to handle names and to convert between
    hlfv::Systematic <-> SusyNtSys
 
-   Note to self: enclose enum in a struct to avoid collisions
-   (see http://stackoverflow.com/questions/7090130/enum-in-a-namespace)
+   Note to self: enclose enum in a struct to avoid collisions; see
+   explanation on
+   <A HREF="http://stackoverflow.com/questions/7090130/enum-in-a-namespace">stackoveflow</A>.
 
    davide.gerbaudo@gmail.com
    Jun 2014
 */
-
-#include "SusyNtuple/SusyDefs.h"
-#include <string>
-
-namespace hlfv {
 
 struct Systematic {
     enum Value {
