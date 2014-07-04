@@ -5,6 +5,7 @@
 #include "SusyntHlfv/ProgressPrinter.h"
 #include "SusyntHlfv/CutFlowCounter.h"
 #include "SusyntHlfv/Systematic.h"
+#include "SusyntHlfv/TupleMaker.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -39,6 +40,9 @@ public:
     virtual bool passEventCriteria();
     Selector& setEventListFilename(const std::string filename);
     virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
+    /// toggle ouput ntuple option
+    Selector& setWriteNtuple(bool val) { m_writeTuple = val; return *this; }
+    Selector& setTupleFile(const std::string &name) { m_writeTuple = true; m_outTupleFile = name; return *this; }
     static std::vector<std::string> defaultCutNames(); ///< provide the list of default counter names (just labelling)
     /// provide the list of default counter names after emu/mue separation (just labelling)
     static std::vector<std::string> defaultCutNamesSplit();
@@ -114,6 +118,9 @@ protected:
     std::string m_eventListFilename; ///< name of the file with the eventlist (empty string means don't use this feature)
     bool m_useExistingList;        ///< to keep track of whether there is already an event list
     Susy::EventlistHandler m_eventList; ///< the actual event list
+    hlfv::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
+    bool m_writeTuple; ///< whether we want to write the output ntuple
+    std::string m_outTupleFile; ///< name of the file where the nutple will be written
     ClassDef(Selector, 1);
 };
 

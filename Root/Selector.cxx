@@ -35,7 +35,10 @@ Selector::Selector() :
   m_counter(Selector::defaultCutNames()),
   m_counterEmu(Selector::defaultCutNamesSplit()),
   m_counterMue(Selector::defaultCutNamesSplit()),
-  m_useExistingList(false)
+  m_useExistingList(false),
+  m_tupleMaker("",""),
+  m_writeTuple(false),
+  m_outTupleFile("")
 {
   setAnaType(Ana_2Lep);
   setSelectTaus(true);
@@ -48,6 +51,15 @@ void Selector::Begin(TTree* /*tree*/)
   bool useReweightUtils = false;
   m_trigObj = new DilTrigLogic(period, useReweightUtils);
 //  if(m_useMCTrig) m_trigObj->useMCTrigger);
+  if(m_writeTuple) {
+      if(susy::utils::endswith(m_outTupleFile, ".root") &&
+         m_tupleMaker.init(m_outTupleFile, "hlfv_tuple"))
+          cout<<"initialized ntuple file "<<m_outTupleFile<<endl;
+      else {
+          cout<<"cannot initialize ntuple file '"<<m_outTupleFile<<"'"<<endl;
+          m_writeTuple = false;
+      }
+  }
 }
 //-----------------------------------------
 void Selector::Init(TTree* tree)
@@ -85,6 +97,13 @@ Bool_t Selector::Process(Long64_t entry)
             incrementEventSplitCounters(vars, weightComponents);
             // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
+            if(m_writeTuple) {
+                double weight(weightComponents.product());
+                unsigned int run(nt.evt()->run), event(nt.evt()->event);
+                const Lepton &l0 = *m_signalLeptons[0];
+                const Lepton &l1 = *m_signalLeptons[1];
+                m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
+            }
         }
     }
   // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
@@ -93,6 +112,7 @@ Bool_t Selector::Process(Long64_t entry)
 //-----------------------------------------
 void Selector::Terminate()
 {
+    if(m_writeTuple) m_tupleMaker.close();
     SusyNtAna::Terminate();
     m_counter.printTableRaw     (cout);
     m_counter.printTableWeighted(cout);
