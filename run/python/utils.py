@@ -12,6 +12,7 @@ import glob
 import json
 import os
 import re
+import sys
 import subprocess
 import unittest
 
@@ -160,6 +161,27 @@ def remove_duplicates(seq=[]) :
     seen = set()
     seen_add = seen.add
     return [ x for x in seq if x not in seen and not seen_add(x)]
+
+def rootcoredir():
+    return os.environ['ROOTCOREDIR']
+
+def add_susynt_path():
+    """
+    provide access to the susynt modules
+    """
+    rootcoredir = os.environ['ROOTCOREBIN']
+    susynt_path = os.path.realpath(os.path.join(rootcoredir, '../SusyNtuple'))
+    if susynt_path not in sys.path:
+        sys.path.append(susynt_path)
+def import_susyntutils():
+    add_susynt_path()
+    import susyntuple.utils as susynt
+    return susynt
+def import_susyntcutflow():
+    add_susynt_path()
+    import susyntuple.cutflow as cutflow
+    return cutflow
+
 #
 # testing
 #
