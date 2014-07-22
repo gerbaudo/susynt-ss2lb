@@ -43,11 +43,6 @@ public:
     virtual void    Init(TTree *tree);       ///< called when the TChain is attached
     virtual void    Terminate();             ///< called after looping is finished
     virtual Bool_t  Process(Long64_t entry); ///< called at each event
-    ///! whether the current event passes the event criteria (as opposed to object criteria)
-    /**
-       This function also increments the cutflow counters
-     */
-    virtual bool passEventCriteria();
     Selector& setEventListFilename(const std::string filename);
     virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
     /// toggle ouput ntuple option
@@ -69,12 +64,15 @@ protected:
                                              hlfv::WeightComponents &weightComponents);
     /// assign the weight components that depend on the object-level variables
     /**
-       The output values are assigned to weightcomponents; need access
-       to trigger and btag tools, so cannot be static.
+       The output values are assigned to vars and weightcomponents;
+       need access to trigger and btag tools, so cannot be static.
+       It's mainly weight components, but also need vars to keep track
+       of the trigger matching.
     */
     bool assignNonStaticWeightComponents(const LeptonVector& leptons,
                                          const JetVector& jets,
                                          const hlfv::Systematic::Value sys,
+                                         hlfv::DileptonVariables &vars,
                                          hlfv::WeightComponents &weightcomponents);
     /// compute the event-level flags
     /**
@@ -102,6 +100,8 @@ protected:
                                 AnalysisType anaType);
     /// lepton efficiency data/simulation scale factor
     static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
+    /// exactly two leptons
+    static bool eventHasTwoLeptons(const LeptonVector &leptons);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
 private:

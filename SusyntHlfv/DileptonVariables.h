@@ -28,6 +28,7 @@ namespace hlfv
   struct DileptonVariables {
     DileptonVariables() { reset(); }
     bool isMu0, isMu1;
+    bool hasFiredTrig, hasTrigMatch;
     float q0, q1;
     float pt0, pt1;
     float phi0, phi1;
@@ -52,6 +53,7 @@ namespace hlfv
     /// reset all variables to their default value
     void reset() {
       isMu0 = isMu1 = false;
+      hasFiredTrig = hasTrigMatch = false;
       q0 = q1 = 0.0;
       pt0 = pt1 =  0.0;
       eta0 = eta1 = 0.0;

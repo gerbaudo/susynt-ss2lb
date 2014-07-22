@@ -90,10 +90,10 @@ Bool_t Selector::Process(Long64_t entry)
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
-        if(eventIsEmu(l)) {
+        if(eventHasTwoLeptons(l) && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
-            assignNonStaticWeightComponents(l, bj, sys, weightComponents);
+            assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementEventSplitCounters(vars, weightComponents);
             // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
@@ -175,11 +175,14 @@ void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
 bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
                                                const JetVector& jets,
                                                const hlfv::Systematic::Value sys,
+                                               hlfv::DileptonVariables &vars,
                                                hlfv::WeightComponents &weightcomponents)
 {
     bool success=false;
     WeightComponents &wc = weightcomponents;
     if(leptons.size()>1) {
+        vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
+        vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
         const Lepton &l0 = *(leptons[0]);
         const Lepton &l1 = *(leptons[1]);
         if(nt.evt()->isMC) {
@@ -191,13 +194,6 @@ bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
         success = true;
     }
     return success;
-}
-//-----------------------------------------
-bool Selector::passEventCriteria()
-{
-    bool pass=true;
-
-    return pass;
 }
 //-----------------------------------------
 Selector& Selector::setEventListFilename(const std::string filename)
@@ -280,6 +276,8 @@ void Selector::incrementEventSplitCounters(const hlfv::DileptonVariables &v, con
     if(v.isEmu() || v.isMue()) {
         CutFlowCounter &counter = (v.isEmu() ? m_counterEmu : m_counterMue);
         if(true                 ) counter.pass(weight); else return;
+        if(v.hasFiredTrig       ) counter.pass(weight); else return;
+        if(v.hasTrigMatch       ) counter.pass(weight); else return;
         if(v.isOs()             ) counter.pass(weight); else return;
         if(v.passL0Pt()         ) counter.pass(weight); else return;
         if(v.passL1Pt()         ) counter.pass(weight); else return;
@@ -325,6 +323,11 @@ double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::
     return effFactor;
 }
 //-----------------------------------------
+bool Selector::eventHasTwoLeptons(const LeptonVector &leptons)
+{
+    return leptons.size()==2;
+}
+//-----------------------------------------
 bool Selector::eventIsEmu(const LeptonVector &leptons)
 {
     bool isEmu = false;
@@ -365,6 +368,8 @@ std::vector<std::string> Selector::defaultCutNamesSplit()
 {
     vector<string> labels;
     labels.push_back("flavor");
+    labels.push_back("trigger-bit");
+    labels.push_back("trigger-match");
     labels.push_back("opp-sign");
     labels.push_back("pt0");
     labels.push_back("pt1");
