@@ -62,28 +62,16 @@ float hlfv::transverseMass(const TLorentzVector &lep, const TLorentzVector &met)
   return std::sqrt(2.0 * lep.Pt() * met.Et() *(1-cos(lep.DeltaPhi(met))) );
 }
 //-----------------------------------------
-bool DileptonVariables::passAllSelectionCriteria() const
+float DileptonVariables::deltaPhiLl() const
 {
-    return passLeptonPt() && passJetVeto() && passDeltaPhiLl() && passDeltaPhiL1Met();
+    return fabs(TVector2::Phi_mpi_pi(TVector2(1.0, 0.0).Rotate(phi0)
+                                     .DeltaPhi(TVector2(1.0, 0.0).Rotate(phi1))));
 }
 //-----------------------------------------
-bool DileptonVariables::passL0Pt() const { return pt0>30.0; }
-bool DileptonVariables::passL1Pt() const { return pt1>20.0; }
-bool DileptonVariables::passLeptonPt() const { return passL0Pt() && passL1Pt(); }
-bool DileptonVariables::passJetVeto() const { return numCentralLightJets==0; }
-//-----------------------------------------
-bool DileptonVariables::passDeltaPhiLl() const
+float DileptonVariables::deltaPhiL1Met() const
 {
-    float dphill = fabs(TVector2::Phi_mpi_pi(TVector2(1.0, 0.0).Rotate(phi0)
-                                             .DeltaPhi(TVector2(1.0, 0.0).Rotate(phi1))));
-    return dphill>2.5;
-}
-//-----------------------------------------
-bool DileptonVariables::passDeltaPhiL1Met() const
-{
-    float dphil1met = fabs(TVector2::Phi_mpi_pi(TVector2(1.0, 0.0).Rotate(phi1)
-                                                .DeltaPhi(TVector2(1.0, 0.0).Rotate(metPhi))));
-    return dphil1met <0.5;
+    return fabs(TVector2::Phi_mpi_pi(TVector2(1.0, 0.0).Rotate(phi1)
+                                     .DeltaPhi(TVector2(1.0, 0.0).Rotate(metPhi))));
 }
 //-----------------------------------------
 float hlfv::computeCollinearMzLepTau(const TLorentzVector &l0,

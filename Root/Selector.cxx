@@ -285,11 +285,11 @@ void Selector::incrementEventSplitCounters(const hlfv::DileptonVariables &v, con
         if(v.hasFiredTrig       ) counter.pass(weight); else return;
         if(v.hasTrigMatch       ) counter.pass(weight); else return;
         if(v.isOs()             ) counter.pass(weight); else return;
-        if(v.passL0Pt()         ) counter.pass(weight); else return;
-        if(v.passL1Pt()         ) counter.pass(weight); else return;
-        if(v.passJetVeto()      ) counter.pass(weight); else return;
-        if(v.passDeltaPhiLl()   ) counter.pass(weight); else return;
-        if(v.passDeltaPhiL1Met()) counter.pass(weight); else return;
+        if(v.pt0 > 45.0         ) counter.pass(weight); else return;
+        if(bool passpt1=true    ) counter.pass(weight); else return;
+        if(v.numCentralLightJets==0) counter.pass(weight); else return;
+        if(bool passDphiLl=true ) counter.pass(weight); else return;
+        if(bool passDphiL1Met=true) counter.pass(weight); else return;
     }
 }
 //-----------------------------------------

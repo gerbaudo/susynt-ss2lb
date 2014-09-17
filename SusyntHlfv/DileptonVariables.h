@@ -68,14 +68,8 @@ namespace hlfv
       met = metPhi = 0.0;
       metrel = 0.0;
     }
-    /// pass all selection criteria below
-    bool passAllSelectionCriteria() const;
-    bool passL0Pt() const;
-    bool passL1Pt() const;
-    bool passLeptonPt() const;
-    bool passJetVeto() const;
-    bool passDeltaPhiLl() const;
-    bool passDeltaPhiL1Met() const;
+    float deltaPhiLl() const;
+    float deltaPhiL1Met() const;
   };
   /// compute and assign all DilepVars attributes
   DileptonVariables computeDileptonVariables(const LeptonVector &leptons, const Susy::Met *met,
