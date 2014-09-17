@@ -1,0 +1,4 @@
+group.phys-susy.mc12_8TeV.169670.MadGraphPythia8_AU2CTEQ6L1_ggH125_taumu.SusyNt.e1903_s1581_s1586_r3658_r3549_p1512_n0155b/
+# missing 169671
+group.phys-susy.mc12_8TeV.169672.MadGraphPythia8_AU2CTEQ6L1_VBFH125_taumu.SusyNt.e1903_s1581_s1586_r3658_r3549_p1512_n0155b/
+group.phys-susy.mc12_8TeV.169673.MadGraphPythia8_AU2CTEQ6L1_VBFH125_taue.SusyNt.e1903_s1581_s1586_r3658_r3549_p1512_n0155b/
