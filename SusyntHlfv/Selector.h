@@ -104,10 +104,12 @@ protected:
     static bool eventHasTwoLeptons(const LeptonVector &leptons);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
-private:
+protected:
+    /// initialize the 2L trig logic
+    bool initDilTrigLogic();
     /// initialize weighter used for normalization
     bool initMcWeighter(TTree *tree);
-    /// convention: we're using an event list if its filename was specified
+   /// convention: we're using an event list if its filename was specified
     bool usingEventList() const { return m_eventListFilename.size()>0; }
     /// initialize event list
     /**
@@ -118,7 +120,6 @@ private:
        proof. We're not using proof, so who cares.
      */
     bool initEventList(TTree *tree);
-protected:
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress

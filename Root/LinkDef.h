@@ -1,4 +1,5 @@
 #include "SusyntHlfv/Selector.h"
+#include "SusyntHlfv/FakeTuplizer.h"
 #include "SusyntHlfv/TupleMakerObjects.h"
 /* #include "SusyntHlfv/kinematic.h" */
 
@@ -11,6 +12,7 @@
 
 #pragma link C++ namespace hlfv;
 #pragma link C++ class hlfv::Selector+;
+#pragma link C++ class hlfv::FakeTuplizer+;
 #pragma link C++ struct hlfv::FourMom+;
 #pragma link C++ struct hlfv::EventParameters+;
 #pragma link C++ enum hlfv::Systematic;

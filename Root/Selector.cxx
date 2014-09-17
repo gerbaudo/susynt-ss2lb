@@ -47,10 +47,7 @@ Selector::Selector() :
 void Selector::Begin(TTree* /*tree*/)
 {
   SusyNtAna::Begin(0);
-  string period = "Moriond";
-  bool useReweightUtils = false;
-  m_trigObj = new DilTrigLogic(period, useReweightUtils);
-//  if(m_useMCTrig) m_trigObj->useMCTrigger);
+  initDilTrigLogic();
   if(m_writeTuple) {
       if(susy::utils::endswith(m_outTupleFile, ".root") &&
          m_tupleMaker.init(m_outTupleFile, "hlfv_tuple"))
@@ -123,6 +120,15 @@ void Selector::Terminate()
     m_counterMue.printTableRaw     (cout);
     m_counterMue.printTableWeighted(cout);
     if(m_mcWeighter) delete m_mcWeighter;
+}
+//-----------------------------------------
+bool Selector::initDilTrigLogic()
+{
+  string period = "Moriond";
+  bool useReweightUtils = false;
+  m_trigObj = new DilTrigLogic(period, useReweightUtils);
+//  if(m_useMCTrig) m_trigObj->useMCTrigger);
+  return (m_trigObj!=NULL);
 }
 //-----------------------------------------
 bool Selector::initMcWeighter(TTree *tree)
