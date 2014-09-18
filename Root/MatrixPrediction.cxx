@@ -58,7 +58,9 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
     incrementEventCounters(eventFlags, weightComponents);
+    // cout<<eventFlags.str()<<endl;
     if(eventFlags.passAllEventCriteria()) {
+        // cout<<"passAllEventCriteria"<<endl;
         const JetVector&    j = m_signalJets2Lep;
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_baseLeptons;
@@ -72,18 +74,23 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
             uint nVtx = nt.evt()->nVtx;
             bool isMC = nt.evt()->isMC;
-            const Lepton &l0 = *m_signalLeptons[0];
-            const Lepton &l1 = *m_signalLeptons[1];
+            const Lepton &l0 = *l[0];
+            const Lepton &l1 = *l[1];
             float metRel = getMetRel(m, l, j);
             bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
             bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
-            string regionName="emu";
+            string regionName="emuInc";
             sf::Systematic::Value sys = sf::Systematic::SYS_NOM;
             size_t iRegion = m_matrix->getIndexRegion(regionName); 
             sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
             sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
             double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
-            m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
+            m_tupleMaker
+                .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
+                .setL1IsTight(l1IsSig)//.setL1Source(l1Source)
+                //.setL0EtConeCorr(computeCorrectedEtCone(l0)).setL0PtConeCorr(computeCorrectedPtCone(l0)) //
+                //.setL1EtConeCorr(computeCorrectedEtCone(l1)).setL1PtConeCorr(computeCorrectedPtCone(l1))
+                .fill(weight, run, event, l0, l1, *m_met);
                 // const JetVector clJets(SusySelection::filterClJets(m_signalJets2Lep));
                 // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m, lowPtLep, m_signalJets2Lep);
         }
@@ -158,7 +165,7 @@ bool MatrixPrediction::initMatrixTool()
     m_matrix = new sf::DileptonMatrixMethod();
     sf::Parametrization::Value p = (m_use2dparametrization ? sf::Parametrization::PT_ETA : sf::Parametrization::PT);
     std::vector<std::string> regions;
-    regions.push_back("emu");
+    regions.push_back("emuInc");
     return m_matrix->configure(m_matrixFilename, regions, p, p, p, p);
 }
 //----------------------------------------------------------

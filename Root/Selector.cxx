@@ -221,7 +221,6 @@ void Selector::setDebug(int dbg)
 hlfv::EventFlags Selector::computeEventFlags()
 {
     EventFlags f;
-    if(m_dbg) cout<<"Selector::computeEventFlags"<<endl;
     int flag = nt.evt()->cutFlags[NtSys_NOM];
     const LeptonVector &bleps = m_baseLeptons;
     const JetVector     &jets = m_baseJets;
