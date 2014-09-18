@@ -1,6 +1,7 @@
 #include "SusyntHlfv/Selector.h"
 #include "SusyntHlfv/FakeTuplizer.h"
 #include "SusyntHlfv/TupleMakerObjects.h"
+#include "SusyntHlfv/MatrixPrediction.h"
 /* #include "SusyntHlfv/kinematic.h" */
 
 #ifdef __CINT__
@@ -13,6 +14,7 @@
 #pragma link C++ namespace hlfv;
 #pragma link C++ class hlfv::Selector+;
 #pragma link C++ class hlfv::FakeTuplizer+;
+#pragma link C++ class hlfv::MatrixPrediction+;
 #pragma link C++ struct hlfv::FourMom+;
 #pragma link C++ struct hlfv::EventParameters+;
 #pragma link C++ enum hlfv::Systematic;
