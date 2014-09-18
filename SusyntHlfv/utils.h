@@ -7,15 +7,17 @@
   Aug 2013
  */
 
-#include <algorithm>    // std::set_intersection, remove_if
+#include <algorithm>    // std::set_intersection, remove_if, copy
 #include <fstream>
+#include <iterator>     // std::ostream_iterator
+#include <sstream>      // std::ostringstream
 #include <string>
 #include <vector>
 
 namespace hlfv
 {
 bool dirExists(const std::string &dirname);
-// mkdir if it is not already there. Return dir path; return empty string if there was a problem
+/// mkdir if it is not already there. Return dir path; return empty string if there was a problem
 std::string mkdirIfNeeded(const std::string &dirname);
 std::string basedir(const std::string &path);
 bool contains(const std::string &s, const std::string &sub);
@@ -25,15 +27,28 @@ std::string rmLeadingTrailingWhitespaces(const std::string &str);
 bool isInt(const std::string &s);
 bool fileExists(const std::string &filename);
 std::string getRootCoreDir(); //!< return empty string if env var not defined
+/// deprecated, use vec2str
 std::string vdouble2str(const std::vector<double> &v);
+/// deprecated, use vec2str
 std::string vfloat2str(const std::vector<float> &v);
 
+template <typename T>
+std::string vec2str(std::vector<T> &v)
+{
+    std::ostringstream oss;
+    std::ostream_iterator<T> it (oss,", ");
+    std::copy(v.begin(), v.end(), it);
+    return oss.str();
+}
 
-// Build a vector that is the difference between two vectors.
-// Caveat1: computing the difference triggers copies of the vectors
-// Caveat2: the result is not guaranteed to be sorted
-// Caveat3: a-b != b-a
-// Based on: http://stackoverflow.com/questions/14175858/c-subtract-vectors
+/**
+   @brief Build a vector that is the difference between two vectors.
+
+   - Caveat1: computing the difference triggers copies of the vectors
+   - Caveat2: the result is not guaranteed to be sorted
+   - Caveat3: a-b != b-a
+   Based on: http://stackoverflow.com/questions/14175858/c-subtract-vectors
+*/
 template <typename T>
 std::vector<T> subtract_vector(std::vector<T>& a, const std::vector<T>& b)
 {
@@ -42,9 +57,12 @@ std::vector<T> subtract_vector(std::vector<T>& a, const std::vector<T>& b)
   return difference;
 }
 
-// Filter a container with a predicate
-// Lifted from:
-// http://stackoverflow.com/questions/2797142/higher-order-function-filter-in-c
+/**
+   @brief Filter a container with a predicate
+
+   Lifted from:
+   http://stackoverflow.com/questions/2797142/higher-order-function-filter-in-c
+*/
 template <typename C, typename P>
   C filter(C const & container, P pred) {
   C filtered(container);
