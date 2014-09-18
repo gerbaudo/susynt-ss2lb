@@ -20,8 +20,8 @@ class Dataset(object):
     """
     attributes_data = ['period', 'stream']
     attributes_simu = ['dsid', 'dsname']
-    prefix_data = 'group.phys-susy.data12_8TeV'
-    prefix_simu = 'mc12_8TeV'
+    stem_data = 'data12_8TeV'
+    stem_simu = 'mc12_8TeV'
     # static regex used to tokenize attributes
     regex_data = re.compile('group\.phys-susy\.data12\_8TeV\.'
                             'period(?P<period>[A-Z])\.'
@@ -54,9 +54,9 @@ class Dataset(object):
                 cls.regex_simu.search(dsname) if cls.is_simulation(dsname) else
                 None)
     @classmethod
-    def is_data(cls, dsname) : return dsname.startswith(cls.prefix_data)
+    def is_data(cls, dsname) : return cls.stem_data in dsname
     @classmethod
-    def is_simulation(cls, dsname) : return dsname.startswith(cls.prefix_simu)
+    def is_simulation(cls, dsname) : return cls.stem_simu in dsname
     @property
     def attributes(self):
         return (Dataset.attributes_data if Dataset.is_data(self.name) else
