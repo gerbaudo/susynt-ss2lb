@@ -1,3 +1,4 @@
+// emacs -*- C++ -*-
 #ifndef HLVF_PROGRESS_PRINTER_H
 #define HLVF_PROGRESS_PRINTER_H
 

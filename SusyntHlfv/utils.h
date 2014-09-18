@@ -1,3 +1,4 @@
+// emacs -*- C++ -*-
 #ifndef SUSYNTHLFV_UTILS_H
 #define SUSYNTHLFV_UTILS_H
 /*

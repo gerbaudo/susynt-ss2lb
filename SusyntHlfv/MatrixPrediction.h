@@ -1,3 +1,4 @@
+// emacs -*- C++ -*-
 #ifndef SusyAna_MatrixPrediction_h
 #define SusyAna_MatrixPrediction_h
 
