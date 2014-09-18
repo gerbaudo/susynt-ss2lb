@@ -1,4 +1,4 @@
-#include "SusyTest0/utils.h"
+#include "SusyntHlfv/utils.h"
 
 #include <algorithm>    // std::copy
 #include <cstdlib> // strtol
@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+namespace hlfv
+{
 //----------------------------------------------------------
 std::string basedir(const std::string &path)
 {
@@ -112,3 +114,4 @@ std::string vfloat2str(const std::vector<float> &v)
   return oss.str();
 }
 //----------------------------------------------------------
+} // hlfv

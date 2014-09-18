@@ -1,5 +1,5 @@
-#ifndef SUSYTEST0_UTILS_H
-#define SUSYTEST0_UTILS_H
+#ifndef SUSYNTHLFV_UTILS_H
+#define SUSYNTHLFV_UTILS_H
 /*
   Generic utility functions
 
@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+namespace hlfv
+{
 bool dirExists(const std::string &dirname);
 // mkdir if it is not already there. Return dir path; return empty string if there was a problem
 std::string mkdirIfNeeded(const std::string &dirname);
@@ -50,5 +52,5 @@ template <typename C, typename P>
   return filtered;
 }
 
-
+} // hlvf
 #endif

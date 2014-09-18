@@ -2,6 +2,7 @@
 
 #include "SusyntHlfv/WeightComponents.h"
 #include "SusyntHlfv/EventFlags.h"
+#include "SusyntHlfv/utils.h"
 //#include "SusyntHlfv/DileptonVariables.h"
 
 #include "DileptonMatrixMethod/Systematic.h"
@@ -144,7 +145,7 @@ float MatrixPrediction::getRFWeight(const LeptonVector &baseLeps,
 //----------------------------------------------------------
 MatrixPrediction& MatrixPrediction::setMatrixFilename(const std::string filename)
 {
-//  if(!fileExists(filename))
+    if(!hlfv::fileExists(filename))
     if(true)
     cout<<"MatrixPrediction::setMatrixFilename: invalid file '"<<filename<<"'"<<endl
         <<"\t"<<"something will go wrong"<<endl;
