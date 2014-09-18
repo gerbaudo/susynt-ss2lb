@@ -62,6 +62,16 @@ public:
     bool fill(const double weight, const unsigned int run, const unsigned int event,
               const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
               const LeptonVector &otherLeptons, const JetVector &jets);
+    //! methods to assign the pieces of info that are not accessible from Lepton (mostly fake-related)
+    TupleMaker& setL0IsTight(bool v) { l0_.setIsTight(v); return *this; }
+    TupleMaker& setL1IsTight(bool v) { l1_.setIsTight(v); return *this; }
+    TupleMaker& setL0Source(int v) { l0_.setSource(v); return *this; }
+    TupleMaker& setL1Source(int v) { l1_.setSource(v); return *this; }
+    TupleMaker& setL0EtConeCorr(float v) { l0_.setEtConeCorr(v); return *this; }
+    TupleMaker& setL1EtConeCorr(float v) { l1_.setEtConeCorr(v); return *this; }
+    TupleMaker& setL0PtConeCorr(float v) { l0_.setPtConeCorr(v); return *this; }
+    TupleMaker& setL1PtConeCorr(float v) { l1_.setPtConeCorr(v); return *this; }
+
 private: // rule of three
     TupleMaker(const TupleMaker&);
     TupleMaker& operator=(const TupleMaker&);
