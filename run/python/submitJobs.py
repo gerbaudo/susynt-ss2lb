@@ -31,9 +31,12 @@ def main():
 
     for dset in datasets :
         if not get_filelist(dset.name):
-            print "# skipping %s (missing filelist)" % dset.name
+            print "# skipping (missing filelist) {0}".format(dset.name)
             continue
         script = get_batch_script(dset, options)
+        if not script:
+            if verbose : print "skipping (do-not-overwrite) {0}".format(dset.name)
+            continue
         cmd = "sbatch %s" % script
         if verbose : print cmd
         if submit :
@@ -51,7 +54,7 @@ def parse_options():
     parser.add_option('--selection',  action='store_true', default=False, help='run Selector')
     parser.add_option('--matrix-prediction',  action='store_true', default=False, help='run MatrixPrediction')
     parser.add_option('-i', '--input', default='samples/', help='input directory or file (default: ./samples/)')
-    parser.add_option("-o", "--overwrite", action="store_true", default=False, help="overwrite existing batch scripts")
+    parser.add_option("-o", "--do-not-overwrite", action="store_true", default=False, help="do not overwrite existing batch scripts")
     parser.add_option("-O", "--other-opt", help="other options that will be passed on to the executable; double quotes if necessary")
     parser.add_option('-s', '--include-regexp', help="select only matching samples (default '.*')")
     parser.add_option('-e', '--exclude-regexp', help="exclude matching samples")
@@ -126,6 +129,9 @@ def get_batch_script(dset, options):
     exe_options = ''
     exe_options += '' if options.no_cache else " --event-list %s"%(cachedir+'/'+dsname+'.root')
 
+    if options.do_not_overwrite and os.path.exists(batch_script):
+        if options.verbose : print "file exists : {0}".format(batch_script)
+        return None
     out_file = open(batch_script, 'w')
     for line in open(script_template).readlines() :
         # note to self: could use string.format, but this can also handle special cases (e.g. output)
