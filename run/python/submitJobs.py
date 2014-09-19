@@ -16,10 +16,9 @@ import utils
 
 def main():
     options = parse_options()
-    
     exe     = options.executable
     inputdf = options.input
-    regexp  = options.sample_regexp
+    include = options.include_regexp
     exclude = options.exclude_regexp
     tag     = options.tag
     verbose = options.verbose
@@ -27,7 +26,7 @@ def main():
 
     datasets = (dataset.Dataset.parse_files_in_dir(inputdf) if os.path.isdir(inputdf) else
                 dataset.Dataset.parse_datasets_from_file(inputdf))
-    datasets = utils.filterWithRegexp (datasets, regexp, lambda _: _.name) if regexp else datasets
+    datasets = utils.filterWithRegexp (datasets, include, lambda _: _.name) if include else datasets
     datasets = utils.excludeWithRegexp(datasets, exclude, lambda _: _.name) if exclude else datasets
 
     for dset in datasets :
@@ -36,7 +35,7 @@ def main():
             continue
         script = get_batch_script(dset, options)
         cmd = "sbatch %s" % script
-        print cmd
+        if verbose : print cmd
         if submit :
             out = utils.getCommandOutput(cmd)
             if verbose : print out['stdout']
@@ -45,19 +44,20 @@ def main():
 
 
 def valid_executables():
-    return ['selection', ] # todo 'seltuple', 'faketupl'...]
+    return ['selection', 'matrix_prediction'] # todo 'seltuple', 'faketupl'...]
 
 def parse_options():
     parser = optparse.OptionParser()
     parser.add_option('--selection',  action='store_true', default=False, help='run Selector')
+    parser.add_option('--matrix-prediction',  action='store_true', default=False, help='run MatrixPrediction')
     parser.add_option('-i', '--input', default='samples/', help='input directory or file (default: ./samples/)')
     parser.add_option("-o", "--overwrite", action="store_true", default=False, help="overwrite existing batch scripts")
     parser.add_option("-O", "--other-opt", help="other options that will be passed on to the executable; double quotes if necessary")
-    parser.add_option('-s', '--sample-regexp', help="create filelists only for matching samples (default '.*')")
+    parser.add_option('-s', '--include-regexp', help="select only matching samples (default '.*')")
     parser.add_option('-e', '--exclude-regexp', help="exclude matching samples")
     parser.add_option("-S", "--submit", action='store_true', default=False, help="submit jobs (default dry run)")
     parser.add_option("-t", "--tag", help="batch tag")
-    parser.add_option("-C", "--no-cache", action='store_true', default=False, help="do not cache TEventList")    
+    parser.add_option("-C", "--no-cache", action='store_true', default=False, help="do not cache TEventList")
     parser.add_option("-v", "--verbose", action="store_true", default=False, help="print more details about what is going on")
     (options, args) = parser.parse_args()
     options.executable = get_executable(parser, options)
@@ -67,10 +67,15 @@ def parse_options():
     return options
 
 def get_executable(parser, options):
+    """
+    the executable is a label for each main executable; valid
+    labels must be listed in 'valid_executables'. We then expect to
+    have exe-specific cases for 'get_template_script' and 'get_subdir'
+    """
     exe_name = None
     for exe in valid_executables():
         if getattr(options, exe)==True:
-            exe_name = exe            
+            exe_name = exe
     if not exe : parser.error("specify one executable")
     return exe_name
 
@@ -84,12 +89,14 @@ def get_out_dir(exe) : return mk_dest_dir('out/'+get_subdir(exe))
 def get_template_script(exe_name):
     template  = ''
     template += 'batch/templates/selection.sh' if exe_name=='selection' else ''
+    template += 'batch/templates/matrix_prediction.sh' if exe_name=='matrix_prediction' else ''
     # other cases here
     return template
 
 def get_subdir(exe_name) :
     subdir = None
     if exe_name=='selection' : subdir = 'selection'
+    if exe_name=='matrix_prediction' : subdir = 'matrix_prediction'
     # other cases here
     return subdir
 
@@ -117,14 +124,15 @@ def get_batch_script(dset, options):
     out_rootfile = outdir+'/'+dsname+'_'+tag+'.root'
     out_logfile  = logdir+'/'+dsname+'_'+tag+'.log'
     exe_options = ''
-    exe_options += '' if options.no_cache else " --event-list %s"%(cachedir+'/'+dsname+'.root') 
+    exe_options += '' if options.no_cache else " --event-list %s"%(cachedir+'/'+dsname+'.root')
 
     out_file = open(batch_script, 'w')
     for line in open(script_template).readlines() :
         # note to self: could use string.format, but this can also handle special cases (e.g. output)
         line = line.replace('%(filelist)s', filelist)
         line = line.replace('%(jobname)s', jobname)
-        line = line.replace('%(logfile)s', out_logfile)        
+        line = line.replace('%(logfile)s', out_logfile)
+        line = line.replace('%(local_outfilename)s', os.path.basename(out_rootfile))
         line = line.replace('%(outfilename)s', out_rootfile) # will need special treatment for multiple output files
         line = line.replace('%(opt)s', exe_options)
         line = line.replace('%(samplename)s', dsname)
