@@ -86,8 +86,9 @@ def get_batch_dir(exe) : return mk_dest_dir('batch/'+get_subdir(exe))
 def get_cache_dir(exe) :
     mk_dest_dir('out/cache/'+get_subdir(exe)) # pre-make dir; need to then pass it with unaccessible env var
     return '${SLURM_SUBMIT_DIR}/out/cache/'+get_subdir(exe)
-def get_log_dir(exe) : return mk_dest_dir('log/'+get_subdir(exe))
-def get_out_dir(exe) : return mk_dest_dir('out/'+get_subdir(exe))
+# log and out go to separate 'tag' subdirs to keep things tidy
+def get_log_dir(exe, tag='') : return mk_dest_dir('/'.join(['log', get_subdir(exe), tag]))
+def get_out_dir(exe, tag='') : return mk_dest_dir('/'.join(['out', get_subdir(exe), tag]))
 
 def get_template_script(exe_name):
     template  = ''
@@ -115,8 +116,8 @@ def get_batch_script(dset, options):
     exe     = options.executable
     tag     = options.tag
     filelist = get_filelist(dset.name)
-    outdir   = get_out_dir(exe)
-    logdir   = get_log_dir(exe)
+    outdir   = get_out_dir(exe, options.tag)
+    logdir   = get_log_dir(exe, options.tag)
     batchdir = get_batch_dir(exe)
     cachedir = get_cache_dir(exe)
 
