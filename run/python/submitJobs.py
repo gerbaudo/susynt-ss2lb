@@ -47,11 +47,12 @@ def main():
 
 
 def valid_executables():
-    return ['selection', 'matrix_prediction'] # todo 'seltuple', 'faketupl'...]
+    return ['selection', 'seltuple', 'matrix_prediction'] # todo 'seltuple', 'faketupl'...]
 
 def parse_options():
     parser = optparse.OptionParser()
     parser.add_option('--selection',  action='store_true', default=False, help='run Selector')
+    parser.add_option('--seltuple',  action='store_true', default=False, help='run Selector to make ntuple')
     parser.add_option('--matrix-prediction',  action='store_true', default=False, help='run MatrixPrediction')
     parser.add_option('-i', '--input', default='samples/', help='input directory or file (default: ./samples/)')
     parser.add_option("-o", "--do-not-overwrite", action="store_true", default=False, help="do not overwrite existing batch scripts")
@@ -93,6 +94,7 @@ def get_out_dir(exe, tag='') : return mk_dest_dir('/'.join(['out', get_subdir(ex
 def get_template_script(exe_name):
     template  = ''
     template += 'batch/templates/selection.sh' if exe_name=='selection' else ''
+    template += 'batch/templates/seltuple.sh' if exe_name=='seltuple' else ''
     template += 'batch/templates/matrix_prediction.sh' if exe_name=='matrix_prediction' else ''
     # other cases here
     return template
@@ -100,6 +102,7 @@ def get_template_script(exe_name):
 def get_subdir(exe_name) :
     subdir = None
     if exe_name=='selection' : subdir = 'selection'
+    if exe_name=='seltuple' : subdir = 'selection_tuple'
     if exe_name=='matrix_prediction' : subdir = 'matrix_prediction'
     # other cases here
     return subdir
