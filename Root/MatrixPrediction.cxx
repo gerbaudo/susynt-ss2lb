@@ -80,6 +80,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
             bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
             string regionName="emuInc";
+//            regionName = "CR_SSInc1j";
             sf::Systematic::Value sys = sf::Systematic::SYS_NOM;
             size_t iRegion = m_matrix->getIndexRegion(regionName); 
             sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
@@ -166,6 +167,7 @@ bool MatrixPrediction::initMatrixTool()
     sf::Parametrization::Value p = (m_use2dparametrization ? sf::Parametrization::PT_ETA : sf::Parametrization::PT);
     std::vector<std::string> regions;
     regions.push_back("emuInc");
+    // regions.push_back("CR_SSInc1j");
     return m_matrix->configure(m_matrixFilename, regions, p, p, p, p);
 }
 //----------------------------------------------------------
