@@ -24,8 +24,8 @@ def main():
     debug   = options.debug
 
     if debug : dataset.Dataset.verbose_parsing = True
-    datasets = (dataset.Dataset.parse_files_in_dir(inputdf) if os.path.isdir(inputdf) else
-                dataset.Dataset.parse_datasets_from_file(inputdf))
+
+    datasets = dataset.build_all_datasets_from_dir_or_file(inputdf)
     datasets = utils.filterWithRegexp (datasets, regexp, lambda _: _.name) if regexp else datasets
     datasets = utils.excludeWithRegexp(datasets, exclude, lambda _: _.name) if exclude else datasets
     counter = {'fail':0, 'pass':0}

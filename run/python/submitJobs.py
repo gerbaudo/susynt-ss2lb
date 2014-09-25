@@ -24,8 +24,7 @@ def main():
     verbose = options.verbose
     submit  = options.submit
 
-    datasets = (dataset.Dataset.parse_files_in_dir(inputdf) if os.path.isdir(inputdf) else
-                dataset.Dataset.parse_datasets_from_file(inputdf))
+    datasets = dataset.build_all_datasets_from_dir_or_file(inputdf)
     datasets = utils.filterWithRegexp (datasets, include, lambda _: _.name) if include else datasets
     datasets = utils.excludeWithRegexp(datasets, exclude, lambda _: _.name) if exclude else datasets
 

@@ -3,12 +3,59 @@
 # davide.gerbuado@gmail.com
 # Jun 2014
 
+import copy
 import glob
 import os
 import re
 import tempfile
 import unittest
 import utils
+
+class DatasetGroup(object):
+    """
+    A group of Dataset objects that are listed in the same text file.
+    Typically they are also plot as one of the histograms in a
+    THStack.
+    """
+    def __init__(self, filename):
+        self.filename = filename
+        self.datasets = []
+    def init_from_file(self):
+        self.datasets = DatasetGroup.parse_datasets_from_file(self.filename)
+        return self
+    @property
+    def name(self):
+        "just the filename, without ext"
+        return utils.first(os.path.splitext(os.path.basename(self.filename)))
+    @property
+    def is_data(self):
+        return 'data' in self.name or all(d.is_data for d in self.datasets)
+    @classmethod
+    def parse_datasets_from_file(cls, filename=''):
+        datasets = []
+        def clean_line(l) : return l.strip()
+        def is_empty(l) : return not l
+        def is_comment(l) : return l.startswith('#')
+        with open(filename) as input_file:
+            for line in input_file.readlines():
+                line = clean_line(line)
+                if is_empty(line) or is_comment(line) : continue
+                ds = Dataset(line)
+                if ds.is_valid : datasets.append(ds)
+        return datasets
+    @classmethod
+    def build_groups_from_files_in_dir(cls, dirname='', ext='.txt'):
+        files = glob.glob(os.path.join(dirname, '*'+ext))
+        return [DatasetGroup(f).init_from_file() for f in files]
+    def clone_data_as_fake(self):
+        "fake is just a copy of data with the same datasets"
+        ds = DatasetGroup('empty')
+        if self.is_data:
+            ds = copy.deepcopy(self)
+            ds.filename = self.filename.replace('data', 'fake')
+        else:
+            print "Warning: you are trying to generate the fake group from something other than data"
+        return ds
 
 class Dataset(object):
     """
@@ -31,23 +78,6 @@ class Dataset(object):
                             '(?P<dsid>\d+)\.'
                             '(?P<dsname>.*)')
     verbose_parsing = False
-    @classmethod
-    def parse_datasets_from_file(cls, filename=''):
-        datasets = []
-        def clean_line(l) : return l.strip()
-        def is_empty(l) : return not l
-        def is_comment(l) : return l.startswith('#')
-        with open(filename) as input_file:
-            for line in input_file.readlines():
-                line = clean_line(line)
-                if is_empty(line) or is_comment(line) : continue
-                ds = Dataset(line)
-                if ds.is_valid : datasets.append(ds)
-        return datasets
-    @classmethod
-    def parse_files_in_dir(cls, dirname='', ext='.txt'):
-        files = glob.glob(os.path.join(dirname, '*'+ext))
-        return [d for f in files for d in cls.parse_datasets_from_file(f)]
     @classmethod
     def parse_dataset_name(cls, dsname=''):
         return (cls.regex_data.search(dsname) if cls.is_data(dsname) else
@@ -100,6 +130,13 @@ class Dataset(object):
             print "build_filelist: missing '%s' from %s"%(self.name, base_input_dir)
         return success
 
+def build_all_datasets_from_dir_or_file(dir_or_file='./samples/'):
+    datasets = [d
+                for group in (DatasetGroup.build_groups_from_files_in_dir(dir_or_file)
+                              if os.path.isdir(dir_or_file) else
+                              [DatasetGroup.parse_datasets_from_file(dir_or_file)])
+                for d in group.datasets]
+    return datasets
 # testing
 #_____________________________________
 class testDataset(unittest.TestCase):
@@ -142,13 +179,13 @@ and then an invalid line
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(dummy_file_content)
             temp.flush()
-            datasets = Dataset.parse_datasets_from_file(temp.name)
+            datasets = DatasetGroup.parse_datasets_from_file(temp.name)
             num_valid = sum(d.is_valid for d in datasets)
             num_invalid = sum(not d.is_valid for d in datasets)
             self.assertEqual(num_valid, 2)
             self.assertEqual(num_invalid, 0) # they're dropped by parse_datasets_*
-            
-            
+
+
 #_____________________________________
 if __name__ == "__main__":
     # Dataset.verbose_parsing = True # toggle verbose if you see errors
