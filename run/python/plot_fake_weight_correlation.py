@@ -50,7 +50,7 @@ def main():
     out_tree.Branch('isSameSign', isSameSign, 'isSameSign[%d]/I'%len(isSameSign))
 
     for iEntry in xrange(entries1):
-        if iEntry>100000:break
+        if iEntry>100:break
         chain1.GetEntry(iEntry)
         chain2.GetEntry(iEntry)
         r1, e1, w1 = chain1.pars.runNumber, chain1.pars.eventNumber, chain1.pars.weight

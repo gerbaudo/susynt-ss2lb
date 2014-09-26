@@ -34,8 +34,14 @@ from utils import (first
                    ,sortedAs
                    )
 
+import utils
+susyntutils = utils.import_susyntutils()
+r = susyntutils.import_root()
+susyntutils.load_packages()
+
 from CutflowTable import CutflowTable
-# import systUtils # from Susy2014_Nt_dev/SusyTest0/run/python/systUtils.py; needed?
+
+import systUtils # from Susy2014_Nt_dev/SusyTest0/run/python/systUtils.py; needed?
 
 usage="""
 This code is used either (1) to fill the histos, or (2) to make plots
@@ -93,12 +99,8 @@ def main() :
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
     print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
-    return
 
-#    you are here. Todo: write dataset.Group class
-# then loop over groups, create chain and fill histos
-
-    if   mode=='fill' : runFill(opts)
+    if   mode=='fill' : runFill(opts, groups)
     elif mode=='plot' : runPlot(opts)
 
 def runFill(opts, groups) :
@@ -112,37 +114,66 @@ def runFill(opts, groups) :
     mkdirIfNeeded(outputDir)
     systematics = ['NOM']
     if verbose : print "about to loop over these systematics:\n %s"%str(systematics)
-    for syst in systematics: # todo : probably not needed, leave it in for now
-        if batchMode:
-            for group in groups:
-                newOptions  = " --input-other %s" % opts.input_other
-                newOptions += " --input-fake %s" % opts.input_fake
-                newOptions += " --output-dir %s" % opts.output_dir
-                newOptions += " --verbose %s" % opts.verbose
-                newOptions += " --group %s" % group.name
-                template = 'batch/templates/plot_emu.sh'
-                log_dir = mkdirIfNeeded('log/plot_emu')
-                script_dir = mkdirIfNeeded('batch/plot_emu')
-                script_name = os.path.join(script_dir, sample+'.sh')
-                script_file = open(script_name, 'w')
-                script_file.write(open(template).read()
-                                  .replace('%(opt)s', newOptions)
-                                  .replace('%(logfile)s', log_dir+'/'+group+'.log')
-                                  .replace('%(jobname)s', group))
-                script_file.close()
-                cmd = "sbatch %s"%script_name
-                if verbose : print cmd
-                out = getCommandOutput(cmd)
-                if verbose : print out['stdout']
-                if out['stderr'] : print  out['stderr']
-            continue
-# you are here 
-        if verbose : print '---- filling ',syst
-        samplesPerGroup = allSamplesAllGroups()
-        [s.setSyst(syst) for g, samples in samplesPerGroup.iteritems() for s in samples]
-        counters, histos = countAndFillHistos(samplesPerGroup=samplesPerGroup, syst=syst, verbose=verbose, outdir=outputDir)
-        printCounters(counters)
-        saveHistos(samplesPerGroup, histos, outputDir, verbose)
+    if batchMode:
+        for syst in systematics: # todo : probably not needed, leave it in for now
+            for group in groups :
+                submit_batch_fill_job_per_group(group, opts)
+    else:
+        selections = regions_to_plot()
+        variables = variables_to_plot()
+        group_names = [g.name for g in groups]
+        counters_all_groups = bookCounters(group_names, selections)
+        histos_all_groups = bookHistos(variables, group_names, selections)
+        for group in groups:
+            tree_name = 'hlfv_tuple'
+            chain = r.TChain(tree_name)
+            input_dir = opts.input_fake if group.name=='fake' else opts.input_other
+            for dataset in group.datasets:
+                chain.Add(os.path.join(input_dir, dataset.name+'.root'))
+            if opts.verbose : print "{0} : {1} entries from {2} samples".format(group.name, chain.GetEntries(), len(group.datasets))
+            selection = 'emu'
+            histos = histos_all_groups[group.name][selection]
+            counters = counters_all_groups[group.name][selection]
+            for iEntry, event in enumerate(chain):
+                run_num = event.pars.runNumber
+                evt_num = event.pars.eventNumber
+                weight =  event.pars.weight
+                l0 = addTlv(event.l0)
+                l1 = addTlv(event.l1)
+                isEl0, isMu0 = l0.isEl, l0.isMu
+                isEl1, isMu1 = l1.isEl, l1.isMu
+                isEmu = int((isEl0 and isMu1) or (isMu1 and isMu0))
+                isSameSign = int((l0.charge * l1.charge)>0)
+                histos['onebin'].Fill(1.0, weight)
+                histos['pt0'].Fill(l0.p4.Pt(), weight)
+                histos['pt1'].Fill(l1.p4.Pt(), weight)
+                counters += (weight) # if passSels[sel] else 0.0)
+
+            for v in ['onebin', 'pt0', 'pt1']:
+                h = histos[v]
+                print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
+        plotting_groups = dict([(g.name, Group(g.name)) for g in groups])
+        saveHistos(plotting_groups, histos_all_groups, outputDir, opts.verbose)
+
+    # for group, samplesGroup in samplesPerGroup.iteritems() :
+    #     logLine = "---->"
+    #     if verbose : print 1*' ',group
+    #     histosGroup = histos  [group]
+    #     countsGroup = counters[group]
+    #     for sample in samplesGroup :
+    #         if verbose : logLine +=" %s"%sample.name
+    #         fillAndCount(histosGroup, countsGroup, sample, blind=False)
+    #     if verbose : print logLine
+    # if verbose : print 'done'
+    # return counters, histos
+
+    #     if verbose : print '---- filling ',syst
+
+    #     samplesPerGroup = allSamplesAllGroups()
+    #     [s.setSyst(syst) for g, samples in samplesPerGroup.iteritems() for s in samples]
+    #     counters, histos = countAndFillHistos(samplesPerGroup=samplesPerGroup, syst=syst, verbose=verbose, outdir=outputDir)
+    #     printCounters(counters)
+    #     saveHistos(samplesPerGroup, histos, outputDir, verbose)
 
 def runPlot(opts) :
     inputDir     = opts.input_dir
@@ -153,7 +184,7 @@ def runPlot(opts) :
     mkdirIfNeeded(outputDir)
     buildTotBkg = systUtils.buildTotBackgroundHisto
     buildStat = systUtils.buildStatisticalErrorBand
-    buildSyst = systUtils.buildSystematicErrorBand
+    # buildSyst = systUtils.buildSystematicErrorBand
 
     groups = allGroups()
     selections = allRegions()
@@ -213,6 +244,32 @@ def runPlot(opts) :
                                           'counts':(("%.3f"%c) if type(c) is float else (str(c)+str(type(c)))),
                                           'delta' :(("%.3f"%d) if type(d) is float else '--' if d==None else (str(d)+str(type(d)))) }
                             for s,c,d in summarySel)
+
+def submit_batch_fill_job_per_group(group, opts):
+    verbose = opts.verbose
+
+    group_name = group.name if hasattr(group, 'name') else group
+    newOptions  = " --input-other %s" % opts.input_other
+    newOptions += " --input-fake %s" % opts.input_fake
+    newOptions += " --output-dir %s" % opts.output_dir
+    newOptions += " --group %s" % group_name
+    newOptions += (" --verbose " if opts.verbose else '')
+    template = 'batch/templates/plot_emu.sh'
+    log_dir = mkdirIfNeeded('log/plot_emu')
+    script_dir = mkdirIfNeeded('batch/plot_emu')
+    print "trying to join '{0}' with '{1}'".format(script_dir, group_name+'.sh')
+    script_name = os.path.join(script_dir, group_name+'.sh')
+    script_file = open(script_name, 'w')
+    script_file.write(open(template).read()
+                      .replace('%(opt)s', newOptions)
+                      .replace('%(logfile)s', log_dir+'/'+group_name+'.log')
+                      .replace('%(jobname)s', group_name))
+    script_file.close()
+    cmd = "sbatch %s"%script_name
+    if verbose : print cmd
+    out = getCommandOutput(cmd)
+    if verbose : print out['stdout']
+    if out['stderr'] : print  out['stderr']
 
 def countAndFillHistos(samplesPerGroup={}, syst='', verbose=False, outdir='./') :
 
@@ -296,6 +353,7 @@ class BaseSampleGroup(object) :
         def identity(s) : return s
         sysNameFunc = nameObjectSys if self.isObjSys else nameWeightSys if self.isWeightSys else nameFakeSys if self.isFakeSys else identity
         self.syst = sysNameFunc(sys)
+        self.syst = sys
         return self
     def logVariation(self, sys='', selection='', counts=0.0) :
         "log this systematic variation and internally store it as [selection][sys]"
@@ -373,6 +431,10 @@ class Group(BaseSampleGroup) :
     @property
     def filenameHisto(self) :
         "file containig the histograms for the current syst"
+        fname = "%(dir)s/%(sys)s_%(group)s.root" % {'group':self.name, 'dir':self.histosDir, 'sys':self.syst}
+        # do we still need the lines below?
+        print 'filenameHisto, cleanup'
+        return fname
         def dataFilename(group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
         def fakeFilename(group, dir, sys) : return "%(dir)s/%(sys)s_fake.%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
         def mcFilename  (group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.root" % {'dir':dir, 'sys':sys, 'gr':group}
@@ -430,25 +492,7 @@ def allGroups(noData=False, noSignal=True) :
             + ([] if noData else ['data'])
             + ['fake']
             )
-def llPairs() : return ['ee', 'em', 'mm']
-def njetSelections() : return ['1jet', '23jets']
-def signalRegions() :
-    return ["%(ll)sSR%(nj)s"%{'ll':ll, 'nj':nj} for ll in llPairs() for nj in njetSelections()]
-def controlRegions() :
-    return ['pre'+r for r in signalRegions()]
-def blindRegions() :
-    "blind regions, where the mlj/mljj cut has been reversed"
-    return [blindRegionFromAnyRegion(r) for r in signalRegions()]
-def allRegions() :
-    return signalRegions() + controlRegions() + blindRegions()
-def blindRegionFromAnyRegion(sr) :
-    "given any selection region, provide the corresponding blind region"
-    if   'bld' in sr : return sr
-    elif 'pre' in sr : return sr.replace('pre', 'bld')
-    else             : return 'bld'+sr
-def signalRegionFromAnyRegion(sr) :
-    "given any selection region, provide the corresponding signal region"
-    return sr.replace('pre','').replace('bld','')
+
 def selectionFormulas(sel) :
     ee, em, mm = 'isEE', 'isEMU', 'isMUMU'
     pt32  = '(lept1Pt>30000.0 && lept2Pt>20000.0)'
@@ -531,44 +575,8 @@ def dataSampleNames() :
             for p in ['A','B','C','D','E','G','H','I','J','L']
             for s in ['Egamma','Muons']]
 def mcDatasetids() :
-    "encode the grouping we use to make HFT plots; from HistFitter_TreeCreator.py"
-    return {
-        'Higgs' : [160155, 160205, 160255, 160305, 160505, 160555,
-                   160655, 160705, 160755, 160805, 161005, 161055,
-                   161105, 161155, 161305, 161555, 161566, 161577,
-                   161675, 161686, 161697, 161708, 161719, 161730,
-                   161805, 167418, 169072],
-        'Top' : [110001, 108346, 119353, 174830, 174831, 119355,
-                   174832, 174833, 179991, 179992, 119583, 169704,
-                   169705, 169706, 158344],
-        'WW' : [177997, 183734, 183736, 183738, 169471, 169472,
-                169473, 169474, 169475, 169476, 169477, 169478,
-                169479, 126988, 126989, 167006],
-        'ZV' : [179974, 179975, 183585, 183587, 183589, 183591,
-                183735, 183737, 183739, 167007, 177999, 183586,
-                183588, 183590, 126894, 179396, 167008],
-        'Zjets' : [178354, 178355, 178356, 178357, 178358, 178359,
-                   178360, 178361, 178362, 178363, 178364, 178365,
-                   178366, 178367, 178368, 178369, 178370, 178371,
-                   178372, 178373, 178374, 178375, 178376, 178377,
-                   178378, 178379, 178380, 178381, 178382, 178383,
-                   178384, 178385, 178386, 178387, 178388, 178389,
-                   178390, 178391, 178392, 178393, 178394, 178395,
-                   178396, 178397, 178398, 178399, 178400, 178401,
-                   178402, 178403, 178404, 178405, 178406, 178407,
-                   117650, 117651, 117652, 117653, 117654, 117655,
-                   110805, 110806, 110807, 110808, 110817, 110818,
-                   110819, 110820, 117660, 117661, 117662, 117663,
-                   117664, 117665, 110809, 110810, 110811, 110812,
-                   110821, 110822, 110823, 110824, 117670, 117671,
-                   117672, 117673, 117674, 117675, 110813, 110814,
-                   110815, 110816, 110825, 110826, 110827, 110828],
-        'signal' : [177501, 177502, 177503, 177504, 177505, 177506,
-                    177507, 177508, 177509, 177510, 177511, 177512,
-                    177513, 177514, 177515, 177516, 177517, 177518,
-                    177519, 177520, 177521, 177522, 177523, 177524,
-                    177525, 177526]
-        }
+    print 'todo: now it is an attribute Dataset.dsid parsed from the dataset name'
+
 def allSamplesAllGroups() :
     asg = dict( [(group, [Sample(groupname=group, name=dsid) for dsid in dsids]) for group, dsids in mcDatasetids().iteritems()]
                +[('data', [Sample(groupname='data', name=s) for s in dataSampleNames()])]
@@ -618,6 +626,11 @@ def getGroupColor(g) :
     newColors = [] #[('signal',r.kMagenta), ('WW',r.kAzure-9), ('Higgs',r.kYellow-9)]
     colors = dict((g,c) for g,c in [(k,v) for k,v in oldColors.iteritems()] + newColors)
     return colors[g]
+
+def regions_to_plot():
+    return ['emu']
+def variables_to_plot():
+    return ['onebin', 'pt0', 'pt1']
 
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
@@ -696,7 +709,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
 
 def saveHistos(samplesPerGroup={}, histosPerGroup={}, outdir='./', verbose=False) :
     for groupname, histos in histosPerGroup.iteritems() :
-        group = first(samplesPerGroup[groupname]).group().setHistosDir(outdir)
+        group = samplesPerGroup[groupname].setHistosDir(outdir)
         outFilename = group.filenameHisto
         if verbose : print "creating file %s"%outFilename
         file = r.TFile.Open(outFilename, 'recreate')
@@ -705,6 +718,16 @@ def saveHistos(samplesPerGroup={}, histosPerGroup={}, outdir='./', verbose=False
             for sel, histos in histosPerSel.iteritems() :
                 for var, h in histos.iteritems() : h.Write()
         file.Close()
+
+# this is duplicated with plot_fake_weight_correlation.py; put it in smth like tuple_utils
+tlv = r.TLorentzVector
+def FourMom2TLorentzVector(fm) :
+    l = tlv()
+    l.SetPxPyPzE(fm.px, fm.py, fm.pz, fm.E)
+    return l
+def addTlv(l) :
+    if not hasattr(l, 'p4') : l.p4 = FourMom2TLorentzVector(l)
+    return l
 
 
 if __name__=='__main__' :
