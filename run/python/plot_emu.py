@@ -13,17 +13,15 @@ import os
 import pprint
 
 import dataset
-from rootUtils import (#drawAtlasLabel
-
-    getBinContents
+from rootUtils import (drawAtlasLabel
+                       ,getBinContents
                        ,getMinMax
-                       # ,graphWithPoissonError
-                       # ,increaseAxisFont
+                       ,graphWithPoissonError
+                       ,increaseAxisFont
                        ,topRightLegend
                        ,importRoot
-                       # ,integralAndError
-                       # ,setWhPlotStyle
-                       # ,setAtlasStyle
+                       ,integralAndError
+                       ,setAtlasStyle
                        )
 r = importRoot()
 from utils import (first
@@ -101,7 +99,7 @@ def main() :
     print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
 
     if   mode=='fill' : runFill(opts, groups)
-    elif mode=='plot' : runPlot(opts)
+    elif mode=='plot' : runPlot(opts, groups)
 
 def runFill(opts, groups) :
     batchMode    = opts.batch
@@ -130,7 +128,10 @@ def runFill(opts, groups) :
             input_dir = opts.input_fake if group.name=='fake' else opts.input_other
             for dataset in group.datasets:
                 chain.Add(os.path.join(input_dir, dataset.name+'.root'))
-            if opts.verbose : print "{0} : {1} entries from {2} samples".format(group.name, chain.GetEntries(), len(group.datasets))
+            if opts.verbose:
+                print "{0} : {1} entries from {2} samples".format(group.name,
+                                                                  chain.GetEntries(),
+                                                                  len(group.datasets))
             selection = 'emu'
             histos = histos_all_groups[group.name][selection]
             counters = counters_all_groups[group.name][selection]
@@ -154,42 +155,23 @@ def runFill(opts, groups) :
                 print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
         plotting_groups = dict([(g.name, Group(g.name)) for g in groups])
         saveHistos(plotting_groups, histos_all_groups, outputDir, opts.verbose)
+        # print counters
 
-    # for group, samplesGroup in samplesPerGroup.iteritems() :
-    #     logLine = "---->"
-    #     if verbose : print 1*' ',group
-    #     histosGroup = histos  [group]
-    #     countsGroup = counters[group]
-    #     for sample in samplesGroup :
-    #         if verbose : logLine +=" %s"%sample.name
-    #         fillAndCount(histosGroup, countsGroup, sample, blind=False)
-    #     if verbose : print logLine
-    # if verbose : print 'done'
-    # return counters, histos
-
-    #     if verbose : print '---- filling ',syst
-
-    #     samplesPerGroup = allSamplesAllGroups()
-    #     [s.setSyst(syst) for g, samples in samplesPerGroup.iteritems() for s in samples]
-    #     counters, histos = countAndFillHistos(samplesPerGroup=samplesPerGroup, syst=syst, verbose=verbose, outdir=outputDir)
-    #     printCounters(counters)
-    #     saveHistos(samplesPerGroup, histos, outputDir, verbose)
-
-def runPlot(opts) :
+def runPlot(opts, groups) :
     inputDir     = opts.input_dir
     outputDir    = opts.output_dir
-    sysOption    = opts.syst
-    excludedSyst = opts.exclude
+    sysOption    = 'NOM' #opts.syst
+    excludedSyst = None #opts.exclude
     verbose      = opts.verbose
     mkdirIfNeeded(outputDir)
     buildTotBkg = systUtils.buildTotBackgroundHisto
     buildStat = systUtils.buildStatisticalErrorBand
-    # buildSyst = systUtils.buildSystematicErrorBand
+    buildSyst = systUtils.buildSystematicErrorBand
 
-    groups = allGroups()
-    selections = allRegions()
-    variables = variablesToPlot()
-    for group in groups :
+    selections = regions_to_plot()
+    variables = variables_to_plot()
+    plot_groups = [Group(g.name) for g in groups]
+    for group in plot_groups :
         group.setHistosDir(inputDir)
         group.exploreAvailableSystematics(verbose)
         group.filterAndDropSystematics(sysOption, excludedSyst, verbose)
@@ -200,7 +182,8 @@ def runPlot(opts) :
     if sysOption=='fake'   or anySys : systematics += systUtils.fakeSystVariations()
     if sysOption=='object' or anySys : systematics += systUtils.mcObjectVariations()
     if sysOption=='weight' or anySys : systematics += systUtils.mcWeightVariations()
-    if sysOption and sysOption.count(',') : systematics = [s for s in systUtils.getAllVariations() if s in sysOption.split(',')]
+    if sysOption and sysOption.count(','):
+        systematics = [s for s in systUtils.getAllVariations() if s in sysOption.split(',')]
     elif sysOption in systUtils.getAllVariations() : systematics = [sysOption]
     if not anySys and len(systematics)==1 and sysOption!='NOM' : raise ValueError("Invalid syst %s"%str(sysOption))
     if excludedSyst : systematics = [s for s in systematics if s not in filterWithRegexp(systematics, excludedSyst)]
@@ -209,29 +192,37 @@ def runPlot(opts) :
     fakeSystematics = [s for s in systematics if s in systUtils.fakeSystVariations()]
     mcSystematics = [s for s in systematics if s in systUtils.mcObjectVariations() + systUtils.mcWeightVariations()]
 
-    simBkgs = [g for g in groups if g.isMcBkg]
-    data, fake, signal = findByName(groups, 'data'), findByName(groups, 'fake'), findByName(groups, 'signal')
-
+    simBkgs = [g for g in plot_groups if g.isMcBkg]
+    data = findByName(plot_groups, 'data')
+    fake = findByName(plot_groups, 'fake')
+    signal = findByName(plot_groups, 'signal')
+    print 'names_stacked_groups to be improved'
+    names_stacked_groups = [g.name for g in groups if g.name not in ['data', 'signal']]
     for sel in selections :
         if verbose : print '-- plotting ',sel
         for var in variables :
             if verbose : print '---- plotting ',var
-            for g in groups : g.setSystNominal()
+            for g in plot_groups : g.setSystNominal()
             nominalHistoData    = data.getHistogram(variable=var, selection=sel, cacheIt=True)
             nominalHistoSign    = signal.getHistogram(variable=var, selection=sel, cacheIt=True)
             nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
-            nominalHistosSimBkg = dict([(g.name, g.getHistogram(variable=var, selection=sel, cacheIt=True)) for g in simBkgs])
-            nominalHistosBkg    = dict([('fake', nominalHistoFakeBkg)] + [(g, h) for g, h in nominalHistosSimBkg.iteritems()])
-            nominalHistoTotBkg  = buildTotBkg(histoFakeBkg=nominalHistoFakeBkg, histosSimBkgs=nominalHistosSimBkg)
+            nominalHistosSimBkg = dict([(g.name, g.getHistogram(variable=var, selection=sel, cacheIt=True))
+                                        for g in simBkgs])
+            nominalHistosBkg    = dict([('fake', nominalHistoFakeBkg)] +
+                                       [(g, h) for g, h in nominalHistosSimBkg.iteritems()])
+            nominalHistoTotBkg  = buildTotBkg(histoFakeBkg=nominalHistoFakeBkg,
+                                              histosSimBkgs=nominalHistosSimBkg)
             statErrBand = buildStat(nominalHistoTotBkg)
             systErrBand = buildSyst(fake=fake, simBkgs=simBkgs, variable=var, selection=sel,
-                                    fakeVariations=fakeSystematics, mcVariations=mcSystematics, verbose=verbose)
+                                    fakeVariations=fakeSystematics, mcVariations=mcSystematics,
+                                    verbose=verbose)
 
-            plotHistos(histoData=nominalHistoData, histoSignal=nominalHistoSign, histoTotBkg=nominalHistoTotBkg,
-                       histosBkg=nominalHistosBkg,
+            plotHistos(histoData=nominalHistoData, histoSignal=nominalHistoSign,
+                       histoTotBkg=nominalHistoTotBkg, histosBkg=nominalHistosBkg,
                        statErrBand=statErrBand, systErrBand=systErrBand,
+                       stack_order=names_stacked_groups,
                        canvasName=(sel+'_'+var), outdir=outputDir, verbose=verbose)
-    for group in groups :
+    for group in plot_groups :
         summary = group.variationsSummary()
         for selection, summarySel in summary.iteritems() :
             colW = str(12)
@@ -241,8 +232,11 @@ def runPlot(opts) :
             print "---             %s                 ---" % selection
             print header
             print '\n'.join(lineTemplate%{'sys':s,
-                                          'counts':(("%.3f"%c) if type(c) is float else (str(c)+str(type(c)))),
-                                          'delta' :(("%.3f"%d) if type(d) is float else '--' if d==None else (str(d)+str(type(d)))) }
+                                          'counts':(("%.3f"%c) if type(c) is float
+                                                    else (str(c)+str(type(c)))),
+                                          'delta' :(("%.3f"%d) if type(d) is float
+                                                    else '--' if d==None
+                                                    else (str(d)+str(type(d)))) }
                             for s,c,d in summarySel)
 
 def submit_batch_fill_job_per_group(group, opts):
@@ -585,7 +579,7 @@ def allSamplesAllGroups() :
 def allGroups() :
     return [Group(g) for g in mcDatasetids().keys()+['data']+['fake']]
 
-def stackedGroups() :
+def stackedGroups(groups) :
     return [g for g in allSamplesAllGroups().keys() if g not in ['data', 'signal']]
 
 def variablesToPlot() :
@@ -622,9 +616,10 @@ def countTotalBkg(counters={'sample' : {'sel':0.0}}) :
     counters['totBkg'] = dict((s, sum(counters[b][s] for b in backgrounds)) for s in selections)
 def getGroupColor(g) :
     oldColors = [('data', r.kBlack), ('diboson',r.kSpring+2), ('higgs',r.kAzure-4),
-                 ('signal',r.kMagenta), ('top', r.kRed+1), ('zjets', r.kOrange-2)]
+                 ('signal',r.kMagenta), ('top', r.kRed+1), ('zjets', r.kOrange-2),
+                 ('fake',r.kGray)]
     newColors = [] #[('signal',r.kMagenta), ('WW',r.kAzure-9), ('Higgs',r.kYellow-9)]
-    colors = dict((g,c) for g,c in [(k,v) for k,v in oldColors.iteritems()] + newColors)
+    colors = dict((g,c) for g,c in  oldColors + newColors)
     return colors[g]
 
 def regions_to_plot():
@@ -635,6 +630,7 @@ def variables_to_plot():
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
                canvasName='canvas', outdir='./', verbose=False,
+               stack_order=[],
                drawStatErr=False, drawSystErr=False,
                drawYieldAndError=False) :
     "Note: blinding can be required for only a subrange of the histo, so it is taken care of when filling"
@@ -653,7 +649,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     can._leg = leg
     leg.SetBorderSize(0)
     leg._reversedEntries = []
-    for group, histo in sortedAs(histosBkg, stackedGroups()) :
+    for group, histo in sortedAs(histosBkg, stack_order) :
         histo.SetFillColor(getGroupColor(group))
         histo.SetLineWidth(2)
         histo.SetLineColor(r.kBlack)
