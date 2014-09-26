@@ -252,3 +252,8 @@ def printHistoIntegrals(histos={}, keyColWidth=20, nameColWidth=40, integralColW
     print ('integrals :\n'
            +'\n'.join([templateLine.format(k, h.GetName(), h.Integral())
                        for k, h in histos.iteritems()]))
+
+def integralAndError(h) :
+    error = r.Double(0.0)
+    integral = h.IntegralAndError(0,-1, error)
+    return integral, float(error)
