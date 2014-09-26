@@ -6,10 +6,26 @@
 # 2013-08-26
 
 import os
+import math
+
 try:
     import numpy as np
 except ImportError:
     print "missing numpy: some functions will not be available"
+    class HackyNumpy(object):
+        "a hack replacement for np; it is only expected to work for basic array operations"
+        def __init__(self):
+            pass
+        def array(self, an_array):
+            length = an_array.GetNoElements() if hasattr(an_array, 'GetNoElements') else len(an_array)
+            vv = r.TVectorD(length)
+            for i in range(length) : vv[i] = an_array[i]
+            return vv
+        def sqrt(self, an_array):
+            return self.array(an_array).Sqrt()
+        def square(self, an_array):
+            return self.array(an_array).Sqr()
+    np = HackyNumpy()
 
 def importRoot() :
     import ROOT as r
@@ -172,12 +188,18 @@ def topRightLabel(pad, label, xpos=None, ypos=None, align=33) :
     tex.DrawLatex((1.0-pad.GetRightMargin()) if not xpos else xpos, (1.0-pad.GetTopMargin()) if not ypos else ypos, label)
     pad._label = tex
     return tex
+
+def drawAtlasLabel(pad, xpos=None, ypos=None, align=33) :
+    label = "#bf{#it{ATLAS}} Internal, #sqrt{s} = 8 TeV, 20.3 fb^{-1}"
+    return topRightLabel(pad, label, xpos, ypos, align)
+
 def getBinning(h) :
     cname = h.Class().GetName()
     if   cname.startswith('TH1') : return (h.GetNbinsX())
     elif cname.startswith('TH2') : return (h.GetNbinsX(), h.GetNbinsY())
     elif cname.startswith('TH3') : return (h.GetNbinsX(), h.GetNbinsY(), h.GetNbinsZ())
     else : return None
+
 def getBinIndices(h) :
     "Return a list of the internal indices used by TH1/TH2/TH3; see TH1::GetBin for info on internal mapping"
     cname = h.Class().GetName()
@@ -194,10 +216,13 @@ def getBinIndices(h) :
                 for j in range(1, 1+h.GetNbinsY())
                 for k in range(1, 1+h.GetNbinsZ())]
     else : return []
+def getBinCenters(h) :
+    return [h.GetBinCenter(b) for b in getBinIndices(h)]
 def getBinContents(h) :
     return [h.GetBinContent(b) for b in getBinIndices(h)]
 def getBinErrors(h) :
     return [h.GetBinError(b) for b in getBinIndices(h)]
+
 
 def writeObjectsToFile(outputFileName='', objects={}, verbose=False):
     """
@@ -257,3 +282,73 @@ def integralAndError(h) :
     error = r.Double(0.0)
     integral = h.IntegralAndError(0,-1, error)
     return integral, float(error)
+
+def setAtlasStyle() :
+    aStyle = getAtlasStyle()
+    r.gROOT.SetStyle("ATLAS")
+    r.gROOT.ForceStyle()
+
+def getAtlasStyle() :
+    style = r.TStyle('ATLAS', 'Atlas style')
+    white = 0
+    style.SetFrameBorderMode(white)
+    style.SetFrameFillColor(white)
+    style.SetCanvasBorderMode(white)
+    style.SetCanvasColor(white)
+    style.SetPadBorderMode(white)
+    style.SetPadColor(white)
+    style.SetStatColor(white)
+    #style.SetPaperSize(20,26)
+    style.SetPadTopMargin(0.05)
+    style.SetPadRightMargin(0.05)
+    nokidding = 0.75 # limit the exaggerated margins
+    style.SetPadBottomMargin(nokidding*0.16)
+    style.SetPadLeftMargin(nokidding*0.16)
+    style.SetTitleXOffset(nokidding*1.4)
+    style.SetTitleYOffset(nokidding*1.4)
+    font, fontSize = 42, 0.04 # helvetica large
+    style.SetTextFont(font)
+#     style.SetTextSize(fontSize)
+    style.SetLabelFont(font,"xyz")
+    style.SetTitleFont(font,"xyz")
+    style.SetPadTickX(1)
+    style.SetPadTickY(1)
+    style.SetOptStat(0)
+    style.SetOptTitle(0)
+    style.SetEndErrorSize(0)
+    return style
+
+def increaseAxisFont(axis, factorLabel=1.25, factorTitle=1.25) :
+    axis.SetLabelSize(factorLabel*axis.GetLabelSize())
+    axis.SetTitleSize(factorTitle*axis.GetTitleSize())
+
+def graphWithPoissonError(histo, fillZero=False) :
+    "From TGuiUtils.cxx; no idea where this implementation is coming from. Ask Anyes et al."
+    gr = r.TGraphAsymmErrors()
+    gr.SetLineWidth(histo.GetLineWidth())
+    gr.SetLineColor(histo.GetLineColor())
+    gr.SetLineStyle(histo.GetLineStyle())
+    gr.SetMarkerSize(histo.GetMarkerSize())
+    gr.SetMarkerColor(histo.GetMarkerColor())
+    gr.SetMarkerStyle(histo.GetMarkerStyle())
+    binCenters  = getBinCenters(histo)
+    binContents = getBinContents(histo)
+    def poissonErr(n) :
+        sqrt = math.sqrt
+        err_up, err_do = 0.0, 0.0
+        if n :
+            y1, y2 = n+1.0, n
+            d1 = 1.0 - 1.0/(9.0*y1) + 1.0/(3.0*sqrt(y1))
+            d2 = 1.0 - 1.0/(9.0*y2) - 1.0/(3.0*sqrt(y2))
+            err_up = y1*d1*d1*d1 - n
+            err_do = n - y2*d2*d2*d2;
+        return err_do, err_up
+    xErr = 0.0
+    yErrors = [poissonErr(v) for v in binContents]
+    for bc, bv, (ed, eu) in zip(binCenters, binContents, yErrors) :
+        if bv or fillZero :
+            point = gr.GetN()
+            gr.SetPoint(point, bc, bv)
+            gr.SetPointError(point, xErr, xErr, ed, eu)
+    histo._poissonErr = gr # attach to histo for persistency
+    return gr
