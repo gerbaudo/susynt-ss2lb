@@ -127,8 +127,8 @@ def get_batch_script(dset, options):
     jobname = dsname
     script_template = get_template_script(exe)
     batch_script = batchdir+'/'+dsname+'.sh'
-    out_rootfile = outdir+'/'+dsname+'_'+tag+'.root'
-    out_logfile  = logdir+'/'+dsname+'_'+tag+'.log'
+    out_rootfile = outdir+'/'+dsname+'.root'
+    out_logfile  = logdir+'/'+dsname+'.log'
     exe_options = ''
     exe_options += '' if options.no_cache else " --event-list %s"%(cachedir+'/'+dsname+'.root')
 
