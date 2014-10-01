@@ -2,8 +2,8 @@
 
 #include "SusyntHlfv/WeightComponents.h"
 #include "SusyntHlfv/EventFlags.h"
+#include "SusyntHlfv/DileptonVariables.h"
 #include "SusyntHlfv/utils.h"
-//#include "SusyntHlfv/DileptonVariables.h"
 
 #include "DileptonMatrixMethod/Systematic.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -65,36 +65,41 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_baseLeptons;
         const Met*          m = m_met;
-        if(eventHasTwoLeptons(l) && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
-            // SsPassFlags ssf(SusySelection::passSrSs(WH_SRSS1, ncl, t, j, m, allowQflip));
-            // if(!ssf.passCommonCriteria()) return false;
-            // if(m_writeTuple && ssf.lepPt) {
-            // const Susy::Lepton *l0=baseLeps[0], *l1=baseLeps[1];
+        if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
+            const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, Systematic::CENTRAL, m_anaType));
+            DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             double gev=1.0;
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
             uint nVtx = nt.evt()->nVtx;
             bool isMC = nt.evt()->isMC;
             const Lepton &l0 = *l[0];
             const Lepton &l1 = *l[1];
-            float metRel = getMetRel(m, l, j);
-            bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
-            bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
-            string regionName="emuInc";
+            bool is_event_to_be_saved = (eventFlags.tauVeto &&
+                                         eventFlags.mllMin &&
+                                         vars.hasFiredTrig &&
+                                         vars.hasTrigMatch &&
+                                         eventIsEmu(l));
+            if(is_event_to_be_saved){
+                float metRel = getMetRel(m, l, j);
+                bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
+                bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
+                string regionName="emuInc";
 //            regionName = "CR_SSInc1j";
-            sf::Systematic::Value sys = sf::Systematic::SYS_NOM;
-            size_t iRegion = m_matrix->getIndexRegion(regionName); 
-            sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
-            sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
-            double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
-            m_tupleMaker
-                .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
-                .setL1IsTight(l1IsSig)//.setL1Source(l1Source)
-                //.setL0EtConeCorr(computeCorrectedEtCone(l0)).setL0PtConeCorr(computeCorrectedPtCone(l0)) //
-                //.setL1EtConeCorr(computeCorrectedEtCone(l1)).setL1PtConeCorr(computeCorrectedPtCone(l1))
-                .fill(weight, run, event, l0, l1, *m_met);
+                sf::Systematic::Value sys = sf::Systematic::SYS_NOM;
+                size_t iRegion = m_matrix->getIndexRegion(regionName);
+                sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
+                sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
+                double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
+                m_tupleMaker
+                    .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
+                    .setL1IsTight(l1IsSig)//.setL1Source(l1Source)
+                    //.setL0EtConeCorr(computeCorrectedEtCone(l0)).setL0PtConeCorr(computeCorrectedPtCone(l0)) //
+                    //.setL1EtConeCorr(computeCorrectedEtCone(l1)).setL1PtConeCorr(computeCorrectedPtCone(l1))
+                    .fill(weight, run, event, l0, l1, *m_met);
                 // const JetVector clJets(SusySelection::filterClJets(m_signalJets2Lep));
                 // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m, lowPtLep, m_signalJets2Lep);
-        }
+            } // is_event_to_be_saved
+        } // eventHasTwoLeptons
     } // if(emu)
     return true;
 }
