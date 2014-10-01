@@ -70,16 +70,19 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             double gev=1.0;
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
-            uint nVtx = nt.evt()->nVtx;
-            bool isMC = nt.evt()->isMC;
-            const Lepton &l0 = *l[0];
-            const Lepton &l1 = *l[1];
+            assignNonStaticWeightComponents(l, bj, Systematic::CENTRAL, vars, weightComponents);
+            incrementObjectCounters(vars, weightComponents, m_counter);
+            incrementObjectSplitCounters(vars, weightComponents);
             bool is_event_to_be_saved = (eventFlags.tauVeto &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
                                          eventIsEmu(l));
             if(is_event_to_be_saved){
+                uint nVtx = nt.evt()->nVtx;
+                bool isMC = nt.evt()->isMC;
+                const Lepton &l0 = *l[0];
+                const Lepton &l1 = *l[1];
                 float metRel = getMetRel(m, l, j);
                 bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
                 bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
