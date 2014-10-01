@@ -92,21 +92,7 @@ int main(int argc, char** argv) {
             <<"eventlist '"<<eventlist <<"'"<<endl;
 
     TChain* chain = new TChain("susyNt");
-    bool inputIsFile = susy::utils::endswith(input, ".root");
-    bool inputIsList = susy::utils::endswith(input, ".txt");
-    bool inputIsDir  = susy::utils::endswith(input, "/");
-    bool validInput(inputIsFile||inputIsList||inputIsDir);
-    if(!validInput) {
-        cout<<"invalid input '"<<input<<"'"<<endl;
-        print_usage(argv[0]); return 1;
-    }
-    if(!sample.size()) {
-        cout<<" sample '"<<sample<<"'"<<endl;
-        print_usage(argv[0]); return 1;
-    }
-    if(inputIsFile) ChainHelper::addFile    (chain, input);
-    if(inputIsList) ChainHelper::addFileList(chain, input);
-    if(inputIsDir ) ChainHelper::addFileDir (chain, input);
+    ChainHelper::addInput(chain, input, verbose);
     Long64_t tot_num_events = chain->GetEntries();
     num_events = (num_events<0 ? tot_num_events : num_events);
     if(debug) chain->ls();
