@@ -229,6 +229,7 @@ hlfv::EventFlags Selector::computeEventFlags()
     const LeptonVector &bleps = m_baseLeptons;
     const JetVector     &jets = m_baseJets;
     const JetVector    &pjets = m_preJets;
+    const TauVector     &taus = m_signalTaus;
     const Susy::Met      *met = m_met;
     uint run = nt.evt()->run;
     bool mc = nt.evt()->isMC;
@@ -257,6 +258,7 @@ hlfv::EventFlags Selector::computeEventFlags()
     // dtl->passDilTrigMatch(leptons, met, evt);
 
     if(mll>mllMin                      )  f.mllMin      = true;
+    if(taus.size()==0                  )  f.tauVeto     = true;
     return f;
 }
 //-----------------------------------------
@@ -278,6 +280,7 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.ge2blep    ) m_counter.pass(weight); else return;
     if(f.eq2blep    ) m_counter.pass(weight); else return;
     if(f.mllMin     ) m_counter.pass(weight); else return;
+    if(f.tauVeto    ) m_counter.pass(weight); else return;
 }
 //-----------------------------------------
 void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
@@ -377,6 +380,7 @@ std::vector<std::string> Selector::defaultCutNames()
     labels.push_back("ge2blep"    );
     labels.push_back("eq2blep"    );
     labels.push_back("mllMin"     );
+    labels.push_back("tauVeto"    );
     labels.push_back("flavor");
     labels.push_back("trigger-bit");
     labels.push_back("trigger-match");
