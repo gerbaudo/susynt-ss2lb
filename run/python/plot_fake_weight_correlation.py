@@ -10,6 +10,8 @@ susyntutils.load_packages()
 import glob
 
 def main():
+    test_first_1k_events = True
+    print_events_as_txt = False # needed to evaluate the matrix on stdin
     base_dir = '/gdata/atlas/gerbaudo/hlfv/take0/SusyntHlfv/run/out/matrix_prediction'
     dir1 = base_dir+'/Jul_26/'
     dir2 = base_dir+'/May_20/'
@@ -50,7 +52,7 @@ def main():
     out_tree.Branch('isSameSign', isSameSign, 'isSameSign[%d]/I'%len(isSameSign))
 
     for iEntry in xrange(entries1):
-        if iEntry>100:break
+        if test_first_1k_events and iEntry>1000 : break
         chain1.GetEntry(iEntry)
         chain2.GetEntry(iEntry)
         r1, e1, w1 = chain1.pars.runNumber, chain1.pars.eventNumber, chain1.pars.weight
@@ -72,15 +74,17 @@ def main():
         isEl1, isMu1 = l1.isEl, l1.isMu
         isEmu[0] = int((isEl0 and isMu1) or (isMu1 and isMu0))
         isSameSign[0] = int((l0.charge * l1.charge)>0)
-        values = {'isEl1': 1 if isEl0 else 0,
+        values = {'run':r1, 'event':e1,
+                  'weight':w1,
+                  'isEl1': 1 if isEl0 else 0,
                   'isEl2': 1 if isEl1 else 0,
                   'isTight1': 1 if l0.isTight else 0,
                   'isTight2': 1 if l1.isTight else 0,
                   'pt1': pts[0], 'pt2': pts[1],
                   'eta1': l0.p4.Eta(), 'eta2': l1.p4.Eta()
                   }
-        if isEmu[0]:
-            print "{isEl1} {isEl2} {isTight1} {isTight2} {pt1} {pt2} {eta1} {eta2}".format(**values)
+        if print_events_as_txt and isEmu[0]:
+            print "{run} {event} {weight} {isEl1} {isEl2} {isTight1} {isTight2} {pt1} {pt2} {eta1} {eta2}".format(**values)
 
         out_tree.Fill()
     print "weight: min {0}, max {1}".format(min_weight, max_weight)
