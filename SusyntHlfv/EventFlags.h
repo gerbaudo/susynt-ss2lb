@@ -3,6 +3,7 @@
 #define HLFV_EVENTFLAGS_H
 
 #include <string>
+#include <iostream>
 
 namespace hlfv
 {
@@ -22,17 +23,18 @@ struct EventFlags {
     bool grl, larErr, tileErr, ttcVeto, goodVtx, tileTrip, lAr;
     bool badJet, deadRegions, badMuon, cosmicMuon, hfor, ge2blep, eq2blep, mllMin;
     bool l0eta, l1eta, tauVeto, dileptonTrigger, oppositeSign, l0pt;
-    bool allTrue() {
+    bool allTrue() const {
         return  (passAllEventCriteria() &&
                  ge2blep && eq2blep && mllMin &&
                  l0eta && l1eta && tauVeto && dileptonTrigger && oppositeSign && l0pt);
     }
-    bool passAllEventCriteria() {
+    bool passAllEventCriteria() const {
         return (grl && larErr && tileErr && ttcVeto && goodVtx && tileTrip && lAr &&
                 badJet && deadRegions && badMuon && cosmicMuon && hfor);
     }
-    bool failAny() { return !allTrue(); }
+    bool failAny() const { return !allTrue(); }
     std::string str() const;
+    std::string str_what_fails() const;
 };
 
 } // namespace hlfv
