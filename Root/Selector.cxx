@@ -87,24 +87,27 @@ Bool_t Selector::Process(Long64_t entry)
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
-        if(eventHasTwoLeptons(l) && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
+        if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
-            if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
-            if(m_writeTuple) {
-                double weight(weightComponents.product());
-                unsigned int run(nt.evt()->run), event(nt.evt()->event);
-                const Lepton &l0 = *m_signalLeptons[0];
-                const Lepton &l1 = *m_signalLeptons[1];
-                m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
-            }
-        }
-    }
-  // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
+            bool is_event_to_be_saved = eventIsEmu(l);
+            if(is_event_to_be_saved){
+                if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
+                if(m_writeTuple) {
+                    double weight(weightComponents.product());
+                    unsigned int run(nt.evt()->run), event(nt.evt()->event);
+                    const Lepton &l0 = *m_signalLeptons[0];
+                    const Lepton &l1 = *m_signalLeptons[1];
+                    m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
+                }
+            } // is_event_to_be_saved
+        } // eventHasTwoLeptons
+    } // passAllEventCriteria
+    // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
     return kTRUE;
 }
 //-----------------------------------------
