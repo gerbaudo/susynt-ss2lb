@@ -93,8 +93,11 @@ Bool_t Selector::Process(Long64_t entry)
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
-            // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
-            bool is_event_to_be_saved = eventIsEmu(l);
+            bool is_event_to_be_saved = (eventFlags.tauVeto &&
+                                         eventFlags.mllMin &&
+                                         vars.hasFiredTrig &&
+                                         vars.hasTrigMatch &&
+                                         eventIsEmu(l));
             if(is_event_to_be_saved){
                 if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
                 if(m_writeTuple) {
@@ -279,8 +282,8 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.cosmicMuon ) m_counter.pass(weight); else return;
     if(f.ge2blep    ) m_counter.pass(weight); else return;
     if(f.eq2blep    ) m_counter.pass(weight); else return;
-    if(f.mllMin     ) m_counter.pass(weight); else return;
-    if(f.tauVeto    ) m_counter.pass(weight); else return;
+    if(f.mllMin     ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
+    if(f.tauVeto    ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
 }
 //-----------------------------------------
 void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
