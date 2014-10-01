@@ -56,7 +56,7 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
-            incrementEventSplitCounters(vars, weightComponents);
+            incrementObjectSplitCounters(vars, weightComponents);
             // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
             if(m_writeTuple) {

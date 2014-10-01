@@ -82,8 +82,19 @@ protected:
     hlfv::EventFlags computeEventFlags();
     /// incremement the event-level counters
     void incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
+    /// incremement the object-level counters
+    /**
+       Increment the counters for selection criteria that depend on
+       objects. Because here we keep several counters (inclusive, emu,
+       mue), we also pass the counter as an input argument.
+    */
+    void incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
+                                 CutFlowCounter &counter);
     /// incremement the event counters after the emu/mue splitting
-    void incrementEventSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w);
+    /**
+       Wraps incrementObjectCounters for the emu/mue specific cases.
+     */
+    void incrementObjectSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w);
     /// dilepton trigger weight
     /**
        Need access to several internal variables, so cannot be static

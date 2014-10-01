@@ -91,7 +91,8 @@ Bool_t Selector::Process(Long64_t entry)
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
-            incrementEventSplitCounters(vars, weightComponents);
+            incrementObjectCounters(vars, weightComponents, m_counter);
+            incrementObjectSplitCounters(vars, weightComponents);
             // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
             if(m_writeTuple) {
@@ -232,6 +233,8 @@ hlfv::EventFlags Selector::computeEventFlags()
     bool has2lep(bleps.size()>1 && bleps[0] && bleps[1]);
     float mll(has2lep ? (*bleps[0] + *bleps[1]).M() : 0.0);
     const int killHfor(4); // inheriting hardcoded magic values from HforToolD3PD.cxx
+    bool pass_hfor(nt.evt()->hfor != killHfor);
+    if(pass_hfor)                         f.hfor        = true;
     if(passGRL        (flag           ))  f.grl         = true;
     if(passLarErr     (flag           ))  f.larErr      = true;
     if(passTileErr    (flag           ))  f.tileErr     = true;
@@ -243,7 +246,6 @@ hlfv::EventFlags Selector::computeEventFlags()
     if(passDeadRegions(pjets,met,run,mc)) f.deadRegions = true;
     if(!hasBadMuon    (m_preMuons     ))  f.badMuon     = true;
     if(!hasCosmicMuon (m_baseMuons    ))  f.cosmicMuon  = true;
-    if(nt.evt()->hfor != killHfor      )  f.hfor        = true;
     if(bleps.size() >= 2               )  f.ge2blep     = true;
     if(bleps.size() == 2               )  f.eq2blep     = true;
 
@@ -258,6 +260,7 @@ hlfv::EventFlags Selector::computeEventFlags()
 void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
 {
     double weight = w.product();
+    if(f.hfor       ) m_counter.pass(weight); else return;
     if(f.grl        ) m_counter.pass(weight); else return;
     if(f.larErr     ) m_counter.pass(weight); else return;
     if(f.tileErr    ) m_counter.pass(weight); else return;
@@ -269,26 +272,31 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.deadRegions) m_counter.pass(weight); else return;
     if(f.badMuon    ) m_counter.pass(weight); else return;
     if(f.cosmicMuon ) m_counter.pass(weight); else return;
-    if(f.hfor       ) m_counter.pass(weight); else return;
     if(f.ge2blep    ) m_counter.pass(weight); else return;
     if(f.eq2blep    ) m_counter.pass(weight); else return;
     if(f.mllMin     ) m_counter.pass(weight); else return;
 }
 //-----------------------------------------
-void Selector::incrementEventSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w)
+void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
+                                       CutFlowCounter &counter)
 {
     double weight = w.product();
+    if(true                 ) counter.pass(weight); else return; // flavor
+    if(v.hasFiredTrig       ) counter.pass(weight); else return;
+    if(v.hasTrigMatch       ) counter.pass(weight); else return;
+    if(v.isOs()             ) counter.pass(weight); else return;
+    if(v.pt0 > 45.0         ) counter.pass(weight); else return;
+    if(bool passpt1=true    ) counter.pass(weight); else return;
+    if(v.numCentralLightJets==0) counter.pass(weight); else return;
+    if(bool passDphiLl=true ) counter.pass(weight); else return;
+    if(bool passDphiL1Met=true) counter.pass(weight); else return;
+}
+//-----------------------------------------
+void Selector::incrementObjectSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w)
+{
     if(v.isEmu() || v.isMue()) {
         CutFlowCounter &counter = (v.isEmu() ? m_counterEmu : m_counterMue);
-        if(true                 ) counter.pass(weight); else return;
-        if(v.hasFiredTrig       ) counter.pass(weight); else return;
-        if(v.hasTrigMatch       ) counter.pass(weight); else return;
-        if(v.isOs()             ) counter.pass(weight); else return;
-        if(v.pt0 > 45.0         ) counter.pass(weight); else return;
-        if(bool passpt1=true    ) counter.pass(weight); else return;
-        if(v.numCentralLightJets==0) counter.pass(weight); else return;
-        if(bool passDphiLl=true ) counter.pass(weight); else return;
-        if(bool passDphiL1Met=true) counter.pass(weight); else return;
+        incrementObjectCounters(v, w, counter);
     }
 }
 //-----------------------------------------
@@ -351,6 +359,7 @@ std::vector<std::string> Selector::defaultCutNames()
   // incrementEventCounters
     vector<string> labels;
     labels.push_back("input"      );
+    labels.push_back("hfor"       );
     labels.push_back("grl"        );
     labels.push_back("larErr"     );
     labels.push_back("tileErr"    );
@@ -362,10 +371,18 @@ std::vector<std::string> Selector::defaultCutNames()
     labels.push_back("deadRegions");
     labels.push_back("badMuon"    );
     labels.push_back("cosmicMuon" );
-    labels.push_back("hfor"       );
     labels.push_back("ge2blep"    );
     labels.push_back("eq2blep"    );
     labels.push_back("mllMin"     );
+    labels.push_back("flavor");
+    labels.push_back("trigger-bit");
+    labels.push_back("trigger-match");
+    labels.push_back("opp-sign");
+    labels.push_back("pt0");
+    labels.push_back("pt1");
+    labels.push_back("jet-veto");
+    labels.push_back("dphi-l0l1");
+    labels.push_back("dphi-l1met");
     return labels;
 }
 //-----------------------------------------
