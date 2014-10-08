@@ -145,6 +145,7 @@ def runFill(opts, groups) :
                 isEl1, isMu1 = l1.isEl, l1.isMu
                 isEmu = int((isEl0 and isMu1) or (isMu1 and isMu0))
                 isSameSign = int((l0.charge * l1.charge)>0)
+                if l0.p4.Pt()<45.0 or not isSameSign : continue
                 histos['onebin'].Fill(1.0, weight)
                 histos['pt0'].Fill(l0.p4.Pt(), weight)
                 histos['pt1'].Fill(l1.p4.Pt(), weight)
@@ -223,21 +224,7 @@ def runPlot(opts, groups) :
                        stack_order=names_stacked_groups,
                        canvasName=(sel+'_'+var), outdir=outputDir, verbose=verbose)
     for group in plot_groups :
-        summary = group.variationsSummary()
-        for selection, summarySel in summary.iteritems() :
-            colW = str(12)
-            header = ' '.join([('%'+colW+'s')%colName for colName in ['variation', 'yield', 'delta[%]']])
-            lineTemplate = '%(sys)'+colW+'s'+'%(counts)'+colW+'s'+'%(delta)'+colW+'s'
-            print "---- summary of variations for %s ----" % group.name
-            print "---             %s                 ---" % selection
-            print header
-            print '\n'.join(lineTemplate%{'sys':s,
-                                          'counts':(("%.3f"%c) if type(c) is float
-                                                    else (str(c)+str(type(c)))),
-                                          'delta' :(("%.3f"%d) if type(d) is float
-                                                    else '--' if d==None
-                                                    else (str(d)+str(type(d)))) }
-                            for s,c,d in summarySel)
+        group.printVariationsSummary()
 
 def submit_batch_fill_job_per_group(group, opts):
     verbose = opts.verbose
@@ -357,9 +344,26 @@ class BaseSampleGroup(object) :
         summaries = {} # one summary for each selection
         for selection, sysCounts in self.varCounts.iteritems() :
             nominalCount = sysCounts['NOM']
-            summaries[selection] = [(sys, sysCount, (100.0*(sysCount-nominalCount)/nominalCount) if nominalCount else None)
+            summaries[selection] = [(sys, sysCount, (100.0*(sysCount-nominalCount)/nominalCount)
+                                     if nominalCount else None)
                                     for sys, sysCount in sortedAs(sysCounts, systUtils.getAllVariations())]
         return summaries
+    def printVariationsSummary(self):
+        for selection, summarySel in self.variationsSummary().iteritems() :
+            colW = str(12)
+            header = ' '.join([('%'+colW+'s')%colName for colName in ['variation', 'yield', 'delta[%]']])
+            lineTemplate = '%(sys)'+colW+'s'+'%(counts)'+colW+'s'+'%(delta)'+colW+'s'
+            print "---- summary of variations for %s ----" % self.name
+            print "---     [selection: %s]            ---" % selection
+            print header
+            print '\n'.join(lineTemplate%{'sys':s,
+                                          'counts':(("%.3f"%c) if type(c) is float
+                                                    else (str(c)+str(type(c)))),
+                                          'delta' :(("%.3f"%d) if type(d) is float
+                                                    else '--' if d==None
+                                                    else (str(d)+str(type(d)))) }
+                            for s,c,d in summarySel)
+
 
 def findByName(bsgs=[], name='') : return [b for b in bsgs if b.name==name][0]
 #___________________________________________________________
