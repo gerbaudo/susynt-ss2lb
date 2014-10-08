@@ -22,6 +22,7 @@ from rootUtils import (drawAtlasLabel
                        ,importRoot
                        ,integralAndError
                        ,setAtlasStyle
+                       ,writeObjectsToFile
                        )
 r = importRoot()
 from utils import (first
@@ -708,16 +709,10 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     for ext in ['png','eps'] : can.SaveAs(outdir+'/'+can.GetName()+'.'+ext)
 
 def saveHistos(samplesPerGroup={}, histosPerGroup={}, outdir='./', verbose=False) :
-    for groupname, histos in histosPerGroup.iteritems() :
+    for groupname, histosThisGroup in histosPerGroup.iteritems() :
         group = samplesPerGroup[groupname].setHistosDir(outdir)
         outFilename = group.filenameHisto
-        if verbose : print "creating file %s"%outFilename
-        file = r.TFile.Open(outFilename, 'recreate')
-        file.cd()
-        for g, histosPerSel in histosPerGroup.iteritems() :
-            for sel, histos in histosPerSel.iteritems() :
-                for var, h in histos.iteritems() : h.Write()
-        file.Close()
+        writeObjectsToFile(outFilename, histosThisGroup, verbose)
 
 # this is duplicated with plot_fake_weight_correlation.py; put it in smth like tuple_utils
 tlv = r.TLorentzVector
