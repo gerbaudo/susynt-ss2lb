@@ -143,14 +143,20 @@ def runFill(opts, groups) :
                 weight =  event.pars.weight
                 l0 = addTlv(event.l0)
                 l1 = addTlv(event.l1)
-                isEl0, isMu0 = l0.isEl, l0.isMu
-                isEl1, isMu1 = l1.isEl, l1.isMu
-                isEmu = int((isEl0 and isMu1) or (isMu1 and isMu0))
-                isSameSign = int((l0.charge * l1.charge)>0)
-                isOppSign  = not isSameSign
-                if l0.p4.Pt()<45.0 : continue
+                met = addTlv(event.met)
+                l0_is_el, l0_is_mu = l0.isEl, l0.isMu
+                l1_is_el, l1_is_mu = l1.isEl, l1.isMu
+                is_emu = int(l0_is_el and l1_is_mu)
+                is_mue = int(l0_is_mu and l1_is_el)
+                is_same_sign = int((l0.charge * l1.charge)>0)
+                is_opp_sign  = not is_same_sign
+                l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
+                dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
+                dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
+                dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
+                dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
                 for sel in selections:
-                    pass_sel = isSameSign if sel=='emu_ss' else isOppSign
+                    pass_sel = eval(selection_formulas()[sel])
                     if not pass_sel : continue
 
                     histos[sel]['onebin'].Fill(1.0, weight)
@@ -500,31 +506,23 @@ def allGroups(noData=False, noSignal=True) :
             + ['fake']
             )
 
-def selectionFormulas(sel) :
-    ee, em, mm = 'isEE', 'isEMU', 'isMUMU'
-    pt32  = '(lept1Pt>30000.0 && lept2Pt>20000.0)'
-    pt33  = '(lept1Pt>30000.0 && lept2Pt>30000.0)'
-    j1    = '(L2nCentralLightJets==1)'
-    j23   = '(L2nCentralLightJets==2 || L2nCentralLightJets==3)'
-    vetoZ = '(L2Mll<(91200.0-10000.0) || L2Mll>(91200.0+10000.))'
-    dEll  = '(TMath::Abs(deltaEtaLl)<1.5)'
-    ss    = '(!isOS || L2qFlipWeight!=1.0)' # ssOrQflip
-    mlj1  = 'mlj < 90000.0'
-    mlj2  = 'mljj<120000.0'
+def selection_formulas(sel=None):
+    pt_req = 'l0_pt>45.0 and l1_pt>15.0'
+    common_req = (pt_req+' and '+
+                  'dphi_l1_met<0.7 and dphi_l0_l1>2.3 and '+
+                  'dpt_l0_l1>7.0 and dphi_l0_met>2.5')
     formulas = {
-        'eeSR1jet'   : '('+ee+' && '+ss+' && '+j1 +' && '+pt32+' && '+vetoZ+' && '+mlj1+' && L2METrel>55000.0 && Ht>200000.0)',
-        'eeSR23jets' : '('+ee+' && '+ss+' && '+j23+' && '+pt32+' && '+vetoZ+' && '+mlj2+' && L2METrel>30000.0 &&                mtmax>110000.0)',
-        'mmSR1jet'   : '('+mm+' && '+ss+' && '+j1 +' && '+pt32+' && '+dEll +' && '+mlj1+' &&                     Ht>200000.0 && mtmax>110000.0)',
-        'mmSR23jets' : '('+mm+' && '+ss+' && '+j23+' && '+pt33+' && '+dEll +' && '+mlj2+' &&                     Ht>200000.0)',
-        'emSR1jet'   : '('+em+' && '+ss+' && '+j1 +' && '+pt33+' && '+dEll +' && '+mlj1+' &&                     Ht>200000.0 && mtmax>110000.0)',
-        'emSR23jets' : '('+em+' && '+ss+' && '+j23+' && '+pt33+' && '+dEll +' && '+mlj2+' &&                     Ht>200000.0 && mtmax>110000.0)',
+        'pre_emu' : 'is_emu and '+pt_req,
+        'pre_mue' : 'is_mue and '+pt_req,
+        'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
+        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req,
+        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req,
+        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req
         }
-    for f in formulas.keys() :
-        formulas['pre'+f] = formulas[f].replace(mlj1, '1').replace(mlj2, '1')
-    mlj1Not, mlj2Not = mlj1.replace('<','>'), mlj2.replace('<','>')
-    for f in formulas.keys() :
-        formulas['bld'+f] = formulas[f].replace(mlj1, mlj1Not).replace(mlj2, mlj2Not)
-    return formulas[sel]
+    formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
+                     for k, v in formulas.iteritems()
+                     for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]])
+    return formulas[sel] if sel else formulas
 
 def fillAndCount(histos, counters, sample, blind=True) :
     group    = sample.group
@@ -636,7 +634,8 @@ def getGroupColor(g) :
     return colors[g]
 
 def regions_to_plot():
-    return ['emu_ss', 'emu_os']
+    return selection_formulas().keys()
+    # return ['emu_ss', 'emu_os']
 def variables_to_plot():
     return ['onebin', 'pt0', 'pt1']
 
