@@ -83,6 +83,14 @@ def drawLegendWithDictKeys(pad, histosDict, legWidth=0.325, legHeight=0.225, opt
     leg.Draw()
     pad.Update()
     return leg
+def dummyHisto(name='dummy', title='', n=1, x_min=0.0, x_max=1.0):
+    "dummy histogram, sometime useful for empty lines in a TLegend"
+    h = r.TH1F(name, title, n, x_min, x_max)
+    h.SetFillColor(0)
+    h.SetLineWidth(0)
+    h.SetMarkerSize(0)
+    h.SetDirectory(0)
+    return h
 def getMinMaxFromTGraph(gr) :
     points = range(gr.GetN())
     y = np.array([gr.GetY()[p] for p in points])
@@ -104,7 +112,7 @@ def getMinMax(histosOrGraphs=[]) :
         if   cname.startswith('TH1') :               return getMinMaxFromTH1(obj)
         elif cname.startswith('TGraphAsymmErrors') : return getMinMaxFromTGraphAsymmErrors(obj)
         elif cname.startswith('TGraph') :            return getMinMaxFromTGraph(obj)
-    ms, Ms = verticalSlice([mM(o) for o in histosOrGraphs])
+    ms, Ms = verticalSlice([mM(o) for o in histosOrGraphs if o])
     return min(ms), max(Ms)
 def buildRatioHistogram(num, den, name='', divide_opt='B') :
     ratio = num.Clone(name if name else num.GetName()+'_over_'+den.GetName())

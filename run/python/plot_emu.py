@@ -14,6 +14,7 @@ import pprint
 
 import dataset
 from rootUtils import (drawAtlasLabel
+                       ,dummyHisto
                        ,getBinContents
                        ,getMinMax
                        ,graphWithPoissonError
@@ -133,10 +134,10 @@ def runFill(opts, groups) :
                 print "{0} : {1} entries from {2} samples".format(group.name,
                                                                   chain.GetEntries(),
                                                                   len(group.datasets))
-            selection = 'emu'
-            histos = histos_all_groups[group.name][selection]
-            counters = counters_all_groups[group.name][selection]
+            histos = histos_all_groups[group.name]
+            counters = counters_all_groups[group.name]
             for iEntry, event in enumerate(chain):
+                if iEntry>1000:break
                 run_num = event.pars.runNumber
                 evt_num = event.pars.eventNumber
                 weight =  event.pars.weight
@@ -146,15 +147,21 @@ def runFill(opts, groups) :
                 isEl1, isMu1 = l1.isEl, l1.isMu
                 isEmu = int((isEl0 and isMu1) or (isMu1 and isMu0))
                 isSameSign = int((l0.charge * l1.charge)>0)
-                if l0.p4.Pt()<45.0 or not isSameSign : continue
-                histos['onebin'].Fill(1.0, weight)
-                histos['pt0'].Fill(l0.p4.Pt(), weight)
-                histos['pt1'].Fill(l1.p4.Pt(), weight)
-                counters += (weight) # if passSels[sel] else 0.0)
+                isOppSign  = not isSameSign
+                if l0.p4.Pt()<45.0 : continue                
+                for sel in selections:
+                    pass_sel = isSameSign if sel=='emu_ss' else isOppSign
+                    if not pass_sel : continue
+                    
+                    histos[sel]['onebin'].Fill(1.0, weight)
+                    histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
+                    histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
+                    counters[sel] += (weight) # if passSels[sel] else 0.0)
 
             for v in ['onebin', 'pt0', 'pt1']:
-                h = histos[v]
-                print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
+                for sel in selections:
+                    h = histos[sel][v]
+                    print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
         plotting_groups = dict([(g.name, Group(g.name)) for g in groups])
         saveHistos(plotting_groups, histos_all_groups, outputDir, opts.verbose)
         # print counters
@@ -219,7 +226,7 @@ def runPlot(opts, groups) :
                                     fakeVariations=fakeSystematics, mcVariations=mcSystematics,
                                     verbose=verbose)
 
-            plotHistos(histoData=nominalHistoData, histoSignal=nominalHistoSign,
+            plotHistos(histoData=nominalHistoData,# histoSignal=nominalHistoSign,
                        histoTotBkg=nominalHistoTotBkg, histosBkg=nominalHistosBkg,
                        statErrBand=statErrBand, systErrBand=systErrBand,
                        stack_order=names_stacked_groups,
@@ -628,7 +635,7 @@ def getGroupColor(g) :
     return colors[g]
 
 def regions_to_plot():
-    return ['emu']
+    return ['emu_ss', 'emu_os']
 def variables_to_plot():
     return ['onebin', 'pt0', 'pt1']
 
@@ -654,13 +661,18 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     can._leg = leg
     leg.SetBorderSize(0)
     leg._reversedEntries = []
+    def integralWou(h):
+        "Integral with underflow and overflow"
+        return h.Integral(0, h.GetNbinsX()+1)
     for group, histo in sortedAs(histosBkg, stack_order) :
         histo.SetFillColor(getGroupColor(group))
         histo.SetLineWidth(2)
         histo.SetLineColor(r.kBlack)
         stack.Add(histo)
         can._hists.append(histo)
-        leg._reversedEntries.append((histo, group, 'F'))
+        leg._reversedEntries.append((histo, "{0}: {1:.2f}".format(group, integralWou(histo)), 'F'))
+    leg._reversedEntries.append((dummyHisto(), "{0}, {1:.2f}".format('bkg', sum([integralWou(h) for h in stack.GetHists()])), 'l'))
+    leg._reversedEntries.append((histoData, "{0}, {1:.2f}".format('data', integralWou(histoData)), 'p'))
     for h, g, o in leg._reversedEntries[::-1] : leg.AddEntry(h, g, o) # stack goes b-t, legend goes t-b
     stack.Draw('hist same')
     histoData.SetMarkerStyle(r.kFullCircle)
