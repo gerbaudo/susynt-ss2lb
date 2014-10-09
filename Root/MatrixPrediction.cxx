@@ -67,6 +67,8 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
         const Met*          m = m_met;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, Systematic::CENTRAL, m_anaType));
+            const JetVector bjets(Selector::filterBtagJets(m_signalJets2Lep));
+            const JetVector fjets(Selector::filterForwardJets(m_signalJets2Lep));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             double gev=1.0;
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
@@ -74,6 +76,8 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             bool is_event_to_be_saved = (eventFlags.tauVeto &&
+                                         bjets.size()==0 &&
+                                         fjets.size()==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
