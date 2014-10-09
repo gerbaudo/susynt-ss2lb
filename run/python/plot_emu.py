@@ -23,6 +23,7 @@ from rootUtils import (drawAtlasLabel
                        ,importRoot
                        ,integralAndError
                        ,setAtlasStyle
+                       ,topRightLabel
                        ,writeObjectsToFile
                        )
 r = importRoot()
@@ -137,7 +138,6 @@ def runFill(opts, groups) :
             histos = histos_all_groups[group.name]
             counters = counters_all_groups[group.name]
             for iEntry, event in enumerate(chain):
-                if iEntry>1000:break
                 run_num = event.pars.runNumber
                 evt_num = event.pars.eventNumber
                 weight =  event.pars.weight
@@ -148,11 +148,11 @@ def runFill(opts, groups) :
                 isEmu = int((isEl0 and isMu1) or (isMu1 and isMu0))
                 isSameSign = int((l0.charge * l1.charge)>0)
                 isOppSign  = not isSameSign
-                if l0.p4.Pt()<45.0 : continue                
+                if l0.p4.Pt()<45.0 : continue
                 for sel in selections:
                     pass_sel = isSameSign if sel=='emu_ss' else isOppSign
                     if not pass_sel : continue
-                    
+
                     histos[sel]['onebin'].Fill(1.0, weight)
                     histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
                     histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
@@ -230,6 +230,7 @@ def runPlot(opts, groups) :
                        histoTotBkg=nominalHistoTotBkg, histosBkg=nominalHistosBkg,
                        statErrBand=statErrBand, systErrBand=systErrBand,
                        stack_order=names_stacked_groups,
+                       topLabel=sel,
                        canvasName=(sel+'_'+var), outdir=outputDir, verbose=verbose)
     for group in plot_groups :
         group.printVariationsSummary()
@@ -643,6 +644,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
                canvasName='canvas', outdir='./', verbose=False,
                stack_order=[],
+               topLabel='',
                drawStatErr=False, drawSystErr=False,
                drawYieldAndError=False) :
     "Note: blinding can be required for only a subrange of the histo, so it is taken care of when filling"
@@ -711,6 +713,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
         tex.DrawLatex(0.10, 0.95, label)
         can.SetTopMargin(2.0*can.GetTopMargin())
     drawAtlasLabel(can, xpos=0.125, align=13)
+    if topLabel : topRightLabel(can, topLabel, ypos=1.0)
     yMin, yMax = getMinMax([histoData, dataGraph, histoTotBkg, histoSignal, totErrBand])
     padMaster.SetMinimum(0.0)
     padMaster.SetMaximum(1.1 * yMax)
