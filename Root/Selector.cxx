@@ -89,11 +89,15 @@ Bool_t Selector::Process(Long64_t entry)
         const LeptonVector& l = m_signalLeptons;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
+            const JetVector bjets(Selector::filterBtagJets(m_signalJets2Lep));
+            const JetVector fjets(Selector::filterForwardJets(m_signalJets2Lep));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             bool is_event_to_be_saved = (eventFlags.tauVeto &&
+                                         bjets.size()==0 &&
+                                         fjets.size()==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
@@ -418,6 +422,26 @@ JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfToo
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
         if(SusyNtTools::isCentralLightJet(jets[i], jvfTool, hlfv::sys2ntsys(sys), anaType))
+            outjets.push_back(jets[i]);
+    }
+    return outjets;
+}
+//-----------------------------------------
+JetVector Selector::filterForwardJets(const JetVector &jets)
+{
+    JetVector outjets;
+    for(size_t i=0; i<jets.size(); ++i){
+        if(SusyNtTools::isForwardJet(jets[i]))
+            outjets.push_back(jets[i]);
+    }
+    return outjets;
+}
+//-----------------------------------------
+JetVector Selector::filterBtagJets(const JetVector &jets)
+{
+    JetVector outjets;
+    for(size_t i=0; i<jets.size(); ++i){
+        if(SusyNtTools::isCentralBJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;

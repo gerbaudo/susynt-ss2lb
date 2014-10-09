@@ -109,6 +109,10 @@ protected:
     static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
                                 const hlfv::Systematic::Value sys,
                                 AnalysisType anaType);
+    /// select forward jets
+    static JetVector filterForwardJets(const JetVector &jets);
+    /// select b jets
+    static JetVector filterBtagJets(const JetVector &jets);
     /// lepton efficiency data/simulation scale factor
     static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
     /// exactly two leptons
