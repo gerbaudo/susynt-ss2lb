@@ -26,6 +26,8 @@ std::string EventFlags::str() const
      <<" l0eta: "           <<l0eta
      <<" l1eta: "           <<l1eta
      <<" tauVeto: "         <<tauVeto
+     <<" forwardJetVeto: "  <<forwardJetVeto
+     <<" bjetVeto: "        <<bjetVeto
      <<" dileptonTrigger: " <<dileptonTrigger
      <<" oppositeSign: "    <<oppositeSign
      <<" l0pt: "            <<l0pt;
@@ -57,6 +59,8 @@ std::string EventFlags::str_what_fails() const
            <<(!l0eta          ? " l0eta"           : "")
            <<(!l1eta          ? " l1eta"           : "")
            <<(!tauVeto        ? " tauVeto"         : "")
+           <<(!forwardJetVeto ? " forwardJetVeto"  : "")
+           <<(!bjetVeto       ? " bjetVeto"        : "")
            <<(!dileptonTrigger? " dileptonTrigger" : "")
            <<(!oppositeSign   ? " oppositeSign"    : "")
            <<(!l0pt           ? " l0pt"            : "");
