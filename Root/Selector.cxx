@@ -86,11 +86,12 @@ Bool_t Selector::Process(Long64_t entry)
     if(eventFlags.passAllEventCriteria()) {
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
+        const JetVector&  jets= m_signalJets; // shouldn't we use m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
-            const JetVector bjets(Selector::filterBtagJets(m_signalJets2Lep));
-            const JetVector fjets(Selector::filterForwardJets(m_signalJets2Lep));
+            const JetVector jets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
+            const JetVector bjets(Selector::filterBtagJets(jets));
+            const JetVector fjets(Selector::filterForwardJets(jets));
             DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
@@ -259,7 +260,7 @@ hlfv::EventFlags Selector::computeEventFlags()
     if(!hasCosmicMuon (m_baseMuons    ))  f.cosmicMuon  = true;
     if(bleps.size() >= 2               )  f.ge2blep     = true;
     if(bleps.size() == 2               )  f.eq2blep     = true;
-
+    if(m_signalLeptons.size()==2)         f.eq2slep     = true;
     // const LeptonVector& leptons, DilTrigLogic *dtl, float met, Event* evt
     // dtl->passDilEvtTrig(leptons, met, evt);
     // dtl->passDilTrigMatch(leptons, met, evt);
