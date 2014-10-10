@@ -231,7 +231,6 @@ hlfv::EventFlags Selector::computeEventFlags()
     const LeptonVector &bleps = m_baseLeptons;
     const JetVector     &jets = m_baseJets;
     const JetVector    &pjets = m_preJets;
-    const TauVector     &taus = m_signalTaus;
     const Susy::Met      *met = m_met;
     uint run = nt.evt()->run, event(nt.evt()->event);
     bool mc = nt.evt()->isMC;
@@ -254,13 +253,9 @@ hlfv::EventFlags Selector::computeEventFlags()
     if(!hasCosmicMuon (m_baseMuons    ))  f.cosmicMuon  = true;
     if(bleps.size() >= 2               )  f.ge2blep     = true;
     if(bleps.size() == 2               )  f.eq2blep     = true;
-    if(m_signalLeptons.size()==2)         f.eq2slep     = true;
-    // const LeptonVector& leptons, DilTrigLogic *dtl, float met, Event* evt
-    // dtl->passDilEvtTrig(leptons, met, evt);
-    // dtl->passDilTrigMatch(leptons, met, evt);
-
     if(mll>mllMin                      )  f.mllMin      = true;
-    if(taus.size()==0                  )  f.tauVeto     = true;
+    if(m_signalLeptons.size()==2)         f.eq2slep     = true;
+    if(m_signalTaus.size()==0          )  f.tauVeto     = true;
     return f;
 }
 //-----------------------------------------
@@ -281,8 +276,8 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.cosmicMuon ) m_counter.increment(weight, "cosmicMuon" ); else return;
     if(f.ge2blep    ) m_counter.increment(weight, "ge2blep"    ); else return;
     if(f.eq2blep    ) m_counter.increment(weight, "eq2blep"    ); else return;
-    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return;
     if(f.mllMin     ) m_counter.increment(weight, "mllMin" ); else return; // todo: this should go in DileptonVariables
+    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return;
     if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"); else return; // todo: this should go in DileptonVariables
 }
 //-----------------------------------------
