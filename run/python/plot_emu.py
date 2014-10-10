@@ -507,7 +507,7 @@ def allGroups(noData=False, noSignal=True) :
             )
 
 def selection_formulas(sel=None):
-    pt_req = 'l0_pt>45.0 and l1_pt>15.0'
+    pt_req = 'l0_pt>45.0 and l1_pt>12.0'
     common_req = (pt_req+' and '+
                   'dphi_l1_met<0.7 and dphi_l0_l1>2.3 and '+
                   'dpt_l0_l1>7.0 and dphi_l0_met>2.5')
@@ -517,12 +517,18 @@ def selection_formulas(sel=None):
         'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
         'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req,
         'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req,
-        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req
+        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req,
         }
     formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
                      for k, v in formulas.iteritems()
                      for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]])
+    # symmetric selection
+    pt_sym_req = 'l0_pt>20.0 and l1_pt>20.0'
+    for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
+        for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]:
+            formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
     return formulas[sel] if sel else formulas
+
 
 def fillAndCount(histos, counters, sample, blind=True) :
     group    = sample.group
