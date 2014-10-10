@@ -17,15 +17,15 @@ struct EventFlags {
     EventFlags() { reset(); }
     void reset() {
         grl = larErr = tileErr = ttcVeto = goodVtx = tileTrip = lAr = false;
-        badJet = deadRegions = badMuon = cosmicMuon = hfor = ge2blep = eq2blep = mllMin = false;
+        badJet = deadRegions = badMuon = cosmicMuon = hfor = ge2blep = eq2blep = eq2slep = mllMin = false;
         l0eta = l1eta = tauVeto = forwardJetVeto = bjetVeto = dileptonTrigger = oppositeSign = l0pt = false;
     }
     bool grl, larErr, tileErr, ttcVeto, goodVtx, tileTrip, lAr;
-    bool badJet, deadRegions, badMuon, cosmicMuon, hfor, ge2blep, eq2blep, mllMin;
+    bool badJet, deadRegions, badMuon, cosmicMuon, hfor, ge2blep, eq2blep, eq2slep, mllMin;
     bool l0eta, l1eta, tauVeto, forwardJetVeto, bjetVeto, dileptonTrigger, oppositeSign, l0pt;
     bool allTrue() const {
         return  (passAllEventCriteria() &&
-                 ge2blep && eq2blep && mllMin &&
+                 ge2blep && eq2blep && eq2slep && mllMin &&
                  l0eta && l1eta && tauVeto && forwardJetVeto && bjetVeto && dileptonTrigger && oppositeSign && l0pt);
     }
     bool passAllEventCriteria() const {

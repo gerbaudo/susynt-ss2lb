@@ -239,7 +239,7 @@ hlfv::EventFlags Selector::computeEventFlags()
     const JetVector    &pjets = m_preJets;
     const TauVector     &taus = m_signalTaus;
     const Susy::Met      *met = m_met;
-    uint run = nt.evt()->run;
+    uint run = nt.evt()->run, event(nt.evt()->event);
     bool mc = nt.evt()->isMC;
     float mllMin(20);
     bool has2lep(bleps.size()>1 && bleps[0] && bleps[1]);
@@ -287,6 +287,7 @@ void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.cosmicMuon ) m_counter.pass(weight); else return;
     if(f.ge2blep    ) m_counter.pass(weight); else return;
     if(f.eq2blep    ) m_counter.pass(weight); else return;
+    if(f.eq2slep    ) m_counter.pass(weight); else return;
     if(f.mllMin     ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
     if(f.tauVeto    ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
 }
@@ -387,6 +388,7 @@ std::vector<std::string> Selector::defaultCutNames()
     labels.push_back("cosmicMuon" );
     labels.push_back("ge2blep"    );
     labels.push_back("eq2blep"    );
+    labels.push_back("eq2slep"    );
     labels.push_back("mllMin"     );
     labels.push_back("tauVeto"    );
     labels.push_back("flavor");

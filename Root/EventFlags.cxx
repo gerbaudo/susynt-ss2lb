@@ -22,6 +22,7 @@ std::string EventFlags::str() const
      <<" hfor: "            <<hfor
      <<" ge2blep: "         <<ge2blep
      <<" eq2blep: "         <<eq2blep
+     <<" eq2slep: "         <<eq2slep
      <<" mllMin: "          <<mllMin
      <<" l0eta: "           <<l0eta
      <<" l1eta: "           <<l1eta
@@ -55,6 +56,7 @@ std::string EventFlags::str_what_fails() const
            <<(!hfor           ? " hfor"            : "")
            <<(!ge2blep        ? " ge2blep"         : "")
            <<(!eq2blep        ? " eq2blep"         : "")
+           <<(!eq2slep        ? " eq2slep"         : "")
            <<(!mllMin         ? " mllMin"          : "")
            <<(!l0eta          ? " l0eta"           : "")
            <<(!l1eta          ? " l1eta"           : "")
