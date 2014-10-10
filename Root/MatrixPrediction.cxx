@@ -58,23 +58,21 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     // cout<<eventFlags.str()<<endl;
     if(eventFlags.passAllEventCriteria()) {
         // cout<<"passAllEventCriteria"<<endl;
-        const JetVector&    j = m_signalJets2Lep;
+        const JetVector& jets = m_signalJets2Lep;
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_baseLeptons;
         const Met*          m = m_met;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, Systematic::CENTRAL, m_anaType));
-            const JetVector bjets(Selector::filterBtagJets(m_signalJets2Lep));
-            const JetVector fjets(Selector::filterForwardJets(m_signalJets2Lep));
-            DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
+            const JetVector cljets(Selector::filterJets(jets, m_jvfTool, Systematic::CENTRAL, m_anaType));
+            DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             double gev=1.0;
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
             assignNonStaticWeightComponents(l, bj, Systematic::CENTRAL, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
-            bool is_event_to_be_saved = (eventFlags.tauVeto &&
-                                         bjets.size()==0 &&
-                                         fjets.size()==0 &&
+            bool is_event_to_be_saved = (vars.numTaus==0 &&
+                                         vars.numBtagJets==0 &&
+                                         vars.numForwardJets==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
@@ -84,7 +82,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 bool isMC = nt.evt()->isMC;
                 const Lepton &l0 = *l[0];
                 const Lepton &l1 = *l[1];
-                float metRel = getMetRel(m, l, j);
+                float metRel = getMetRel(m, l, jets);
                 bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
                 bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));
                 string regionName="emuInc";

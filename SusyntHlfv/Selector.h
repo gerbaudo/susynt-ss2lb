@@ -77,8 +77,8 @@ protected:
        baseline objects, so you need to call it after selectObjects().
      */
     hlfv::EventFlags computeEventFlags();
-    /// incremement the event-level counters
-    void incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
+    /// incremement the event-level counters; return true if pass all event requirements
+    bool incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
     /// incremement the object-level counters
     /**
        Increment the counters for selection criteria that depend on
@@ -102,6 +102,7 @@ protected:
        Need access to several internal variables, so cannot be static
      */
     double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
+public:
     /// select the jets we are interested in (central, high-pt)
     static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
                                 const hlfv::Systematic::Value sys,

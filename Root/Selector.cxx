@@ -76,23 +76,20 @@ Bool_t Selector::Process(Long64_t entry)
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
-    incrementEventCounters(eventFlags, weightComponents);
-    if(eventFlags.passAllEventCriteria()) {
+    if(incrementEventCounters(eventFlags, weightComponents)){
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const JetVector&  jets= m_signalJets; // shouldn't we use m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector jets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
-            const JetVector bjets(Selector::filterBtagJets(jets));
-            const JetVector fjets(Selector::filterForwardJets(jets));
-            DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
+            const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
+            DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
-            bool is_event_to_be_saved = (eventFlags.tauVeto &&
-                                         bjets.size()==0 &&
-                                         fjets.size()==0 &&
+            bool is_event_to_be_saved = (vars.numTaus==0 &&
+                                         vars.numBtagJets==0 &&
+                                         vars.numForwardJets==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
@@ -259,36 +256,39 @@ hlfv::EventFlags Selector::computeEventFlags()
     return f;
 }
 //-----------------------------------------
-void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
+bool Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
 {
     double weight = w.product();
-    if(f.hfor       ) m_counter.increment(weight, "hfor"       ); else return;
-    if(f.grl        ) m_counter.increment(weight, "grl"        ); else return;
-    if(f.larErr     ) m_counter.increment(weight, "larErr"     ); else return;
-    if(f.tileErr    ) m_counter.increment(weight, "tileErr"    ); else return;
-    if(f.ttcVeto    ) m_counter.increment(weight, "ttcVeto"    ); else return;
-    if(f.goodVtx    ) m_counter.increment(weight, "goodVtx"    ); else return;
-    if(f.tileTrip   ) m_counter.increment(weight, "tileTrip"   ); else return;
-    if(f.lAr        ) m_counter.increment(weight, "lAr"        ); else return;
-    if(f.badJet     ) m_counter.increment(weight, "badJet"     ); else return;
-    if(f.deadRegions) m_counter.increment(weight, "deadRegions"); else return;
-    if(f.badMuon    ) m_counter.increment(weight, "badMuon"    ); else return;
-    if(f.cosmicMuon ) m_counter.increment(weight, "cosmicMuon" ); else return;
-    if(f.ge2blep    ) m_counter.increment(weight, "ge2blep"    ); else return;
-    if(f.eq2blep    ) m_counter.increment(weight, "eq2blep"    ); else return;
-    if(f.mllMin     ) m_counter.increment(weight, "mllMin" ); else return; // todo: this should go in DileptonVariables
-    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return;
-    if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"); else return; // todo: this should go in DileptonVariables
+    if(f.hfor       ) m_counter.increment(weight, "hfor"       ); else return false;
+    if(f.grl        ) m_counter.increment(weight, "grl"        ); else return false;
+    if(f.larErr     ) m_counter.increment(weight, "larErr"     ); else return false;
+    if(f.tileErr    ) m_counter.increment(weight, "tileErr"    ); else return false;
+    if(f.ttcVeto    ) m_counter.increment(weight, "ttcVeto"    ); else return false;
+    if(f.goodVtx    ) m_counter.increment(weight, "goodVtx"    ); else return false;
+    if(f.tileTrip   ) m_counter.increment(weight, "tileTrip"   ); else return false;
+    if(f.lAr        ) m_counter.increment(weight, "lAr"        ); else return false;
+    if(f.badJet     ) m_counter.increment(weight, "badJet"     ); else return false;
+    if(f.deadRegions) m_counter.increment(weight, "deadRegions"); else return false;
+    if(f.badMuon    ) m_counter.increment(weight, "badMuon"    ); else return false;
+    if(f.cosmicMuon ) m_counter.increment(weight, "cosmicMuon" ); else return false;
+    if(f.ge2blep    ) m_counter.increment(weight, "ge2blep"    ); else return false;
+    if(f.eq2blep    ) m_counter.increment(weight, "eq2blep"    ); else return false;
+    if(f.mllMin     ) m_counter.increment(weight, "mllMin"     ); else return false; // todo: this should go in DileptonVariables
+    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return false;
+    if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"); else return false; // todo: this should go in DileptonVariables
+    return true;
 }
 //-----------------------------------------
 void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
                                        CutFlowCounter &counter)
 {
     double weight = w.product();
-    if(true                 )    counter.increment(weight, "flavor"       ); else return;
+    if(abs(v.eta0)<2.4      )    counter.increment(weight, "l0_eta<2.4"   ); else return;
+    if(abs(v.eta1)<2.4      )    counter.increment(weight, "l1_eta<2.4"   ); else return;
     if(v.hasFiredTrig       )    counter.increment(weight, "trigger-bit"  ); else return;
     if(v.hasTrigMatch       )    counter.increment(weight, "trigger-match"); else return;
     if(v.isOs()             )    counter.increment(weight, "opp-sign"     ); else return;
+    if(v.isOf()             )    counter.increment(weight, "opp-flav"     ); else return;
     if(v.pt0 > 45.0         )    counter.increment(weight, "pt0"          ); else return;
     if(bool passpt1=true    )    counter.increment(weight, "pt1"          ); else return;
     if(v.numCentralLightJets==0) counter.increment(weight, "jet-veto"     ); else return;

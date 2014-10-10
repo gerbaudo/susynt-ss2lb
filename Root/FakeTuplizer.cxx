@@ -50,11 +50,10 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(eventHasTwoLeptons(l) && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector jets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
-            DileptonVariables vars = computeDileptonVariables(l, m_met, jets);
+            const JetVector cljets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
+            DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectSplitCounters(vars, weightComponents);
-            // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m_met, jets); // todo (just re-use the one from wh)
             if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
             if(m_writeTuple) {
                 double weight(weightComponents.product());
