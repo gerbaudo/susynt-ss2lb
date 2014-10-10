@@ -1,5 +1,7 @@
 #include "SusyntHlfv/DileptonVariables.h"
 
+#include "SusyntHlfv/Selector.h"
+
 #include "SusyNtuple/SusyNt.h" // Lepton, Jet, Met, and all that
 #include "SusyNtuple/SusyDefs.h" // LeptonVector, JetVector and all that
 #include "SusyNtuple/SusyNtTools.h"
@@ -12,10 +14,12 @@
 #include <cassert>
 
 using hlfv::DileptonVariables;
+using hlfv::Selector;
 
 //-----------------------------------------
 DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, const Susy::Met *met,
-                                                 const JetVector &jets)
+                                                 const JetVector &cljets, const JetVector &alljets,
+                                                 const TauVector &taus)
 {
     DileptonVariables v;
     if(leptons.size()>1) {
@@ -43,16 +47,21 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
         LeptonVector lepts;
         lepts.push_back(&l0);
         lepts.push_back(&l1);
-        v.metrel = SusyNtTools::getMetRel(met, lepts, jets);
+        v.metrel = SusyNtTools::getMetRel(met, lepts, cljets);
         v.mt0 = hlfv::transverseMass(l0, met->lv());
         v.mt1 = hlfv::transverseMass(l1, met->lv());
         v.mtllmet = transverseMass(ll, met->lv());
         v.met = met->Et;
         v.metPhi = met->phi;
-        v.numCentralLightJets = jets.size();
-        if(jets.size()>0) { const Susy::Jet& j = (*jets[0]); v.j0pt = j.Pt(); v.j0eta = j.Eta(); v.j0phi = j.Phi(); }
-        if(jets.size()>1) { const Susy::Jet& j = (*jets[1]); v.j1pt = j.Pt(); v.j1eta = j.Eta(); v.j1phi = j.Phi(); }
-        if(jets.size()>2) { const Susy::Jet& j = (*jets[2]); v.j2pt = j.Pt(); v.j2eta = j.Eta(); v.j2phi = j.Phi(); }
+
+        v.numCentralLightJets = cljets.size();
+        v.numBtagJets = Selector::filterBtagJets(alljets).size();
+        v.numForwardJets = Selector::filterForwardJets(alljets).size();
+        v.numTaus = taus.size();
+
+        if(cljets.size()>0) { const Susy::Jet& j = (*cljets[0]); v.j0pt = j.Pt(); v.j0eta = j.Eta(); v.j0phi = j.Phi(); }
+        if(cljets.size()>1) { const Susy::Jet& j = (*cljets[1]); v.j1pt = j.Pt(); v.j1eta = j.Eta(); v.j1phi = j.Phi(); }
+        if(cljets.size()>2) { const Susy::Jet& j = (*cljets[2]); v.j2pt = j.Pt(); v.j2eta = j.Eta(); v.j2phi = j.Phi(); }
     }
     return v;
 }

@@ -11,9 +11,11 @@ namespace Susy
   class Lepton;
   class Jet;
   class Met;
+  class Tau;
 }
 typedef std::vector<Susy::Lepton*> LeptonVector;
 typedef std::vector<Susy::Jet*> JetVector;
+typedef std::vector<Susy::Tau*> TauVector;
 
 namespace hlfv
 {
@@ -36,6 +38,9 @@ namespace hlfv
     float mll, detall;
     float mcoll01, mcoll10, mcoll;
     size_t numCentralLightJets;
+    size_t numBtagJets;
+    size_t numForwardJets;
+    size_t numTaus;
     float j0pt,  j1pt,  j2pt;
     float j0eta, j1eta, j2eta;
     float j0phi, j1phi, j2phi;
@@ -48,6 +53,7 @@ namespace hlfv
     bool isMumu() const { return (isMu0 && isMu1); }
     bool isEmu() const { return (!isMu0 && isMu1); }
     bool isMue() const { return (isMu0 && !isMu1); }
+    bool isOf() const { return (isEmu() || isMue()); }
     float mtmin() const { return mt0<mt1 ? mt0 : mt1; }
     float mtmax() const { return mt0>mt1 ? mt0 : mt1; }
     /// reset all variables to their default value
@@ -73,7 +79,8 @@ namespace hlfv
   };
   /// compute and assign all DilepVars attributes
   DileptonVariables computeDileptonVariables(const LeptonVector &leptons, const Susy::Met *met,
-                                             const JetVector &jets);
+                                             const JetVector &cljets, const JetVector &alljets,
+                                             const TauVector &taus);
   /// transverse W mass variable
   float transverseMass(const TLorentzVector &lep, const TLorentzVector &met);
   /// invariant mass under the assumption that one lepton is from a leptonic tau
