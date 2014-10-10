@@ -53,11 +53,13 @@ CutFlowCounter& CutFlowCounter::increment(const double &w, const std::string &cu
 //-----------------------------------------
 void CutFlowCounter::printTableRaw(std::ostream& oo) const
 {
-    int col1Width(12), col2Width(24);
+    int col0Width(3), col1Width(14), col2Width(24);
     oo<<std::setw(col1Width)<<"Cut "<<std::setw(col2Width)<<"raw counts"<<endl;
     if(m_raw_counts.size()==m_cut_names.size()){
         for(size_t i=0; i<m_raw_counts.size(); ++i)
-            oo<<std::setw(col1Width)<<m_cut_names[i]<<std::setw(col2Width)<<m_raw_counts[i]<<endl;
+            oo<<"Cut ["<<std::setw(col0Width)<<i<<"] "
+              <<std::setw(col1Width)<<m_cut_names[i]
+              <<std::setw(col2Width)<<m_raw_counts[i]<<endl;
     } else {
         oo<<"CutFlowCounter::printTableRaw: invalid vector size"
           <<" (names["<<m_cut_names.size()<<"]"
@@ -68,11 +70,13 @@ void CutFlowCounter::printTableRaw(std::ostream& oo) const
 //-----------------------------------------
 void CutFlowCounter::printTableWeighted(std::ostream& oo) const
 {
-    int col1Width(12), col2Width(24);
+    int col0Width(3), col1Width(14), col2Width(24);
     oo<<std::setw(col1Width)<<"Cut "<<std::setw(col2Width)<<"weighted counts"<<endl;
     if(m_raw_counts.size()==m_cut_names.size()){
         for(size_t i=0; i<m_weighted_counts.size(); ++i)
-            oo<<std::setw(col1Width)<<m_cut_names[i]<<std::setw(col2Width)<<m_weighted_counts[i]<<endl;
+            oo<<"Cut ["<<std::setw(col0Width)<<i<<"] "
+              <<std::setw(col1Width)<<m_cut_names[i]
+              <<std::setw(col2Width)<<m_weighted_counts[i]<<endl;
     } else {
         oo<<"CutFlowCounter::printTableWeighted: invalid vector size"
           <<" (names["<<m_cut_names.size()<<"]"
