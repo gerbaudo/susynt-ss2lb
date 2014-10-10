@@ -33,6 +33,27 @@ std::string vdouble2str(const std::vector<double> &v);
 /// deprecated, use vec2str
 std::string vfloat2str(const std::vector<float> &v);
 
+
+/// returns true if vector contains val
+template < class T >
+bool contains(const std::vector<T> &v, const T& val) {
+    return std::find(v.begin(), v.end(), val)!=v.end();
+}
+
+/// pointer to the end of an array
+/**
+   Useful for example to initialize vec from array
+   \code
+   const string tmp_strings[] = {"aaa", "bb", "c"};
+   vector<string> strings(strings, end(strings));
+   \endcode
+   from http://stackoverflow.com/questions/4268886/initialize-a-vector-array-of-strings
+*/
+template<typename T, size_t N>
+T * end(T (&ra)[N]) {
+    return ra + N;
+}
+
 template <typename T>
 std::string vec2str(std::vector<T> &v)
 {

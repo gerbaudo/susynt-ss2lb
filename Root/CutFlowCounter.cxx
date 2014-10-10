@@ -1,5 +1,8 @@
 #include "SusyntHlfv/CutFlowCounter.h"
 
+#include "SusyntHlfv/utils.h"
+
+#include <algorithm>
 #include <iomanip>
 #include <stdio.h>
 
@@ -12,20 +15,9 @@ using std::vector;
 
 //-----------------------------------------
 CutFlowCounter::CutFlowCounter():
-    m_iCut(0),
-    m_nErrors(0),
+    m_index_last_cut(0),
     m_debug(false)
 {
-}
-//-----------------------------------------
-CutFlowCounter::CutFlowCounter(const std::vector<std::string> &cutnames):
-    m_iCut(cutnames.size()),
-    m_nErrors(0),
-    m_debug(false)
-{
-    m_cut_names = cutnames;
-    m_raw_counts.resize(m_cut_names.size(), 0);
-    m_weighted_counts.resize(m_cut_names.size(), 0.0);
 }
 //-----------------------------------------
 CutFlowCounter& CutFlowCounter::setDebug(bool v)
@@ -34,49 +26,32 @@ CutFlowCounter& CutFlowCounter::setDebug(bool v)
     return *this;
 }
 //-----------------------------------------
-CutFlowCounter& CutFlowCounter::nextEvent()
+CutFlowCounter& CutFlowCounter::incrementRaw(const std::string &cutname)
 {
-    m_iCut = 0;
-    if(m_debug)
-        cout<<"CutFlowCounter::nextEvent: reset m_iCut"<<endl;
-    return *this;
-}
-//-----------------------------------------
-CutFlowCounter& CutFlowCounter::pass()
-{
-    addCutIfNecessary();
+    size_t index=cutIndex(cutname);
     if(m_debug)
         cout<<"CutFlowCounter: increment"
-            <<" raw["<<m_cut_names[m_iCut]<<"] ("<<m_raw_counts[m_iCut]<<"+1)"
+            <<" raw["<<m_cut_names[index]<<"] ("<<m_raw_counts[index]<<"+1)"
             <<endl;
-    m_raw_counts[m_iCut] += 1;
-    m_iCut++;
+    m_raw_counts[index] += 1;
+    m_index_last_cut = index;
     return *this;
 }
 //-----------------------------------------
-CutFlowCounter& CutFlowCounter::pass(const double &w)
+CutFlowCounter& CutFlowCounter::increment(const double &w, const std::string &cutname)
 {
-    addCutIfNecessary();
+    size_t index=cutIndex(cutname);
     if(m_debug)
         cout<<"CutFlowCounter: increment"
-            <<" raw["<<m_cut_names[m_iCut]<<"] ("<<m_raw_counts[m_iCut]<<"+1)"
-            <<" and"
-            <<" weighted["<<m_cut_names[m_iCut]<<"] ("<<m_weighted_counts[m_iCut]<<"+"<<w<<")"
+            <<" raw["<<m_cut_names[index]<<"] ("<<m_raw_counts[index]<<"+1)"
             <<endl;
-    m_raw_counts[m_iCut] += 1;
-    m_weighted_counts[m_iCut] += w;
-    m_iCut++;
+    m_raw_counts[index] += 1;
+    m_weighted_counts[index] += w;
+    m_index_last_cut = index;
     return *this;
 }
 //-----------------------------------------
-CutFlowCounter& CutFlowCounter::fail()
-{
-    addCutIfNecessary();
-    m_iCut++;
-    return *this;
-}
-//-----------------------------------------
-void CutFlowCounter::printTableRaw     (std::ostream& oo) const
+void CutFlowCounter::printTableRaw(std::ostream& oo) const
 {
     int col1Width(12), col2Width(24);
     oo<<std::setw(col1Width)<<"Cut "<<std::setw(col2Width)<<"raw counts"<<endl;
@@ -106,19 +81,30 @@ void CutFlowCounter::printTableWeighted(std::ostream& oo) const
     }
 }
 //-----------------------------------------
-std::string CutFlowCounter::defaultCutName(const size_t cutindex)
+bool CutFlowCounter::hasCut(const std::string &cutname)
 {
-    const int bufsize=512;
-    unsigned long index = static_cast<unsigned long>(cutindex);
-    char buf[bufsize];
-    snprintf(buf, bufsize, "cut_%03lu", index);
-    string cutname(buf);
-    return cutname;
+    bool has_cut=false;
+    size_t best_guess = m_index_last_cut+1;
+    if(best_guess<m_cut_names.size() &&
+       m_cut_names[best_guess]==cutname){
+        has_cut=true;
+    } else {
+        has_cut=hlfv::contains(m_cut_names, cutname);
+    }
+    return has_cut;
 }
 //-----------------------------------------
-void CutFlowCounter::addCut()
+size_t CutFlowCounter::cutIndex(const std::string &cutname)
 {
-    addCut(defaultCutName(m_iCut));
+    size_t index=0;
+    if(hasCut(cutname)){
+        index = std::distance(m_cut_names.begin(), std::find(m_cut_names.begin(), m_cut_names.end(), cutname));
+    } else {
+        addCut(cutname);
+        index = m_cut_names.size()-1;
+        if(m_debug) cout<<"added cut["<<index<<"] '"<<cutname<<"'"<<endl;
+    }
+    return index;
 }
 //-----------------------------------------
 void CutFlowCounter::addCut(const std::string &cutname)
@@ -128,13 +114,3 @@ void CutFlowCounter::addCut(const std::string &cutname)
     m_cut_names.push_back(cutname);
 }
 //-----------------------------------------
-void CutFlowCounter::addCutIfNecessary()
-{
-    if(m_iCut >= m_raw_counts.size()) {
-        if(m_debug)
-            cout<<"CutFlowCounter: cut index "<<m_iCut<<", counters["<<m_raw_counts.size()<<"]"
-                <<" : adding a counter for '"<<defaultCutName(m_iCut)<<"'"
-                <<endl;
-        addCut();
-    }
-}

@@ -32,9 +32,6 @@ using hlfv::DileptonVariables;
 Selector::Selector() :
   m_trigObj(NULL),
   m_mcWeighter(NULL),
-  m_counter(Selector::defaultCutNames()),
-  m_counterEmu(Selector::defaultCutNamesSplit()),
-  m_counterMue(Selector::defaultCutNamesSplit()),
   m_useExistingList(false),
   m_tupleMaker("",""),
   m_writeTuple(false),
@@ -69,16 +66,13 @@ void Selector::Init(TTree* tree)
 //-----------------------------------------
 Bool_t Selector::Process(Long64_t entry)
 {
-    m_counter.nextEvent();
-    m_counterEmu.nextEvent();
-    m_counterMue.nextEvent();
     m_printer.countAndPrint(cout);
     GetEntry(entry);
     m_chainEntry++; // SusyNtAna counter
     clearObjects();
     WeightComponents weightComponents;
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
-    m_counter.pass(weightComponents.product());
+    m_counter.increment(weightComponents.product(), "input");
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
@@ -273,38 +267,38 @@ hlfv::EventFlags Selector::computeEventFlags()
 void Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
 {
     double weight = w.product();
-    if(f.hfor       ) m_counter.pass(weight); else return;
-    if(f.grl        ) m_counter.pass(weight); else return;
-    if(f.larErr     ) m_counter.pass(weight); else return;
-    if(f.tileErr    ) m_counter.pass(weight); else return;
-    if(f.ttcVeto    ) m_counter.pass(weight); else return;
-    if(f.goodVtx    ) m_counter.pass(weight); else return;
-    if(f.tileTrip   ) m_counter.pass(weight); else return;
-    if(f.lAr        ) m_counter.pass(weight); else return;
-    if(f.badJet     ) m_counter.pass(weight); else return;
-    if(f.deadRegions) m_counter.pass(weight); else return;
-    if(f.badMuon    ) m_counter.pass(weight); else return;
-    if(f.cosmicMuon ) m_counter.pass(weight); else return;
-    if(f.ge2blep    ) m_counter.pass(weight); else return;
-    if(f.eq2blep    ) m_counter.pass(weight); else return;
-    if(f.eq2slep    ) m_counter.pass(weight); else return;
-    if(f.mllMin     ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
-    if(f.tauVeto    ) m_counter.pass(weight); else return; // todo: this should go in DileptonVariables
+    if(f.hfor       ) m_counter.increment(weight, "hfor"       ); else return;
+    if(f.grl        ) m_counter.increment(weight, "grl"        ); else return;
+    if(f.larErr     ) m_counter.increment(weight, "larErr"     ); else return;
+    if(f.tileErr    ) m_counter.increment(weight, "tileErr"    ); else return;
+    if(f.ttcVeto    ) m_counter.increment(weight, "ttcVeto"    ); else return;
+    if(f.goodVtx    ) m_counter.increment(weight, "goodVtx"    ); else return;
+    if(f.tileTrip   ) m_counter.increment(weight, "tileTrip"   ); else return;
+    if(f.lAr        ) m_counter.increment(weight, "lAr"        ); else return;
+    if(f.badJet     ) m_counter.increment(weight, "badJet"     ); else return;
+    if(f.deadRegions) m_counter.increment(weight, "deadRegions"); else return;
+    if(f.badMuon    ) m_counter.increment(weight, "badMuon"    ); else return;
+    if(f.cosmicMuon ) m_counter.increment(weight, "cosmicMuon" ); else return;
+    if(f.ge2blep    ) m_counter.increment(weight, "ge2blep"    ); else return;
+    if(f.eq2blep    ) m_counter.increment(weight, "eq2blep"    ); else return;
+    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return;
+    if(f.mllMin     ) m_counter.increment(weight, "mllMin" ); else return; // todo: this should go in DileptonVariables
+    if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"); else return; // todo: this should go in DileptonVariables
 }
 //-----------------------------------------
 void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
                                        CutFlowCounter &counter)
 {
     double weight = w.product();
-    if(true                 ) counter.pass(weight); else return; // flavor
-    if(v.hasFiredTrig       ) counter.pass(weight); else return;
-    if(v.hasTrigMatch       ) counter.pass(weight); else return;
-    if(v.isOs()             ) counter.pass(weight); else return;
-    if(v.pt0 > 45.0         ) counter.pass(weight); else return;
-    if(bool passpt1=true    ) counter.pass(weight); else return;
-    if(v.numCentralLightJets==0) counter.pass(weight); else return;
-    if(bool passDphiLl=true ) counter.pass(weight); else return;
-    if(bool passDphiL1Met=true) counter.pass(weight); else return;
+    if(true                 )    counter.increment(weight, "flavor"       ); else return;
+    if(v.hasFiredTrig       )    counter.increment(weight, "trigger-bit"  ); else return;
+    if(v.hasTrigMatch       )    counter.increment(weight, "trigger-match"); else return;
+    if(v.isOs()             )    counter.increment(weight, "opp-sign"     ); else return;
+    if(v.pt0 > 45.0         )    counter.increment(weight, "pt0"          ); else return;
+    if(bool passpt1=true    )    counter.increment(weight, "pt1"          ); else return;
+    if(v.numCentralLightJets==0) counter.increment(weight, "jet-veto"     ); else return;
+    if(bool passDphiLl=true )    counter.increment(weight, "dphi-l0l1"    ); else return;
+    if(bool passDphiL1Met=true)  counter.increment(weight, "dphi-l1met"   ); else return;
 }
 //-----------------------------------------
 void Selector::incrementObjectSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w)
@@ -366,56 +360,6 @@ bool Selector::eventIsEmu(const LeptonVector &leptons)
                  (l0.isMu() && l1.isEle()) );
     }
     return isEmu;
-}
-//-----------------------------------------
-std::vector<std::string> Selector::defaultCutNames()
-{ // note to self: these labels must match the calls of
-  // m_counter.pass() (i.e. the first one and the subsequent ones in
-  // incrementEventCounters
-    vector<string> labels;
-    labels.push_back("input"      );
-    labels.push_back("hfor"       );
-    labels.push_back("grl"        );
-    labels.push_back("larErr"     );
-    labels.push_back("tileErr"    );
-    labels.push_back("ttcVeto"    );
-    labels.push_back("goodVtx"    );
-    labels.push_back("tileTrip"   );
-    labels.push_back("lAr"        );
-    labels.push_back("badJet"     );
-    labels.push_back("deadRegions");
-    labels.push_back("badMuon"    );
-    labels.push_back("cosmicMuon" );
-    labels.push_back("ge2blep"    );
-    labels.push_back("eq2blep"    );
-    labels.push_back("eq2slep"    );
-    labels.push_back("mllMin"     );
-    labels.push_back("tauVeto"    );
-    labels.push_back("flavor");
-    labels.push_back("trigger-bit");
-    labels.push_back("trigger-match");
-    labels.push_back("opp-sign");
-    labels.push_back("pt0");
-    labels.push_back("pt1");
-    labels.push_back("jet-veto");
-    labels.push_back("dphi-l0l1");
-    labels.push_back("dphi-l1met");
-    return labels;
-}
-//-----------------------------------------
-std::vector<std::string> Selector::defaultCutNamesSplit()
-{
-    vector<string> labels;
-    labels.push_back("flavor");
-    labels.push_back("trigger-bit");
-    labels.push_back("trigger-match");
-    labels.push_back("opp-sign");
-    labels.push_back("pt0");
-    labels.push_back("pt1");
-    labels.push_back("jet-veto");
-    labels.push_back("dphi-l0l1");
-    labels.push_back("dphi-l1met");
-    return labels;
 }
 //-----------------------------------------
 JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,

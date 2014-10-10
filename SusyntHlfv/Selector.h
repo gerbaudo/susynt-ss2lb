@@ -48,9 +48,6 @@ public:
     /// toggle ouput ntuple option
     Selector& setWriteNtuple(bool val) { m_writeTuple = val; return *this; }
     Selector& setTupleFile(const std::string &name) { m_writeTuple = true; m_outTupleFile = name; return *this; }
-    static std::vector<std::string> defaultCutNames(); ///< provide the list of default counter names (just labelling)
-    /// provide the list of default counter names after emu/mue separation (just labelling)
-    static std::vector<std::string> defaultCutNamesSplit();
 protected:
     /// assign the weight components that depend only on event-level variables
     /**

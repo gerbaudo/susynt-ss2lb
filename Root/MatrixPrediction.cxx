@@ -44,16 +44,13 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
 #warning todo rename smm hmp
 
 
-    m_counter.nextEvent();
-    m_counterEmu.nextEvent();
-    m_counterMue.nextEvent();
     m_printer.countAndPrint(cout);
     GetEntry(entry);
     m_chainEntry++; // SusyNtAna counter
     clearObjects();
     WeightComponents weightComponents;
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
-    m_counter.pass(weightComponents.product());
+    m_counter.increment(weightComponents.product(), "input");
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
