@@ -87,9 +87,12 @@ Bool_t Selector::Process(Long64_t entry)
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
+            bool is_data(!nt.evt()->isMC), two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
+
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          vars.numBtagJets==0 &&
                                          vars.numForwardJets==0 &&
+                                         (is_data || two_mc_prompt) &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
@@ -283,10 +286,13 @@ void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const h
                                        CutFlowCounter &counter)
 {
     double weight = w.product();
+    bool is_data = !nt.evt()->isMC;
+    bool two_mc_prompt = is_data || v.hasTwoPromptLeptons;
     if(abs(v.eta0)<2.4      )    counter.increment(weight, "l0_eta<2.4"   ); else return;
     if(abs(v.eta1)<2.4      )    counter.increment(weight, "l1_eta<2.4"   ); else return;
     if(v.hasFiredTrig       )    counter.increment(weight, "trigger-bit"  ); else return;
     if(v.hasTrigMatch       )    counter.increment(weight, "trigger-match"); else return;
+    if(two_mc_prompt        )    counter.increment(weight, "two-mc-propt" ); else return;
     if(v.isOs()             )    counter.increment(weight, "opp-sign"     ); else return;
     if(v.isOf()             )    counter.increment(weight, "opp-flav"     ); else return;
     if(v.pt0 > 45.0         )    counter.increment(weight, "pt0"          ); else return;
