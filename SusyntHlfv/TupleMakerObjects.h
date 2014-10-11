@@ -4,6 +4,8 @@
 
 #include "SusyNtuple/SusyNt.h"
 
+#include "TVector2.h"
+
 #include <iostream>
 #include <vector>
 
@@ -66,6 +68,14 @@ struct FourMom {
     FourMom& setPtConeCorr(double v) { ptConeCorr = v; return *this; }
     FourMom& setJet(const Jet &j)   { isJet=true; isMu = isEl = false; mv1 = j.mv1; return set4mom(j); }
     FourMom& setMet(const Met &m)   { isJet=isMu=isEl=false; px=m.lv().Px(); py=m.lv().Py(); E=m.lv().E(); return *this; }
+    /// metcorr used for lhfv
+    FourMom& setMetCorr(const Met &m) {
+        double met_x = m.lv().Px() - m.softTerm_etx;
+        double met_y = m.lv().Py() - m.softTerm_ety;
+        TVector2 metCorr(met_x, met_y);
+        isJet=isMu=isEl=false; px=metCorr.Px(); py=metCorr.Py(); E=metCorr.Mod();
+        return *this;
+    }
 #endif // end ifndef CINT
 }; // end FourMom
 
