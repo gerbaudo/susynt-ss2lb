@@ -527,6 +527,9 @@ def selection_formulas(sel=None):
     for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
         for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]:
             formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
+    # validation region used by Matt in the 2L paper, see sec6.4 ATL-COM-PHYS-2012-1808
+    formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
+    # formulas['vrss_btag'] = formulas_vrss_btag
     return formulas[sel] if sel else formulas
 
 
