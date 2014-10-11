@@ -31,6 +31,7 @@ namespace hlfv
     DileptonVariables() { reset(); }
     bool isMu0, isMu1;
     bool hasFiredTrig, hasTrigMatch;
+    bool hasTwoPromptLeptons;
     float q0, q1;
     float pt0, pt1;
     float phi0, phi1;
@@ -60,6 +61,7 @@ namespace hlfv
     void reset() {
       isMu0 = isMu1 = false;
       hasFiredTrig = hasTrigMatch = false;
+      hasTwoPromptLeptons = false;
       q0 = q1 = 0.0;
       pt0 = pt1 =  0.0;
       eta0 = eta1 = 0.0;
@@ -99,6 +101,12 @@ namespace hlfv
   float computeCollinearMzTauTau(const TLorentzVector &l0,
                                  const TLorentzVector &l1,
                                  const TLorentzVector &met);
+  /// is a prompt lepton from the hard scattering (not a fake/conversion)
+  /**
+    Used to avoid double-counting of simulated fake with the fake estimate from data
+   */
+  bool isMcPromptLepton(const Susy::Lepton &l);
+
 } // hlfv
 
 #endif
