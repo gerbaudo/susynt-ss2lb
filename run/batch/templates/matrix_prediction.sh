@@ -20,6 +20,7 @@ echo "Starting on `hostname`, `date`"
 mkdir -p ${SCRATCH}
 cd       ${SCRATCH}
 echo "Working from ${PWD}"
+stdbuf --output=1M --error=1M \
 run_MatrixPrediction \
  -i ${SLURM_SUBMIT_DIR}/%(filelist)s \
  -o %(local_outfilename)s \

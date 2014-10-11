@@ -20,7 +20,8 @@ mkdir -p ${SCRATCH}
 cd       ${SCRATCH}
 echo "Working from ${PWD}"
 
-run_Selector \
+stdbuf --output=1M --error=1M \
+ run_Selector \
  --sample %(samplename)s \
  --input ${SLURM_SUBMIT_DIR}/%(filelist)s \
  --tuple-out %(local_outfilename)s \

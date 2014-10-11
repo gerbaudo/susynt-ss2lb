@@ -24,6 +24,7 @@ echo "Starting on `hostname`, `date`"
 mkdir -p ${SCRATCH}
 cd       ${SCRATCH}
 echo "Working from ${PWD}"
+stdbuf --output=1M --error=1M \
 run_Selector -i ${SLURM_SUBMIT_DIR}/%(filelist)s  -s %(samplename)s  %(opt)s
 echo "${PWD} contentents:"
 ls -ltrh
