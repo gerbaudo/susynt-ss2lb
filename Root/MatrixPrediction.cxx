@@ -71,8 +71,6 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             bool is_event_to_be_saved = (vars.numTaus==0 &&
-                                         vars.numBtagJets==0 &&
-                                         vars.numForwardJets==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
@@ -93,6 +91,8 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
                 double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
                 m_tupleMaker
+                    .setNumFjets(vars.numForwardJets)
+                    .setNumBjets(vars.numBtagJets)
                     .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
                     .setL1IsTight(l1IsSig)//.setL1Source(l1Source)
                     //.setL0EtConeCorr(computeCorrectedEtCone(l0)).setL0PtConeCorr(computeCorrectedPtCone(l0)) //

@@ -74,7 +74,10 @@ struct EventParameters {
     double weight;
     unsigned int eventNumber;
     unsigned int runNumber;
-    EventParameters() : weight(0), eventNumber(0), runNumber(0) {}
+    unsigned int numTaus;
+    unsigned int numFjets; ///< number of forward jets
+    unsigned int numBjets; ///< number of b-tagged jets
+    EventParameters() : weight(0), eventNumber(0), runNumber(0), numTaus(0), numFjets(0), numBjets(0) {}
 #ifndef __CINT__
     EventParameters& setWeight(const double &w) { weight=w; return *this; }
     EventParameters& setEvent(const unsigned int &e) { eventNumber=e; return *this; }

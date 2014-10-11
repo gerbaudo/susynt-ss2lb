@@ -90,8 +90,6 @@ Bool_t Selector::Process(Long64_t entry)
             bool is_data(!nt.evt()->isMC), two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
 
             bool is_event_to_be_saved = (vars.numTaus==0 &&
-                                         vars.numBtagJets==0 &&
-                                         vars.numForwardJets==0 &&
                                          (is_data || two_mc_prompt) &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
@@ -104,7 +102,10 @@ Bool_t Selector::Process(Long64_t entry)
                     unsigned int run(nt.evt()->run), event(nt.evt()->event);
                     const Lepton &l0 = *m_signalLeptons[0];
                     const Lepton &l1 = *m_signalLeptons[1];
-                    m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
+                    m_tupleMaker
+                        .setNumFjets(vars.numForwardJets)
+                        .setNumBjets(vars.numBtagJets)
+                        .fill(weight, run, event, l0, l1, *m_met);
                 }
             } // is_event_to_be_saved
         } // eventHasTwoLeptons

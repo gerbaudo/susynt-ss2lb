@@ -63,6 +63,9 @@ public:
               const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
               const LeptonVector &otherLeptons, const JetVector &jets);
     //! methods to assign the pieces of info that are not accessible from Lepton (mostly fake-related)
+    TupleMaker& setNumTaus(size_t n) { eventPars_.numTaus = n; return *this; }
+    TupleMaker& setNumFjets(size_t n) { eventPars_.numFjets = n; return *this; }
+    TupleMaker& setNumBjets(size_t n) { eventPars_.numBjets = n; return *this; }
     TupleMaker& setL0IsTight(bool v) { l0_.setIsTight(v); return *this; }
     TupleMaker& setL1IsTight(bool v) { l1_.setIsTight(v); return *this; }
     TupleMaker& setL0Source(int v) { l0_.setSource(v); return *this; }
