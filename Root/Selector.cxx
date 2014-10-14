@@ -364,6 +364,11 @@ bool Selector::eventIsEmu(const LeptonVector &leptons)
     return isEmu;
 }
 //-----------------------------------------
+bool Selector::eventIsSameSign(const LeptonVector &leptons)
+{
+    return (leptons.size()==2 && (leptons[0]->q*leptons[1]->q >0));
+}
+//-----------------------------------------
 JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
                                const hlfv::Systematic::Value sys,
                                AnalysisType anaType)

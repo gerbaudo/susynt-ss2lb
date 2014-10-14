@@ -117,6 +117,8 @@ public:
     static bool eventHasTwoLeptons(const LeptonVector &leptons);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
+    /// two same-sign leptons
+    static bool eventIsSameSign(const LeptonVector &leptons);
 protected:
     /// initialize the 2L trig logic
     bool initDilTrigLogic();
