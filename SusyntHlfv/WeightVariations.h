@@ -33,16 +33,16 @@ namespace hlfv
       mcgenUp_ = mcgenDo_ = 1.0;
       return *this;
     }
-    float qflipUp_, qflipDo_;
-    float elTrigUp_, elTrigDo_;
-    float muTrigUp_, muTrigDo_;
-    float elEffUp_, elEffDo_;
-    float muEffUp_, muEffDo_;
-    float bTagUp_, bTagDo_;
-    float cTagUp_, cTagDo_;
-    float lTagUp_, lTagDo_;
-    float xsecUp_, xsecDo_;
-    float mcgenUp_, mcgenDo_;
+    double qflipUp_, qflipDo_;
+    double elTrigUp_, elTrigDo_;
+    double muTrigUp_, muTrigDo_;
+    double elEffUp_, elEffDo_;
+    double muEffUp_, muEffDo_;
+    double bTagUp_, bTagDo_;
+    double cTagUp_, cTagDo_;
+    double lTagUp_, lTagDo_;
+    double xsecUp_, xsecDo_;
+    double mcgenUp_, mcgenDo_;
   };
 
 } // hlfv
