@@ -7,6 +7,8 @@ susyntutils = utils.import_susyntutils()
 r = susyntutils.import_root()
 susyntutils.load_packages()
 
+from kin import addTlv
+
 import glob
 
 def main():
@@ -106,14 +108,6 @@ def main():
     c.SaveAs(h_w1_vs_w2_s.GetName()+'.root')
 
 
-tlv = r.TLorentzVector
-def FourMom2TLorentzVector(fm) :
-    l = tlv()
-    l.SetPxPyPzE(fm.px, fm.py, fm.pz, fm.E)
-    return l
-def addTlv(l) :
-    if not hasattr(l, 'p4') : l.p4 = FourMom2TLorentzVector(l)
-    return l
 
 if __name__=='__main__':
     main()

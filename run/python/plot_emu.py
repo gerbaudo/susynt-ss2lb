@@ -36,6 +36,8 @@ from utils import (first
                    )
 
 import utils
+from kin import addTlv
+
 susyntutils = utils.import_susyntutils()
 r = susyntutils.import_root()
 susyntutils.load_packages()
@@ -736,17 +738,6 @@ def saveHistos(samplesPerGroup={}, histosPerGroup={}, outdir='./', verbose=False
         group = samplesPerGroup[groupname].setHistosDir(outdir)
         outFilename = group.filenameHisto
         writeObjectsToFile(outFilename, histosThisGroup, verbose)
-
-# this is duplicated with plot_fake_weight_correlation.py; put it in smth like tuple_utils
-tlv = r.TLorentzVector
-def FourMom2TLorentzVector(fm) :
-    l = tlv()
-    l.SetPxPyPzE(fm.px, fm.py, fm.pz, fm.E)
-    return l
-def addTlv(l) :
-    if not hasattr(l, 'p4') : l.p4 = FourMom2TLorentzVector(l)
-    return l
-
 
 if __name__=='__main__' :
     main()
