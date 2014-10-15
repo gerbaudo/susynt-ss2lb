@@ -8,6 +8,12 @@
 
 #include <string>
 
+namespace susy {
+namespace fake {
+class Lepton;
+}
+}
+
 namespace hlfv
 {
 
@@ -37,7 +43,7 @@ static std::string FAKESYSNames[nFakeSys] =
   "MU_METREL"
 };
 
-/**   
+/**
     @brief Looper to run over data and make fake lepton prediction
 
     It applies the LL/LT/TT event weight from the matrix method.
@@ -66,12 +72,13 @@ static std::string FAKESYSNames[nFakeSys] =
                       susy::fake::Systematic::Value);
     MatrixPrediction& setMatrixFilename(const std::string filename); ///< to be called before Begin
     MatrixPrediction& use2dParametrization() { m_use2dparametrization = true; return *this; }
+    MatrixPrediction& useComputeSystematics(bool v) { m_computeSystematics = v; return *this; }
     static std::string dilepDetails(const Susy::Event &event, const DiLepEvtType &ll,
                                     const LeptonVector &ls);
     std::string eventDetails(bool passSrSs, const Susy::Event &event, const DiLepEvtType &ll,
                              const LeptonVector &ls);
     bool m_dbg;
-    ClassDef(MatrixPrediction, 2);
+    ClassDef(MatrixPrediction, 3);
 
   protected:
     std::vector<uint> m_matrixSys;      ///< systematics to process
@@ -79,7 +86,10 @@ static std::string FAKESYSNames[nFakeSys] =
     std::string m_matrixFilename;
     bool m_use2dparametrization;
     bool m_allconfigured;
-    bool initMatrixTool();    
+    bool m_computeSystematics;
+    bool initMatrixTool();
+    /// compute all the weight variations for the fake systematics
+    hlfv::WeightVariations computeSystematicWeights(const susy::fake::Lepton &l0, const susy::fake::Lepton &l1, size_t regionIndex);
 };
-} // hlvf
+} // hlfv
 #endif

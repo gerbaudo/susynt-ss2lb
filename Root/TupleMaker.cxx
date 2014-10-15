@@ -13,6 +13,7 @@
 
 using hlfv::TupleMaker;
 using hlfv::FourMom;
+using hlfv::WeightVariations;
 using Susy::Lepton;
 using Susy::Jet;
 using std::cout;
@@ -123,6 +124,7 @@ bool TupleMaker::initTreeBranches()
         tree_->Branch("jets",  &jets_);
         tree_->Branch("lepts", &lowptLepts_);
         tree_->Branch("pars",  &eventPars_);
+        tree_->Branch("relWeights",  &weightVariations_);
     } else {
         cout<<"TupleMaker::initTreeBranches : invalid tree, failed to init branches"<<endl;
     }

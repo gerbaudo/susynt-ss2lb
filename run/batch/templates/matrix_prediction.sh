@@ -27,6 +27,7 @@ run_MatrixPrediction \
  -s %(samplename)s \
  --matrix-file ${ROOTCOREDIR}/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root \
  --etapt \
+ --systematics \
  %(opt)s
 
  # --matrix-file ${ROOTCOREDIR}/data/DileptonMatrixMethod/FinalFakeHist_May_20.root \

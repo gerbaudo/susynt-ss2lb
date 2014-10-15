@@ -3,6 +3,7 @@
 #include "SusyntHlfv/WeightComponents.h"
 #include "SusyntHlfv/EventFlags.h"
 #include "SusyntHlfv/DileptonVariables.h"
+#include "SusyntHlfv/WeightVariations.h"
 #include "SusyntHlfv/utils.h"
 
 #include "DileptonMatrixMethod/Systematic.h"
@@ -17,6 +18,7 @@ namespace sf = susy::fake;
 using hlfv::MatrixPrediction;
 using hlfv::Selector;
 using hlfv::WeightComponents;
+using hlfv::WeightVariations;
 using hlfv::EventFlags;
 using hlfv::DileptonVariables;
 using sf::Parametrization;
@@ -25,10 +27,11 @@ using sf::Parametrization;
 //----------------------------------------------------------
 MatrixPrediction::MatrixPrediction() :
    Selector(),
-    m_matrix(0),
-    m_use2dparametrization(false),
-    m_allconfigured(false),
-    m_dbg(false)
+   m_dbg(false),
+   m_matrix(0),
+   m_use2dparametrization(false),
+   m_allconfigured(false),
+   m_computeSystematics(false)
 {
 }
 //----------------------------------------------------------
@@ -90,7 +93,9 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
                 sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
                 double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
+                WeightVariations wv = computeSystematicWeights(fl0, fl1, iRegion);
                 m_tupleMaker
+                    .setWeightVariations(wv)
                     .setNumFjets(vars.numForwardJets)
                     .setNumBjets(vars.numBtagJets)
                     .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
@@ -205,5 +210,28 @@ std::string MatrixPrediction::eventDetails(bool passSrSs, const Susy::Event &eve
 //     <<" weight="<<m_weightComponents.fake
       ;
   return oss.str();
+}
+//----------------------------------------------------------
+hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lepton &l0, const sf::Lepton &l1, size_t regionIndex)
+{
+    using sf::Systematic;
+    WeightVariations wv;
+    double mr = 0.0; // not currently using any metrel parametrization
+    size_t &ri = regionIndex;
+    if(m_computeSystematics){
+        double nominal = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_NOM);
+        if(nominal!=0){
+            double in = 1.0/nominal;
+            wv.fakeElRealUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_UP   ) * in;
+            wv.fakeElRealDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_DOWN ) * in;
+            wv.fakeElFakeUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_UP   ) * in;
+            wv.fakeElFakeDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_DOWN ) * in;
+            wv.fakeMuRealUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_UP   ) * in;
+            wv.fakeMuRealDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_DOWN ) * in;
+            wv.fakeMuFakeUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_UP   ) * in;
+            wv.fakeMuFakeDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_DOWN ) * in;
+        }
+    }
+    return wv;
 }
 //----------------------------------------------------------

@@ -1,6 +1,7 @@
 #include "SusyntHlfv/Selector.h"
 #include "SusyntHlfv/FakeTuplizer.h"
 #include "SusyntHlfv/TupleMakerObjects.h"
+#include "SusyntHlfv/WeightVariations.h"
 #include "SusyntHlfv/MatrixPrediction.h"
 /* #include "SusyntHlfv/kinematic.h" */
 
@@ -17,6 +18,7 @@
 #pragma link C++ class hlfv::MatrixPrediction+;
 #pragma link C++ struct hlfv::FourMom+;
 #pragma link C++ struct hlfv::EventParameters+;
+#pragma link C++ struct hlfv::WeightVariations+;
 #pragma link C++ enum hlfv::Systematic;
 #pragma link C++ class vector<hlfv::FourMom>+;
 

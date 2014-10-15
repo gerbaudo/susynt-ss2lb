@@ -3,6 +3,7 @@
 #define HLVF_TUPLEMAKER_H
 
 #include "SusyntHlfv/TupleMakerObjects.h"
+#include "SusyntHlfv/WeightVariations.h"
 
 #include <string>
 #include <vector>
@@ -74,6 +75,7 @@ public:
     TupleMaker& setL1EtConeCorr(float v) { l1_.setEtConeCorr(v); return *this; }
     TupleMaker& setL0PtConeCorr(float v) { l0_.setPtConeCorr(v); return *this; }
     TupleMaker& setL1PtConeCorr(float v) { l1_.setPtConeCorr(v); return *this; }
+    TupleMaker& setWeightVariations(const hlfv::WeightVariations &w) { weightVariations_ = w; return *this; }
 
 private: // rule of three
     TupleMaker(const TupleMaker&);
@@ -88,6 +90,7 @@ private:
     hlfv::FourMom l0_, l1_, met_;
     std::vector<FourMom> jets_, lowptLepts_;
     EventParameters eventPars_;
+    hlfv::WeightVariations weightVariations_;
 }; // end TupleMaker
 
 } // namespace hlfv

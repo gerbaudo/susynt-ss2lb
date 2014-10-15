@@ -28,9 +28,10 @@ void usage(const char *exeName, const char *defaultMatrixFile) {
       <<"\t"<<"-o [--output]      output file"           <<endl
       <<"\t"<<"-t [--tuple-out] fname.root (out ntuple file)"<<endl
       <<"\t"<<"-s [--sample]      samplename"            <<endl
-      <<"\t"<<"-e [--etapt]     : use eta-pt (default pt only)"<<endl
-      <<"\t"<<"-d [--debug]     : debug (>0 print stuff)"<<endl
-      <<"\t"<<"-h [--help]      : print help"            <<endl
+      <<"\t"<<"-S [--systematics] : store also syst variations"<<endl
+      <<"\t"<<"-e [--etapt]       : use eta-pt (default pt only)"<<endl
+      <<"\t"<<"-d [--debug]       : debug (>0 print stuff)"<<endl
+      <<"\t"<<"-h [--help]        : print help"            <<endl
       <<endl;
 }
 
@@ -45,6 +46,7 @@ int main(int argc, char** argv)
   string output;
   bool writeTuple = false;
   bool etapt = false;
+  bool systematics = false;
   string matrixFile(hlfv::getRootCoreDir()+"/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root");
   int optind(1);
   while ((optind < argc)) {
@@ -58,6 +60,7 @@ int main(int argc, char** argv)
     else if(sw=="-i"||sw=="--input"      ) { input = argv[++optind]; }
     else if(sw=="-o"||sw=="--output"     ) { output = argv[++optind]; }
     else if(sw=="-s"||sw=="--sample"     ) { sample = argv[++optind]; }
+    else if(sw=="-S"||sw=="--systematics") { systematics = true; }
     else if(sw=="-t"||sw=="--tuple-out")   { writeTuple = true; output = argv[++optind]; }
     else if(sw=="-h"||sw=="--help"       ) { usage(argv[0], matrixFile.c_str()); return 0; }
     else cout<<"Unknown switch "<<sw<<endl;
@@ -71,7 +74,8 @@ int main(int argc, char** argv)
       <<"  dbg     "<<dbg       <<endl
       <<"  input   "<<input     <<endl
       <<"  output  "<<output    <<endl
-      <<"  writeTuple "<<writeTuple <<endl
+      <<"  systematics "<<systematics<<endl
+      <<"  writeTuple  "<<writeTuple <<endl
       <<endl;
 
   TChain* chain = new TChain("susyNt");
@@ -84,6 +88,7 @@ int main(int argc, char** argv)
   hlfv::MatrixPrediction fakePred;
   fakePred.setMatrixFilename(matrixFile);
   fakePred.setDebug(dbg);
+  fakePred.useComputeSystematics(systematics);
   fakePred.setSampleName(sample);
   if(etapt) fakePred.use2dParametrization();
   fakePred.setTupleFile(output);

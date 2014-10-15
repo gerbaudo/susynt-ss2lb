@@ -31,6 +31,10 @@ namespace hlfv
       lTagUp_ = lTagDo_ = 1.0;
       xsecUp_ = xsecDo_ = 1.0;
       mcgenUp_ = mcgenDo_ = 1.0;
+      fakeElRealUp_ = fakeElRealDo_ = 1.0;
+      fakeElFakeUp_ = fakeElFakeDo_ = 1.0;
+      fakeMuRealUp_ = fakeMuRealDo_ = 1.0;
+      fakeMuFakeUp_ = fakeMuFakeDo_ = 1.0;
       return *this;
     }
     double qflipUp_, qflipDo_;
@@ -43,6 +47,10 @@ namespace hlfv
     double lTagUp_, lTagDo_;
     double xsecUp_, xsecDo_;
     double mcgenUp_, mcgenDo_;
+    double fakeElRealUp_, fakeElRealDo_;
+    double fakeElFakeUp_, fakeElFakeDo_;
+    double fakeMuRealUp_, fakeMuRealDo_;
+    double fakeMuFakeUp_, fakeMuFakeDo_;
   };
 
 } // hlfv
