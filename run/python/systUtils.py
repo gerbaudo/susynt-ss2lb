@@ -5,12 +5,13 @@
 
 # todo : replace the various range(...) with rootUtils.getBinIndices()
 
+import collections
 import math
 from rootUtils import importRoot
 r = importRoot()
 
 import rootUtils
-from rootUtils import integralAndError
+from rootUtils import integralAndError, getBinContents
 
 try:
     import numpy as np
@@ -136,7 +137,202 @@ def buildErrBandRatioGraph(errband_graph) :
     return gr
 
 #___________________________________________________________
-# todo : move Group here (fake and simBkgs are Group objects)
+class BaseSampleGroup(object) :
+    """
+    Base class for a sample or a group of samples.
+
+    Holds the info about the type of sample (data/mc/fake, etc.) and
+    is aware of which systematic variation should be processed for
+    each sample. Also keep track of the yield variation for each
+    systematic.
+    
+    """
+    def __init__(self, name) :
+        self.name = name
+        self.setSystNominal()
+        self.varCounts = collections.defaultdict(dict)
+    @property
+    def label(self) : return self.groupname if hasattr(self, 'groupname') else self.name
+    @property
+    def isFake(self) : return self.label=='fake'
+    @property
+    def isData(self) : return self.label=='data'
+    @property
+    def isMc(self) : return not (self.isFake or self.isData)
+    @property
+    def isSignal(self) : return self.label=='signal'
+    @property
+    def isMcBkg(self) : return self.isMc and not self.isSignal
+    def isNeededForSys(self, sys) :
+        return (sys=='NOM'
+                or (self.isMc and sys in mcWeightVariations())
+                or (self.isMc and sys in mcObjectVariations())
+                or (self.isFake and sys in fakeSystVariations()))
+    def setSystNominal(self) : return self.setSyst()
+    def setSyst(self, sys='NOM') :
+        nominal = 'NOM' # do we have differnt names for nom (mc vs fake)?
+        self.isObjSys    = sys in mcObjectVariations()
+        self.isWeightSys = sys in mcWeightVariations()
+        self.isFakeSys   = sys in fakeSystVariations()
+        def nameObjectSys(s) : return s if self.isMc else nominal
+        def nameWeightSys(s) : return s if self.isMc else nominal
+        def nameFakeSys(s) : return s if self.isFake else nominal
+        def identity(s) : return s
+        sysNameFunc = nameObjectSys if self.isObjSys else nameWeightSys if self.isWeightSys else nameFakeSys if self.isFakeSys else identity
+        self.syst = sysNameFunc(sys)
+        self.syst = sys
+        return self
+    def logVariation(self, sys='', selection='', counts=0.0) :
+        "log this systematic variation and internally store it as [selection][sys]"
+        self.varCounts[selection][sys] = counts
+        return self
+    def variationsSummary(self) :
+        summaries = {} # one summary for each selection
+        for selection, sysCounts in self.varCounts.iteritems() :
+            nominalCount = sysCounts['NOM']
+            summaries[selection] = [(sys, sysCount, (100.0*(sysCount-nominalCount)/nominalCount)
+                                     if nominalCount else None)
+                                    for sys, sysCount in sortedAs(sysCounts, getAllVariations())]
+        return summaries
+    def printVariationsSummary(self):
+        for selection, summarySel in self.variationsSummary().iteritems() :
+            colW = str(12)
+            header = ' '.join([('%'+colW+'s')%colName for colName in ['variation', 'yield', 'delta[%]']])
+            lineTemplate = '%(sys)'+colW+'s'+'%(counts)'+colW+'s'+'%(delta)'+colW+'s'
+            print "---- summary of variations for %s ----" % self.name
+            print "---     [selection: %s]            ---" % selection
+            print header
+            print '\n'.join(lineTemplate%{'sys':s,
+                                          'counts':(("%.3f"%c) if type(c) is float
+                                                    else (str(c)+str(type(c)))),
+                                          'delta' :(("%.3f"%d) if type(d) is float
+                                                    else '--' if d==None
+                                                    else (str(d)+str(type(d)))) }
+                            for s,c,d in summarySel)
+
+
+def findByName(bsgs=[], name='') : return [b for b in bsgs if b.name==name][0]
+#___________________________________________________________
+class Sample(BaseSampleGroup) :
+    "A sample that is aware of its input ntuples and event weight formulas"
+    def __init__(self, name, groupname) :
+        super(Sample, self).__init__(name) # this is either the name (for data and fake) or the dsid (for mc)
+        self.groupname = groupname
+        self.setHftInputDir()
+    def setHftInputDir(self, dir='') :
+        useDefaults = not dir
+        defaultDir = 'out/fakepred' if self.isFake else 'out/susyplot'
+        self.hftInputDir = defaultDir if useDefaults else dir
+        return self
+    @property
+    def weightLeafname(self) :
+        leafname = 'eventweight'
+        if  self.isWeightSys : leafname += " * %s"%mcWeightBranchname(self.syst)
+        return leafname
+    @property
+    def filenameHftTree(self) :
+        def dataFilename(sample, dir, sys) : return "%(dir)s/%(sys)s_%(sam)s.PhysCont.root" % {'dir':dir, 'sam':sample, 'sys':sys}
+        def fakeFilename(sample, dir, sys) : return "%(dir)s/%(sys)s_fake.%(sam)s.PhysCont.root" % {'dir':dir, 'sam':sample, 'sys':sys}
+        def mcFilename  (sample, dir, sys) : return "%(dir)s/%(sys)s_%(dsid)s.root" % {'dir':dir, 'sys':sys, 'dsid':sample}
+        fnameFunc = dataFilename if self.isData else fakeFilename if self.isFake else mcFilename
+        sys = (self.syst
+               if (self.isMc and self.isObjSys or self.isFake and self.isFakeSys)
+               else 'NOM')
+        return fnameFunc(self.name, self.hftInputDir, sys)
+    @property
+    def hftTreename(self) :
+        def dataTreename(samplename) : return "id_%(s)s.PhysCont" % {'s' : samplename}
+        def fakeTreename(samplename) : return "id_fake.%(s)s.PhysCont"%{'s':samplename}
+        def mcTreename(dsid=123456) :  return "id_%d"%dsid
+        getTreename = dataTreename if self.isData else fakeTreename if self.isFake else mcTreename
+        return getTreename(self.name)
+    def hasInputHftFile(self, msg) :
+        filename = self.filenameHftTree
+        isThere = os.path.exists(filename)
+        if not isThere : print msg+"%s %s missing : %s"%(self.groupname, self.name, filename)
+        return isThere
+    def hasInputHftTree(self, msg='') :
+        treeIsThere = False
+        if self.hasInputHftFile(msg) :
+            filename, treename = self.filenameHftTree, self.hftTreename
+            inputFile = r.TFile.Open(filename) if self.hasInputHftFile(msg) else None
+            if inputFile :
+                if inputFile.Get(treename) : treeIsThere = True
+                else : print msg+"%s %s missing tree '%s' from %s"%(self.groupname, self.name, treename, filename)
+            inputFile.Close()
+        return treeIsThere
+    def group(self) :
+        return Group(self.groupname).setSyst(self.syst)
+#___________________________________________________________
+class Group(BaseSampleGroup) :
+    "A group of sameples that's aware of the root files with the histograms to be plotted"
+    def __init__(self, name) :
+        super(Group, self).__init__(name)
+        self.setSyst()
+        self.setHistosDir()
+        self._histoCache = collections.defaultdict(dict) # [syst][histoname]
+    def setHistosDir(self, dir='') :
+        self.histosDir = dir if dir else 'out/hft'
+        return self
+    @property
+    def filenameHisto(self) :
+        "file containig the histograms for the current syst"
+        fname = "%(dir)s/%(sys)s_%(group)s.root" % {'group':self.name, 'dir':self.histosDir, 'sys':self.syst}
+        # do we still need the lines below?
+        print 'filenameHisto, cleanup'
+        return fname
+        def dataFilename(group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
+        def fakeFilename(group, dir, sys) : return "%(dir)s/%(sys)s_fake.%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
+        def mcFilename  (group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.root" % {'dir':dir, 'sys':sys, 'gr':group}
+        fnameFunc = dataFilename if self.isData else fakeFilename if self.isFake else mcFilename
+        return fnameFunc(self.name, self.histosDir, self.syst)
+    def exploreAvailableSystematics(self, verbose=False) :
+        systs = ['NOM']
+        if self.isFake :
+            systs += fakeSystVariations()
+        elif self.isMc :
+            systs += mcObjectVariations()
+            systs += mcWeightVariations()
+        self.systematics = []
+        for sys in systs :
+            self.setSyst(sys)
+            if os.path.exists(self.filenameHisto) :
+                self.systematics.append(sys)
+        if verbose : print "%s : found %d variations : %s"%(self.name, len(self.systematics), str(self.systematics))
+    def filterAndDropSystematics(self, include='.*', exclude=None, verbose=False) :
+        nBefore = len(self.systematics)
+        anyFilter = include or exclude
+        toBeExcluded = filter(self,systematics, exclude) if exclude else []
+        systs = ['NOM'] if 'NOM' in self.systematics else []
+        if include : systs += filterWithRegexp(self.systematics, include)
+        if exclude : systs  = [s for s in systs if toBeExcluded and s not in toBeExcluded]
+        self.systematics = systs if anyFilter else self.systematics
+        self.systematics = remove_duplicates(self.systematics)
+        nAfter = len(self.systematics)
+        if verbose : print "%s : dropped %d systematics, left with %s"%(self.name, nBefore-nAfter, str(self.systematics))
+        assert self.systematics.count('NOM')==1 or not nBefore, "%s : 'NOM' required %s"%(self.name, str(self.systematics))
+    def getHistogram(self, variable, selection, cacheIt=False) :
+        hname = histoName(sample=self.name, selection=selection, variable=variable)
+        histo = None
+        try :
+            histo = self._histoCache[self.syst][hname]
+        except KeyError :
+            file = r.TFile.Open(self.filenameHisto)
+            if not file : print "missing file %s"%self.filenameHisto
+            hname = histoName(sample=self.name, selection=selection, variable=variable)
+            histo = file.Get(hname)
+            if not histo : print "%s : cannot get histo %s"%(self.name, hname)
+            elif cacheIt :
+                histo.SetDirectory(0)
+                self._histoCache[self.syst][hname] = histo
+            else :
+                histo.SetDirectory(0)
+                file.Close()
+        if variable=='onebin' and histo : self.logVariation(self.syst, selection, histo.Integral(0, -1))
+        return histo
+    def getBinContents(self, variable, selection) :
+        return getBinContents(self.getHistogram)
+#___________________________________________________________
 def buildTotBackgroundHisto(histoFakeBkg=None, histosSimBkgs={}) :
     hTemplate = histoFakeBkg
     if not hTemplate :
