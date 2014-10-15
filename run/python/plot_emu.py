@@ -36,7 +36,7 @@ from utils import (first
                    )
 
 import utils
-from kin import addTlv
+from kin import addTlv, computeCollinearMassLepTau
 
 susyntutils = utils.import_susyntutils()
 r = susyntutils.import_root()
@@ -157,6 +157,7 @@ def runFill(opts, groups) :
                 dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
                 dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
                 dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
+                m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
                 for sel in selections:
                     pass_sel = eval(selection_formulas()[sel])
                     if not pass_sel : continue
@@ -164,6 +165,7 @@ def runFill(opts, groups) :
                     histos[sel]['onebin'].Fill(1.0, weight)
                     histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
                     histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
+                    histos[sel]['mcoll'].Fill(m_coll, weight)
                     counters[sel] += (weight) # if passSels[sel] else 0.0)
 
             for v in ['onebin', 'pt0', 'pt1']:
@@ -255,7 +257,6 @@ def submit_batch_fill_job_per_group(group, opts):
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded('log/plot_emu')
     script_dir = mkdirIfNeeded('batch/plot_emu')
-    print "trying to join '{0}' with '{1}'".format(script_dir, group_name+'.sh')
     script_name = os.path.join(script_dir, group_name+'.sh')
     script_file = open(script_name, 'w')
     script_file.write(open(template).read()
@@ -618,6 +619,7 @@ def bookHistos(variables, samples, selections) :
         if   v=='onebin'  : h = r.TH1F(histoName(sam, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
         elif v=='pt0'     : h = r.TH1F(histoName(sam, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          12, 0.0, 240.0)
         elif v=='pt1'     : h = r.TH1F(histoName(sam, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          12, 0.0, 240.0)
+        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    12, 0.0, 240.0)
         elif v=='mll'     : h = r.TH1F(histoName(sam, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         12, 0.0, 240.0)
         elif v=='ptll'    : h = r.TH1F(histoName(sam, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       12, 0.0, 240.0)
         elif v=='dphil0met': h= r.TH1F(histoName(sam, sel, 'dphil0met'),';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
@@ -648,7 +650,7 @@ def regions_to_plot():
     return selection_formulas().keys()
     # return ['emu_ss', 'emu_os']
 def variables_to_plot():
-    return ['onebin', 'pt0', 'pt1']
+    return ['onebin', 'pt0', 'pt1', 'mcoll']
 
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
