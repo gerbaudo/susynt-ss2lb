@@ -222,14 +222,14 @@ hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lept
         double nominal = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_NOM);
         if(nominal!=0){
             double in = 1.0/nominal;
-            wv.fakeElRealUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_UP   ) * in;
-            wv.fakeElRealDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_DOWN ) * in;
-            wv.fakeElFakeUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_UP   ) * in;
-            wv.fakeElFakeDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_DOWN ) * in;
-            wv.fakeMuRealUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_UP   ) * in;
-            wv.fakeMuRealDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_DOWN ) * in;
-            wv.fakeMuFakeUp_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_UP   ) * in;
-            wv.fakeMuFakeDo_ = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_DOWN ) * in;
+            wv.fakeElRealUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_UP   ) * in;
+            wv.fakeElRealDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_DOWN ) * in;
+            wv.fakeElFakeUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_UP   ) * in;
+            wv.fakeElFakeDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_DOWN ) * in;
+            wv.fakeMuRealUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_UP   ) * in;
+            wv.fakeMuRealDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_DOWN ) * in;
+            wv.fakeMuFakeUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_UP   ) * in;
+            wv.fakeMuFakeDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_DOWN ) * in;
         }
     }
     return wv;

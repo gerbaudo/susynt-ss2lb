@@ -21,36 +21,36 @@ namespace hlfv
   struct WeightVariations {
     WeightVariations() { reset(); }
     WeightVariations& reset() {
-      qflipUp_ = qflipDo_ = 1.0;
-      elTrigUp_ = elTrigDo_ = 1.0;
-      muTrigUp_ = muTrigDo_ = 1.0;
-      elEffUp_ = elEffDo_ = 1.0;
-      muEffUp_ = muEffDo_ = 1.0;
-      bTagUp_ = bTagDo_ = 1.0;
-      cTagUp_ = cTagDo_ = 1.0;
-      lTagUp_ = lTagDo_ = 1.0;
-      xsecUp_ = xsecDo_ = 1.0;
-      mcgenUp_ = mcgenDo_ = 1.0;
-      fakeElRealUp_ = fakeElRealDo_ = 1.0;
-      fakeElFakeUp_ = fakeElFakeDo_ = 1.0;
-      fakeMuRealUp_ = fakeMuRealDo_ = 1.0;
-      fakeMuFakeUp_ = fakeMuFakeDo_ = 1.0;
+      qflipUp = qflipDo = 1.0;
+      elTrigUp = elTrigDo = 1.0;
+      muTrigUp = muTrigDo = 1.0;
+      elEffUp = elEffDo = 1.0;
+      muEffUp = muEffDo = 1.0;
+      bTagUp = bTagDo = 1.0;
+      cTagUp = cTagDo = 1.0;
+      lTagUp = lTagDo = 1.0;
+      xsecUp = xsecDo = 1.0;
+      mcgenUp = mcgenDo = 1.0;
+      fakeElRealUp = fakeElRealDo = 1.0;
+      fakeElFakeUp = fakeElFakeDo = 1.0;
+      fakeMuRealUp = fakeMuRealDo = 1.0;
+      fakeMuFakeUp = fakeMuFakeDo = 1.0;
       return *this;
     }
-    double qflipUp_, qflipDo_;
-    double elTrigUp_, elTrigDo_;
-    double muTrigUp_, muTrigDo_;
-    double elEffUp_, elEffDo_;
-    double muEffUp_, muEffDo_;
-    double bTagUp_, bTagDo_;
-    double cTagUp_, cTagDo_;
-    double lTagUp_, lTagDo_;
-    double xsecUp_, xsecDo_;
-    double mcgenUp_, mcgenDo_;
-    double fakeElRealUp_, fakeElRealDo_;
-    double fakeElFakeUp_, fakeElFakeDo_;
-    double fakeMuRealUp_, fakeMuRealDo_;
-    double fakeMuFakeUp_, fakeMuFakeDo_;
+    double qflipUp, qflipDo;
+    double elTrigUp, elTrigDo;
+    double muTrigUp, muTrigDo;
+    double elEffUp, elEffDo;
+    double muEffUp, muEffDo;
+    double bTagUp, bTagDo;
+    double cTagUp, cTagDo;
+    double lTagUp, lTagDo;
+    double xsecUp, xsecDo;
+    double mcgenUp, mcgenDo;
+    double fakeElRealUp, fakeElRealDo;
+    double fakeElFakeUp, fakeElFakeDo;
+    double fakeMuRealUp, fakeMuRealDo;
+    double fakeMuFakeUp, fakeMuFakeDo;
   };
 
 } // hlfv
