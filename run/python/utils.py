@@ -188,6 +188,12 @@ def import_susyntcutflow():
     import susyntuple.cutflow as cutflow
     return cutflow
 
+def print_running_conditions(parser, opts):
+    print "working from {0}".format(os.getcwd())
+    print "being called as : {0}".format(' '.join(os.sys.argv))
+    allOptions = [x.dest for x in parser._get_all_options()[1:]]
+    print "options parsed:\n"+'\n'.join("%s : %s"%(o, str(getattr(opts, o))) for o in allOptions)
+
 #
 # testing
 #
