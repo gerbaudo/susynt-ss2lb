@@ -102,14 +102,11 @@ def main() :
     mode = 'fill' if inOtherSpecified else 'plot' if inDirSpecified else None
     requiredOptions = (['input_fake', 'input_other', 'output_dir'] if mode=='fill'
                        else ['input_dir', 'output_dir'])
-    allOptions = [x.dest for x in parser._get_all_options()[1:]]
     def optIsNotSpecified(o) : return not hasattr(opts, o) or getattr(opts,o) is None
     if any(optIsNotSpecified(o) for o in requiredOptions):
         parser.error('Missing required option\n'
                      +'\n'.join(["%s : %s"%(o, getattr(opts, o)) for o in requiredOptions]))
-    if opts.verbose:
-        print ('\nUsing the following options:\n'
-               +'\n'.join("%s : %s"%(o, str(getattr(opts, o))) for o in allOptions))
+    if opts.verbose : utils.print_running_conditions(parser, opts)
 
     if   mode=='fill' : runFill(opts)
     elif mode=='plot' : runPlot(opts)
