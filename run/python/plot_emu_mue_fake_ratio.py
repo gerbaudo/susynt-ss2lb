@@ -6,18 +6,81 @@
 # davide.gerbaudo@gmail.com
 # Oct 2014
 
-import ROOT as r
-r.gROOT.SetBatch(1)
-r.gStyle.SetPadTickX(1)
-r.gStyle.SetPadTickY(1)
+import os
+import sys
+
+from rootUtils import (buildBotTopPads
+                       ,drawAtlasLabel
+                       ,getMinMax
+                       ,increaseAxisFont
+                       ,referenceLine
+                       ,topLeftLegend
+                       ,importRoot
+                       ,setAtlasStyle
+                       )
+r = importRoot()
+setAtlasStyle()
+import systUtils
+from systUtils import buildTotBackgroundHisto, buildStatisticalErrorBand, buildFakeSystematicErrorBand
+import utils
 
 def main():
-    fname = '/tmp/NOM_fake.root'
-    input_file = r.TFile.Open(fname)
-    h_emu = input_file.Get('h_mcoll_fake_sr_mue_os')
-    h_mue = input_file.Get('h_mcoll_fake_sr_emu_os')
+    if len(sys.argv)!=3:
+        print "Usage: {0} inputdir outputdir".format(sys.argv[0])
+        return
+    inputdir = sys.argv[1]
+    outputdir = sys.argv[2]
+    verbose = True
+    if not os.path.exists(inputdir):
+        print "missing input dir {0}".format(inputdir)
+        return
+    utils.mkdirIfNeeded(outputdir)
 
-    c = r.TCanvas('c', '')
+    fake = systUtils.Group('fake')
+    fake.setHistosDir(inputdir)
+    fake.exploreAvailableSystematics(verbose)
+    fakeSystematics = [s for s in fake.systematics if s!='NOM']
+
+    c = r.TCanvas('c','')
+    var = 'mcoll'
+
+    h_emu = fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
+    h_mue = fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
+    h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
+    h_ratio.Divide(h_emu)
+    plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
+                            filename="{0}/emu_over_mue_wout_sys_err.png".format(outputdir))
+
+    h_with_totErrBand = {} # histo with stat+syst err (to get the correct error in the ratio)
+    for sel in regions_to_plot():
+        fake.setSystNominal()
+        nominalHistoData    = None
+        nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
+        nominalHistosBkg    = {'fake', nominalHistoFakeBkg}
+        nominalHistoTotBkg  = buildTotBackgroundHisto(histoFakeBkg=nominalHistoFakeBkg, histosSimBkgs={})
+        statErrBand = buildStatisticalErrorBand(nominalHistoTotBkg)
+        systErrBand = buildFakeSystematicErrorBand(fake=fake, nominalHistosSimBkg={}, variable=var, selection=sel,
+                                                   variations=fakeSystematics, verbose=verbose)
+        totErrBand = systUtils.addErrorBandsInQuadrature(statErrBand, systErrBand)
+        c.cd()
+        c.Clear()
+        nominalHistoFakeBkg.Draw()
+        totErrBand.Draw('E2 same')
+        totErrBand.SetFillStyle(3005)
+        c.SaveAs("{0}/{1}_{2}.png".format(outputdir, sel, var))
+        h_with_totErrBand[sel] = systUtils.setHistErrFromErrBand(nominalHistoFakeBkg, totErrBand)
+    h_emu = [h for k,h in h_with_totErrBand.iteritems() if 'emu' in k][0]
+    h_mue = [h for k,h in h_with_totErrBand.iteritems() if 'mue' in k][0]
+
+    h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
+    h_ratio.Divide(h_emu)
+    plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
+                            filename="{0}/emu_over_mue_with_sys_err.png".format(outputdir))
+    return
+
+def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None, filename=''):
+    c = canvas
+    c.Clear()
     c._graphics = []
     c.cd()
     botPad, topPad = buildBotTopPads(c, splitFraction=0.375)
@@ -30,11 +93,14 @@ def main():
     h_mue.Draw()
     h_emu.Draw('same')
     pm = h_mue
+    yMin, yMax = getMinMax([h_mue, h_emu])
+    pm.SetMinimum(0.0)
+    pm.SetMaximum(1.1 * yMax)
     xax = pm.GetXaxis()
     yax = pm.GetYaxis()
     xax.SetLabelSize(0)
     xax.SetTitleSize(0)
-    leg = topLeftLegend(c, 0.275, 0.275)
+    leg = topLeftLegend(c, 0.275, 0.275, shift=0.05)
     leg.SetBorderSize(0)
     leg.SetHeader('non-prompt prediction')
     leg.AddEntry(h_mue, '#mue', 'L')
@@ -44,15 +110,13 @@ def main():
     c.cd()
     botPad.Draw()
     botPad.cd()
-    h_r = h_emu.Clone('h_r')
-    h_r.Divide(h_mue)
-    h_r.SetLineColor(r.kBlack)
-    h_r.SetTitle('')
-    xax = h_r.GetXaxis()
-    yax = h_r.GetYaxis()
+    h_ratio.SetLineColor(r.kBlack)
+    h_ratio.SetTitle('')
+    xax = h_ratio.GetXaxis()
+    yax = h_ratio.GetYaxis()
     yax.SetRangeUser(0.0, 2.0)
     yax.SetTitle('#mue / e#mu ratio')
-    xA, yA = h_r.GetXaxis(), h_r.GetYaxis()
+    xA, yA = h_ratio.GetXaxis(), h_ratio.GetYaxis()
     textScaleUp = 1.0/botPad.GetHNDC()
     yA.SetNdivisions(-104)
     yA.CenterTitle()
@@ -60,48 +124,14 @@ def main():
     for a in [xA, yA] :
         a.SetLabelSize(a.GetLabelSize()*textScaleUp)
         a.SetTitleSize(a.GetTitleSize()*textScaleUp)
-    h_r.Draw()
+    h_ratio.Draw()
     refline = referenceLine(xA.GetXmin(), xA.GetXmax())
     refline.Draw()
     c._graphics.append(refline)
     c.Update()
-    c.SaveAs('ratio_emu_mue.png')
+    c.SaveAs(filename)
 
-    
-def buildBotTopPads(canvas, splitFraction=0.275, squeezeMargins=True) :
-    canvas.cd()
-    botPad = r.TPad(canvas.GetName()+'_bot', 'bot pad', 0.0, 0.0, 1.0, splitFraction, 0, 0, 0)
-    interPadMargin = 0.5*0.05
-    botPad.SetTopMargin(interPadMargin)
-    botPad.SetBottomMargin(botPad.GetBottomMargin()/splitFraction)
-    if squeezeMargins : botPad.SetRightMargin(0.20*botPad.GetRightMargin())
-    r.SetOwnership(botPad, False)
-    canvas.cd()
-    canvas.Update()
-    topPad = r.TPad(canvas.GetName()+'_top', 'top pad', 0.0, splitFraction, 1.0, 1.0, 0, 0)
-    topPad.SetBottomMargin(interPadMargin)
-    if squeezeMargins : topPad.SetTopMargin(0.20*topPad.GetTopMargin())
-    if squeezeMargins : topPad.SetRightMargin(0.20*topPad.GetRightMargin())
-    r.SetOwnership(topPad, False)
-    canvas._pads = [topPad, botPad]
-    return botPad, topPad
-
-def topLeftLegend(pad,  legWidth, legHeight, shift=0.0) :
-    rMarg, lMarg, tMarg = pad.GetRightMargin(), pad.GetLeftMargin(), pad.GetTopMargin()
-    leg = r.TLegend(0.0 + lMarg + shift,
-                    1.0 - tMarg - legHeight + shift,
-                    0.0 + rMarg + legWidth + shift,
-                    1.0 - tMarg + shift)
-    leg.SetBorderSize(1)
-    leg.SetFillColor(0)
-    leg.SetFillStyle(0)
-    pad._leg = leg
-    return leg
-def referenceLine(xmin=0., xmax=100.0, ymin=1.0, ymax=1.0) :
-    l1 = r.TLine(xmin, ymin, xmax, ymax)
-    l1.SetLineStyle(3)
-    l1.SetLineColor(r.kGray+1)
-    return l1
+def regions_to_plot() : return ['sr_mue_os', 'sr_emu_os']
 
 if __name__=='__main__':
     main()
