@@ -158,7 +158,18 @@ def buildErrBandRatioGraph(errband_graph) :
         gr.SetPointEYlow (p, ey_lo)
         gr.SetPointEYhigh(p, ey_hi)
     return gr
-
+def setHistErrFromErrBand(h, errband_graph):
+    "given an histogram and a graph, set the error of the hist to the error from the graph"
+    assert h.GetNbinsX()==errband_graph.GetN()
+    points = range(errband_graph.GetN())
+    # histos don't support asymmetric errors, take the average
+    eys_lo = np.array([abs(errband_graph.GetErrorYlow (i)) for i in points])
+    eys_hi = np.array([abs(errband_graph.GetErrorYhigh(i)) for i in points])
+    def avg(v1, v2) : return np.array([0.5*(e1+e2) for e1, e2 in zip(v1, v2)])
+    errs = avg(eys_lo, eys_hi)
+    for i in points:
+        h.SetBinError(i+1, errs[i])
+    return h
 #___________________________________________________________
 class BaseSampleGroup(object) :
     """
