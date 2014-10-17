@@ -7,6 +7,7 @@
 
 import collections
 import math
+import os
 from rootUtils import importRoot
 r = importRoot()
 
@@ -18,11 +19,32 @@ try:
 except ImportError:
     np = rootUtils.np
 
+from utils import filterWithRegexp, first, remove_duplicates, sortedAs
+
+def fakeSystWeightLeaves() :
+    """
+    Names of the leaves used to store the syst variations for the
+    fake.  See WeightVariations.h and TupleMaker::initTreeBranches()
+    The names of the systematics are the ones specified in
+    susy::fake::Systematic.
+    """
+    branch = 'relWeights.'
+    return {'EL_RE_UP'  : branch+'fakeElRealUp',
+            'EL_RE_DOWN': branch+'fakeElRealDo',
+            'MU_RE_UP'  : branch+'fakeElFakeUp',
+            'MU_RE_DOWN': branch+'fakeElFakeDo',
+            'EL_FR_UP'  : branch+'fakeMuRealUp',
+            'EL_FR_DOWN': branch+'fakeMuRealDo',
+            'MU_FR_UP'  : branch+'fakeMuFakeUp',
+            'MU_FR_DOWN': branch+'fakeMuFakeDo',
+            # 'EL_FRAC_DO': '',
+            # 'EL_FRAC_UP': '',
+            # 'MU_FRAC_DO': '',
+            # 'MU_FRAC_UP': ''
+            }
 def fakeSystVariations() :
-    "syst variations for the fake estimate, see DiLeptonMatrixMethod::systematic_names"
-    return ['EL_RE_UP', 'EL_RE_DOWN', 'MU_RE_UP', 'MU_RE_DOWN',
-            'EL_FR_UP', 'EL_FR_DOWN', 'MU_FR_UP', 'MU_FR_DOWN',
-            'EL_FRAC_DO', 'EL_FRAC_UP', 'MU_FRAC_DO', 'MU_FRAC_UP']
+    return fakeSystWeightLeaves().keys()
+
 def mcObjectVariations() :
     "See definitions in SusyDefs.h:SusyNtSystNames, and active list in SusyPlotter::toggleStdSystematics()"
     return ['EES_Z_UP', 'EES_Z_DN',
@@ -49,6 +71,7 @@ def mcWeightVariations() :
             ,'BMISTAGUP'  ,'BMISTAGDOWN'
             ,'XSUP'       ,'XSDOWN'
             ]
+
 def mcWeightBranchname(mcWeightVariation='') : return 'syst_'+mcWeightVariation
 def mcWeightBranches() : return [mcWeightBranchname(v) for v in mcWeightVariations()]
 
@@ -145,7 +168,6 @@ class BaseSampleGroup(object) :
     is aware of which systematic variation should be processed for
     each sample. Also keep track of the yield variation for each
     systematic.
-    
     """
     def __init__(self, name) :
         self.name = name
@@ -170,15 +192,19 @@ class BaseSampleGroup(object) :
                 or (self.isFake and sys in fakeSystVariations()))
     def setSystNominal(self) : return self.setSyst()
     def setSyst(self, sys='NOM') :
+        "Set the syst; if we should not consider this syst for the current sample, set to nominal"
         nominal = 'NOM' # do we have differnt names for nom (mc vs fake)?
         self.isObjSys    = sys in mcObjectVariations()
-        self.isWeightSys = sys in mcWeightVariations()
+        self.isWeightSys = sys in mcWeightVariations() + fakeSystVariations()
         self.isFakeSys   = sys in fakeSystVariations()
         def nameObjectSys(s) : return s if self.isMc else nominal
         def nameWeightSys(s) : return s if self.isMc else nominal
         def nameFakeSys(s) : return s if self.isFake else nominal
         def identity(s) : return s
-        sysNameFunc = nameObjectSys if self.isObjSys else nameWeightSys if self.isWeightSys else nameFakeSys if self.isFakeSys else identity
+        sysNameFunc = (nameObjectSys if self.isObjSys else
+                       nameWeightSys if self.isWeightSys else
+                       nameFakeSys if self.isFakeSys else
+                       identity)
         self.syst = sysNameFunc(sys)
         self.syst = sys
         return self
@@ -209,6 +235,18 @@ class BaseSampleGroup(object) :
                                                     else '--' if d==None
                                                     else (str(d)+str(type(d)))) }
                             for s,c,d in summarySel)
+    @property
+    def weightLeafname(self) :
+        leafname = 'event.pars.weight'
+        if  self.isWeightSys:
+            rel_weight = ""
+            if self.isFakeSys: rel_weight = "event.{0}".format(fakeSystWeightLeaves()[self.syst])
+            else: print "not implemented yet"
+            leafname += " * {0}".format(rel_weight)
+        return leafname
+    @classmethod
+    def histoname(cls, sample='', syst='', selection='', variable=''):
+        return "h_%s_%s_%s_%s"%(variable, sample, syst, selection)
 
 
 def findByName(bsgs=[], name='') : return [b for b in bsgs if b.name==name][0]
@@ -224,11 +262,6 @@ class Sample(BaseSampleGroup) :
         defaultDir = 'out/fakepred' if self.isFake else 'out/susyplot'
         self.hftInputDir = defaultDir if useDefaults else dir
         return self
-    @property
-    def weightLeafname(self) :
-        leafname = 'eventweight'
-        if  self.isWeightSys : leafname += " * %s"%mcWeightBranchname(self.syst)
-        return leafname
     @property
     def filenameHftTree(self) :
         def dataFilename(sample, dir, sys) : return "%(dir)s/%(sys)s_%(sam)s.PhysCont.root" % {'dir':dir, 'sam':sample, 'sys':sys}
@@ -277,15 +310,8 @@ class Group(BaseSampleGroup) :
     @property
     def filenameHisto(self) :
         "file containig the histograms for the current syst"
-        fname = "%(dir)s/%(sys)s_%(group)s.root" % {'group':self.name, 'dir':self.histosDir, 'sys':self.syst}
-        # do we still need the lines below?
-        print 'filenameHisto, cleanup'
+        fname = "%(dir)s/%(group)s_%(sys)s.root" % {'group':self.name, 'dir':self.histosDir, 'sys':self.syst}
         return fname
-        def dataFilename(group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
-        def fakeFilename(group, dir, sys) : return "%(dir)s/%(sys)s_fake.%(gr)s.PhysCont.root" % {'dir':dir, 'gr':group, 'sys':sys}
-        def mcFilename  (group, dir, sys) : return "%(dir)s/%(sys)s_%(gr)s.root" % {'dir':dir, 'sys':sys, 'gr':group}
-        fnameFunc = dataFilename if self.isData else fakeFilename if self.isFake else mcFilename
-        return fnameFunc(self.name, self.histosDir, self.syst)
     def exploreAvailableSystematics(self, verbose=False) :
         systs = ['NOM']
         if self.isFake :
@@ -300,26 +326,32 @@ class Group(BaseSampleGroup) :
                 self.systematics.append(sys)
         if verbose : print "%s : found %d variations : %s"%(self.name, len(self.systematics), str(self.systematics))
     def filterAndDropSystematics(self, include='.*', exclude=None, verbose=False) :
+        "include and exclude can be either a regex, a single value, or a list"
         nBefore = len(self.systematics)
-        anyFilter = include or exclude
-        toBeExcluded = filter(self,systematics, exclude) if exclude else []
-        systs = ['NOM'] if 'NOM' in self.systematics else []
-        if include : systs += filterWithRegexp(self.systematics, include)
-        if exclude : systs  = [s for s in systs if toBeExcluded and s not in toBeExcluded]
-        self.systematics = systs if anyFilter else self.systematics
-        self.systematics = remove_duplicates(self.systematics)
+        def is_regex(exp) : return exp and '*' in exp
+        def is_list(exp) : return exp and ',' in exp
+        def is_single_value(exp) : return exp and len(exp)
+        def str_to_list(exp) : return eval("[{0}]".format(exp))
+        toBeIncluded = ([s for s in self.systematics if s in str_to_list(include)] if is_list(include) else
+                        filterWithRegexp(self.systematics, include) if is_regex(include) else
+                        str_to_list(include) if is_single_value(include) else
+                        self.systematics)
+        toBeExcluded = ([s for s in self.systematics if s in str_to_list(include)] if is_list(include) else
+                        filterWithRegexp(self,systematics, exclude) if is_regex(exclude) else
+                        [])
+        self.systematics = remove_duplicates([s for s in toBeIncluded if s not in toBeExcluded])
         nAfter = len(self.systematics)
         if verbose : print "%s : dropped %d systematics, left with %s"%(self.name, nBefore-nAfter, str(self.systematics))
         assert self.systematics.count('NOM')==1 or not nBefore, "%s : 'NOM' required %s"%(self.name, str(self.systematics))
     def getHistogram(self, variable, selection, cacheIt=False) :
-        hname = histoName(sample=self.name, selection=selection, variable=variable)
+        hname = BaseSampleGroup.histoname(sample=self.name, syst=self.syst,
+                                          selection=selection, variable=variable)
         histo = None
         try :
             histo = self._histoCache[self.syst][hname]
         except KeyError :
             file = r.TFile.Open(self.filenameHisto)
             if not file : print "missing file %s"%self.filenameHisto
-            hname = histoName(sample=self.name, selection=selection, variable=variable)
             histo = file.Get(hname)
             if not histo : print "%s : cannot get histo %s"%(self.name, hname)
             elif cacheIt :

@@ -78,10 +78,24 @@ def main() :
     parser.add_option('-o', '--output-dir')
     parser.add_option('--samples-dir', default='samples/',
                       help='directory with the list of samples; default ./samples/')
+    parser.add_option('-s', '--syst', help="variations to process (default all)."
+                      " Give a comma-sep list or say 'weight', 'object', or 'fake'")
+    parser.add_option('-l', '--list-systematics', action='store_true', default=False,
+                      help='list what is already in output_dir')
+    parser.add_option('-L', '--list-all-systematics', action='store_true', default=False,
+                      help='list all possible systematics')
+    parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('--debug', action='store_true', default=False)
 
     (opts, args) = parser.parse_args()
+    if opts.list_all_systematics :
+        print "All systematics:\n\t%s"%'\n\t'.join(systUtils.getAllVariations())
+        return
+    if opts.list_systematics :
+        print listExistingSyst(opts.input_dir)
+        return
+
     inOtherSpecified, inDirSpecified = opts.input_other!=None, opts.input_dir!=None
     eitherMode = inOtherSpecified != inDirSpecified
     if not eitherMode : parser.error("Run either in 'fill' or 'plot' mode")
@@ -97,121 +111,84 @@ def main() :
         print ('\nUsing the following options:\n'
                +'\n'.join("%s : %s"%(o, str(getattr(opts, o))) for o in allOptions))
 
-    if opts.debug : dataset.Dataset.verbose_parsing = True
-    groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
-    groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
-    if opts.group : groups = [g for g in groups if g.name==opts.group]
-    print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
+    if   mode=='fill' : runFill(opts)
+    elif mode=='plot' : runPlot(opts)
 
-    if   mode=='fill' : runFill(opts, groups)
-    elif mode=='plot' : runPlot(opts, groups)
-
-def runFill(opts, groups) :
+def runFill(opts) :
     batchMode    = opts.batch
     inputFakeDir = opts.input_fake
     inputGenDir  = opts.input_other
     outputDir    = opts.output_dir
     verbose      = opts.verbose
 
+    if opts.debug : dataset.Dataset.verbose_parsing = True
+    groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
+    groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
+    if opts.group : groups = [g for g in groups if g.name==opts.group]
+    print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
+
     if verbose : print "filling histos"
     mkdirIfNeeded(outputDir)
-    systematics = ['NOM']
+    systematics = get_list_of_syst_to_fill(opts)
     if verbose : print "about to loop over these systematics:\n %s"%str(systematics)
     if batchMode:
-        for syst in systematics: # todo : probably not needed, leave it in for now
-            for group in groups :
-                submit_batch_fill_job_per_group(group, opts)
-    else:
-        selections = regions_to_plot()
-        variables = variables_to_plot()
-        group_names = [g.name for g in groups]
-        counters_all_groups = bookCounters(group_names, selections)
-        histos_all_groups = bookHistos(variables, group_names, selections)
         for group in groups:
-            tree_name = 'hlfv_tuple'
-            chain = r.TChain(tree_name)
-            input_dir = opts.input_fake if group.name=='fake' else opts.input_other
-            for dataset in group.datasets:
-                chain.Add(os.path.join(input_dir, dataset.name+'.root'))
-            if opts.verbose:
-                print "{0} : {1} entries from {2} samples".format(group.name,
-                                                                  chain.GetEntries(),
-                                                                  len(group.datasets))
-            histos = histos_all_groups[group.name]
-            counters = counters_all_groups[group.name]
-            for iEntry, event in enumerate(chain):
-                if iEntry>10000:break
-                run_num = event.pars.runNumber
-                evt_num = event.pars.eventNumber
-                weight =  event.pars.weight
-                l0 = addTlv(event.l0)
-                l1 = addTlv(event.l1)
-                met = addTlv(event.met)
-                l0_is_el, l0_is_mu = l0.isEl, l0.isMu
-                l1_is_el, l1_is_mu = l1.isEl, l1.isMu
-                is_emu = int(l0_is_el and l1_is_mu)
-                is_mue = int(l0_is_mu and l1_is_el)
-                is_same_sign = int((l0.charge * l1.charge)>0)
-                is_opp_sign  = not is_same_sign
-                l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
-                dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
-                dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
-                dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
-                dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
-                m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
-                for sel in selections:
-                    pass_sel = eval(selection_formulas()[sel])
-                    if not pass_sel : continue
-
-                    histos[sel]['onebin'].Fill(1.0, weight)
-                    histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
-                    histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
-                    histos[sel]['mcoll'].Fill(m_coll, weight)
-                    counters[sel] += (weight) # if passSels[sel] else 0.0)
-
-            for v in ['onebin', 'pt0', 'pt1']:
-                for sel in selections:
-                    h = histos[sel][v]
-                    print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
-        plotting_groups = dict([(g.name, systUtils.Group(g.name)) for g in groups])
-        saveHistos(plotting_groups, histos_all_groups, outputDir, opts.verbose)
+            for systematic in systematics:
+                if systUtils.Group(group.name).isNeededForSys(systematic):
+                    opts.syst = systematic
+                    submit_batch_fill_job_per_group(group, opts)
+    else:
+        for group in groups:
+            systematics = [s for s in systematics if systUtils.Group(group.name).isNeededForSys(s)]
+            if not systematics : print "warning, empty syst list. You should have at least the nominal"
+            for systematic in systematics:
+                # note to self: here you will want to use a modified Sample.setHftInputDir
+                # for now we just have the fake syst that are in the nominal tree
+                tree_name = 'hlfv_tuple'
+                chain = r.TChain(tree_name)
+                input_dir = opts.input_fake if group.name=='fake' else opts.input_other
+                for ds in group.datasets:
+                    chain.Add(os.path.join(input_dir, ds.name+'.root'))
+                if opts.verbose:
+                    print "{0} : {1} entries from {2} samples".format(group.name,
+                                                                      chain.GetEntries(),
+                                                                      len(group.datasets))
+                counters, histos = count_and_fill(chain=chain, sample=group.name,
+                                                  syst=systematic, verbose=verbose)
+                out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
+                print 'out_filename: ',out_filename
+                writeObjectsToFile(out_filename, histos, verbose)
         # print counters
 
-def runPlot(opts, groups) :
+def runPlot(opts) :
     inputDir     = opts.input_dir
     outputDir    = opts.output_dir
-    sysOption    = 'NOM' #opts.syst
-    excludedSyst = None #opts.exclude
     verbose      = opts.verbose
     mkdirIfNeeded(outputDir)
     buildTotBkg = systUtils.buildTotBackgroundHisto
     buildStat = systUtils.buildStatisticalErrorBand
     buildSyst = systUtils.buildSystematicErrorBand
-
     selections = regions_to_plot()
     variables = variables_to_plot()
+
+    groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
+    groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     plot_groups = [systUtils.Group(g.name) for g in groups]
     for group in plot_groups :
         group.setHistosDir(inputDir)
         group.exploreAvailableSystematics(verbose)
-        group.filterAndDropSystematics(sysOption, excludedSyst, verbose)
-
-    mkdirIfNeeded(outputDir)
-    systematics = ['NOM']
-    anySys = sysOption==None
-    if sysOption=='fake'   or anySys : systematics += systUtils.fakeSystVariations()
-    if sysOption=='object' or anySys : systematics += systUtils.mcObjectVariations()
-    if sysOption=='weight' or anySys : systematics += systUtils.mcWeightVariations()
-    if sysOption and sysOption.count(','):
-        systematics = [s for s in systUtils.getAllVariations() if s in sysOption.split(',')]
-    elif sysOption in systUtils.getAllVariations() : systematics = [sysOption]
-    if not anySys and len(systematics)==1 and sysOption!='NOM' : raise ValueError("Invalid syst %s"%str(sysOption))
-    if excludedSyst : systematics = [s for s in systematics if s not in filterWithRegexp(systematics, excludedSyst)]
-    if verbose : print "using the following systematics : %s"%str(systematics)
-
+        group.filterAndDropSystematics(opts.syst, opts.exclude, verbose)
+    available_systematics = sorted(list(set([s for g in plot_groups for s in g.systematics])))
+    systematics_to_use = get_list_of_syst_to_fill(opts)
+    systematics = [s for s in systematics_to_use if s in available_systematics]
+    if verbose :
+        print "using the following systematics : {0}".format(systematics)
+        print "missing the following systematics : {0}".format([s for s in systematics_to_use if s not in available_systematics])
     fakeSystematics = [s for s in systematics if s in systUtils.fakeSystVariations()]
     mcSystematics = [s for s in systematics if s in systUtils.mcObjectVariations() + systUtils.mcWeightVariations()]
 
+    mkdirIfNeeded(outputDir)
+    findByName = systUtils.findByName
     simBkgs = [g for g in plot_groups if g.isMcBkg]
     data = findByName(plot_groups, 'data')
     fake = findByName(plot_groups, 'fake')
@@ -250,19 +227,23 @@ def submit_batch_fill_job_per_group(group, opts):
     verbose = opts.verbose
 
     group_name = group.name if hasattr(group, 'name') else group
+    systematic = opts.syst if opts.syst else None
     newOptions  = " --input-other %s" % opts.input_other
     newOptions += " --input-fake %s" % opts.input_fake
     newOptions += " --output-dir %s" % opts.output_dir
     newOptions += " --group %s" % group_name
     newOptions += (" --verbose " if opts.verbose else '')
+    newOptions += (" --syst {0}".format(opts.syst) if opts.syst else '')
+    newOptions += (" --exclude {0}".format(opts.exclude) if opts.exclude else '')
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded('log/plot_emu')
     script_dir = mkdirIfNeeded('batch/plot_emu')
-    script_name = os.path.join(script_dir, group_name+'.sh')
+    script_name = os.path.join(script_dir, group_name+("_{0}".format(systematic) if systematic else '')+'.sh')
+    log_name = log_dir+'/'+group_name+("_{0}".format(systematic) if systematic else '')+'.log'
     script_file = open(script_name, 'w')
     script_file.write(open(template).read()
                       .replace('%(opt)s', newOptions)
-                      .replace('%(logfile)s', log_dir+'/'+group_name+'.log')
+                      .replace('%(logfile)s', log_name)
                       .replace('%(jobname)s', group_name))
     script_file.close()
     cmd = "sbatch %s"%script_name
@@ -271,37 +252,52 @@ def submit_batch_fill_job_per_group(group, opts):
     if verbose : print out['stdout']
     if out['stderr'] : print  out['stderr']
 
-def countAndFillHistos(samplesPerGroup={}, syst='', verbose=False, outdir='./') :
-
-    selections = allRegions()
-    variables = variablesToPlot()
-
-    mcGroups, fakeGroups = mcDatasetids().keys(), ['fake']
-    objVariations, weightVariations, fakeVariations = systUtils.mcObjectVariations(), systUtils.mcWeightVariations(), systUtils.fakeSystVariations()
-    def groupIsRelevantForSys(g, s) :
-        isRelevant = (s=='NOM' or (g in mcGroups and s in objVariations+weightVariations) or (g in fakeGroups and s in fakeVariations))
-        if verbose and not isRelevant : print "skipping %s for %s"%(g, s)
-        return isRelevant
-    def dropIrrelevantGroupsForThisSys(groups, sys) : return dict((g, samples) for g, samples in groups.iteritems() if groupIsRelevantForSys(g, syst))
-    def dropSamplesWithoutTree(samples) : return [s for s in samples if s.hasInputHftTree(msg='Warning! ')]
-    def dropGroupsWithoutSamples(groups) : return dict((g, samples) for g, samples in groups.iteritems() if len(samples))
-    samplesPerGroup = dropIrrelevantGroupsForThisSys(samplesPerGroup, syst)
-    samplesPerGroup = dict((g, dropSamplesWithoutTree(samples)) for g, samples in samplesPerGroup.iteritems())
-    samplesPerGroup = dropGroupsWithoutSamples(samplesPerGroup)
-
-    groups = samplesPerGroup.keys()
-    counters = bookCounters(groups, selections)
-    histos = bookHistos(variables, groups, selections)
-    for group, samplesGroup in samplesPerGroup.iteritems() :
-        logLine = "---->"
-        if verbose : print 1*' ',group
-        histosGroup = histos  [group]
-        countsGroup = counters[group]
-        for sample in samplesGroup :
-            if verbose : logLine +=" %s"%sample.name
-            fillAndCount(histosGroup, countsGroup, sample, blind=False)
-        if verbose : print logLine
-    if verbose : print 'done'
+#-------------------
+def count_and_fill(chain, sample='', syst='', verbose=False):
+    """
+    count and fill for one sample (or group), one syst.
+    """
+    sysGroup = systUtils.Group(sample).setSyst(syst)
+    selections = regions_to_plot()
+    counters = book_counters(selections)
+    histos = book_histograms(sample_name=sample, variables=variables_to_plot(),
+                             systematics=[syst], selections=selections
+                             )[syst]
+    weight_expr = 'event.pars.weight'
+    weight_expr = sysGroup.weightLeafname
+    print 'weight_expr: ',weight_expr
+    for iEntry, event in enumerate(chain):
+        weight = eval(weight_expr)
+        run_num = event.pars.runNumber
+        evt_num = event.pars.eventNumber
+        l0 = addTlv(event.l0)
+        l1 = addTlv(event.l1)
+        met = addTlv(event.met)
+        l0_is_el, l0_is_mu = l0.isEl, l0.isMu
+        l1_is_el, l1_is_mu = l1.isEl, l1.isMu
+        is_emu = int(l0_is_el and l1_is_mu)
+        is_mue = int(l0_is_mu and l1_is_el)
+        is_same_sign = int((l0.charge * l1.charge)>0)
+        is_opp_sign  = not is_same_sign
+        l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
+        dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
+        dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
+        dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
+        dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
+        m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
+        for sel in selections:
+            pass_sel = eval(selection_formulas()[sel])
+            if not pass_sel : continue
+            histos[sel]['onebin'].Fill(1.0, weight)
+            histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
+            histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
+            histos[sel]['mcoll'].Fill(m_coll, weight)
+            counters[sel] += (weight) # if passSels[sel] else 0.0)
+    if verbose:
+        for v in ['onebin', 'pt0', 'pt1']:
+            for sel in selections:
+                h = histos[sel][v]
+                print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
     return counters, histos
 
 def printCounters(counters):
@@ -319,12 +315,6 @@ def printCounters(counters):
     print 4*'-',' blind regions ',4*'-'
     print tableBld.csv()
 #___________________________________________________________
-def allGroups(noData=False, noSignal=True) :
-    return ([k for k in mcDatasetids().keys() if k!='signal' or not noSignal]
-            + ([] if noData else ['data'])
-            + ['fake']
-            )
-
 def selection_formulas(sel=None):
     pt_req = 'l0_pt>45.0 and l1_pt>12.0'
     common_req = (pt_req+' and '+
@@ -350,107 +340,37 @@ def selection_formulas(sel=None):
     formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
     # formulas['vrss_btag'] = formulas_vrss_btag
     return formulas[sel] if sel else formulas
-
-
-def fillAndCount(histos, counters, sample, blind=True) :
-    group    = sample.group
-    filename = sample.filenameHftTree
-    treename = sample.hftTreename
-    file = r.TFile.Open(filename)
-    tree = file.Get(treename)
-    selections = allRegions()
-    selWeights = dict((s, r.TTreeFormula(s, selectionFormulas(s), tree)) for s in selections)
-    weightFormula = r.TTreeFormula('weightFormula', sample.weightLeafname, tree)
-    l1 = r.TLorentzVector()
-    l2 = r.TLorentzVector()
-    met = r.TLorentzVector()
-    for iEvent, event in enumerate(tree) :
-        weight = weightFormula.EvalInstance()
-        passSels = dict((s, selWeights[s].EvalInstance()) for s in selections)
-        for sel in selections : counters[sel] += (weight if passSels[sel] else 0.0)
-        for sel in selections :
-            fillHisto = passSels[sel]
-            if blind and sample.isData :
-                if sel in signalRegions() : fillHisto = False
-                else : fillHisto = passSels[blindRegionFromAnyRegion(sel)] and not passSels[signalRegionFromAnyRegion(sel)]
-            oneJet = event.L2nCentralLightJets==1
-            mev2gev = 1.0e-3
-            mljj = mev2gev*(event.mlj if oneJet else event.mljj)
-            l1.SetPtEtaPhiM(event.lept1Pt*mev2gev, event.lept1Eta, event.lept1Phi, 0.0) # massless here is good enough
-            l2.SetPtEtaPhiM(event.lept2Pt*mev2gev, event.lept2Eta, event.lept2Phi, 0.0)
-            met.SetPtEtaPhiM(event.met*mev2gev,               0.0, event.metPhi,   0.0)
-            ll = l1+l2
-            ptll = ll.Pt()
-            mll = ll.M()
-            l1IsMu = event.lept1Flav==1
-            l2IsMu = event.lept2Flav==1
-            dphil0met = abs(l1.DeltaPhi(met)) if l1.Pt()>l2.Pt() else abs(l2.DeltaPhi(met))
-            if fillHisto :
-                histos[sel]['mll'   ].Fill(mll, weight)
-                histos[sel]['mljj'  ].Fill(mljj, weight)
-                histos[sel]['ptll'  ].Fill(ptll, weight)
-                histos[sel]['onebin'].Fill(1.0,  weight)
-                histos[sel]['dphil0met'].Fill(dphil0met, weight)
-                if l1IsMu or l2IsMu:
-                    dphimumet = abs(l1.DeltaPhi(met)) if l1IsMu else abs(l2.DeltaPhi(met))
-                    histos[sel]['dphimumet'].Fill(dphimumet, weight)
-            # checks
-            if (True and fillHisto
-                and sel in signalRegions()
-                and (sample.isData or sample.isFake)) :
-                channel = 'ee' if event.isEE else 'mm' if event.isMUMU else 'em'
-                dataOrFake = 'data' if sample.isData else 'fake' if sample.isFake else 'other'
-                print "ev %d run %d channel %s sel %s sample %s weight %f"%(event.runNumber, event.eventNumber, channel, sel, dataOrFake, weight)
-    file.Close()
-
-def dataSampleNames() :
-    return ["period%(period)s.physics_%(stream)s"%{'period':p, 'stream':s}
-            for p in ['A','B','C','D','E','G','H','I','J','L']
-            for s in ['Egamma','Muons']]
-def mcDatasetids() :
-    print 'todo: now it is an attribute Dataset.dsid parsed from the dataset name'
-
-def allSamplesAllGroups() :
-    Sample = systUtils.Sample
-    asg = dict( [(group, [Sample(groupname=group, name=dsid) for dsid in dsids]) for group, dsids in mcDatasetids().iteritems()]
-               +[('data', [Sample(groupname='data', name=s) for s in dataSampleNames()])]
-               +[('fake', [Sample(groupname='fake', name=s) for s in dataSampleNames()])])
-    return asg
-def allGroups() :
-    return [systUtils.Group(g) for g in mcDatasetids().keys()+['data']+['fake']]
-
-def stackedGroups(groups) :
-    return [g for g in allSamplesAllGroups().keys() if g not in ['data', 'signal']]
-
+#___________________________________________________________
 def variablesToPlot() :
     return ['onebin','mljj', 'ptll', 'mll', 'dphil0met', 'dphimumet']
-    return ['pt0','pt1','mll','mtmin','mtmax','mtllmet','ht','metrel','dphill','detall',
-            'mt2j','mljj','dphijj','detajj']
-def histoName(sample, selection, variable) : return "h_%s_%s_%s"%(variable, sample, selection)
-def bookHistos(variables, samples, selections) :
-    "book a dict of histograms with keys [sample][selection][var]"
-    def histo(variable, sam, sel) :
+def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
+    "book a dict of histograms with keys [systematics][selection][var]"
+    histoName = systUtils.BaseSampleGroup.histoname
+    def histo(variable, sam, sys, sel) :
         twopi = +2.0*math.pi
         mljjLab = 'm_{lj}' if '1j' in sel else 'm_{ljj}'
         h = None
-        if   v=='onebin'  : h = r.TH1F(histoName(sam, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
-        elif v=='pt0'     : h = r.TH1F(histoName(sam, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          12, 0.0, 240.0)
-        elif v=='pt1'     : h = r.TH1F(histoName(sam, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          12, 0.0, 240.0)
-        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    12, 0.0, 240.0)
-        elif v=='mll'     : h = r.TH1F(histoName(sam, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         12, 0.0, 240.0)
-        elif v=='ptll'    : h = r.TH1F(histoName(sam, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       12, 0.0, 240.0)
-        elif v=='dphil0met': h= r.TH1F(histoName(sam, sel, 'dphil0met'),';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='dphil1met': h= r.TH1F(histoName(sam, sel, 'dphil1met'),';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
+        if   v=='onebin'  : h = r.TH1F(histoName(sam, sys, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
+        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          12, 0.0, 240.0)
+        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          12, 0.0, 240.0)
+        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sys, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    12, 0.0, 240.0)
+        elif v=='mll'     : h = r.TH1F(histoName(sam, sys, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         12, 0.0, 240.0)
+        elif v=='ptll'    : h = r.TH1F(histoName(sam, sys, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       12, 0.0, 240.0)
+        elif v=='dphil0met': h= r.TH1F(histoName(sam, sys, sel, 'dphil0met'),';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='dphil1met': h= r.TH1F(histoName(sam, sys, sel, 'dphil1met'),';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
         else : print "unknown variable %s"%v
         h.Sumw2()
         h.SetDirectory(0)
         return h
-    return dict([(sam, dict([(sel, dict([(v, histo(v, sam, sel)) for v in variables]))
-                         for sel in selections]))
-                 for sam in samples])
-def bookCounters(samples, selections) :
-    "book a dict of counters with keys [sample][selection]"
-    return dict((s, dict((sel, 0.0) for sel in selections)) for s in samples)
+    return dict([(sys,
+                  dict([(sel,
+                         dict([(v, histo(v, sample_name, sys, sel))
+                               for v in variables]))
+                        for sel in selections]))
+                 for sys in systematics])
+def book_counters(selections) :
+    "book a dict of counters with keys [systematic][selection]"
+    return dict((sel, 0.0) for sel in selections)
 def countTotalBkg(counters={'sample' : {'sel':0.0}}) :
     backgrounds = [g for g in counters.keys() if g!='signal' and g!='data']
     selections = first(counters).keys()
@@ -465,7 +385,7 @@ def getGroupColor(g) :
 
 def regions_to_plot():
     return selection_formulas().keys()
-    # return ['emu_ss', 'emu_os']
+
 def variables_to_plot():
     return ['onebin', 'pt0', 'pt1', 'mcoll']
 
@@ -552,11 +472,27 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     can.Update() # force stack to create padMaster
     for ext in ['png','eps'] : can.SaveAs(outdir+'/'+can.GetName()+'.'+ext)
 
-def saveHistos(samplesPerGroup={}, histosPerGroup={}, outdir='./', verbose=False) :
-    for groupname, histosThisGroup in histosPerGroup.iteritems() :
-        group = samplesPerGroup[groupname].setHistosDir(outdir)
-        outFilename = group.filenameHisto
-        writeObjectsToFile(outFilename, histosThisGroup, verbose)
+def listExistingSyst(dirname) :
+    print "listing systematics from ",dirname
+    print "...not implemented yet..."
+
+def get_list_of_syst_to_fill(opts):
+    systematics = ['NOM']
+    sysOption    = opts.syst
+    excludedSyst = opts.exclude
+    anySys       = sysOption==None
+    if sysOption=='fake'   or anySys : systematics += systUtils.fakeSystVariations()
+    if sysOption=='object' or anySys : systematics += systUtils.mcObjectVariations()
+    if sysOption=='weight' or anySys : systematics += systUtils.mcWeightVariations()
+    if sysOption and sysOption.count(','):
+        systematics = [s for s in systUtils.getAllVariations() if s in sysOption.split(',')]
+    elif sysOption in systUtils.getAllVariations(): systematics = [sysOption]
+    elif not anySys and len(systematics)==1 and sysOption!='NOM':
+        raise ValueError("Invalid syst %s"%str(sysOption))
+    if excludedSyst:
+        systematics = [s for s in systematics if s not in filterWithRegexp(systematics, excludedSyst)]
+    return systematics
+
 
 if __name__=='__main__' :
     main()
