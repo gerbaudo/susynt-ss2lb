@@ -57,6 +57,17 @@ def unitLineFromFirstHisto(histos) :
     xAx = fH.GetXaxis()
     return referenceLine(xAx.GetXmin(), xAx.GetXmax())
 
+def topLeftLegend(pad,  legWidth, legHeight, shift=0.0) :
+    rMarg, lMarg, tMarg = pad.GetRightMargin(), pad.GetLeftMargin(), pad.GetTopMargin()
+    leg = r.TLegend(0.0 + lMarg + shift,
+                    1.0 - tMarg - legHeight + shift,
+                    0.0 + rMarg + legWidth + shift,
+                    1.0 - tMarg + shift)
+    leg.SetBorderSize(1)
+    leg.SetFillColor(0)
+    leg.SetFillStyle(0)
+    pad._leg = leg
+    return leg
 def topRightLegend(pad,  legWidth, legHeight, shift=0.0) :
     rMarg, lMarg, tMarg = pad.GetRightMargin(), pad.GetLeftMargin(), pad.GetTopMargin()
     leg = r.TLegend(1.0 - rMarg - legWidth + shift,
