@@ -25,7 +25,7 @@ run_MatrixPrediction \
  -i ${SLURM_SUBMIT_DIR}/%(filelist)s \
  -o %(local_outfilename)s \
  -s %(samplename)s \
- --matrix-file ${ROOTCOREDIR}/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root \
+ --matrix-file ${ROOTCOREDIR}/data/DileptonMatrixMethod/FakeMatrix_Oct_19.root \
  --etapt \
  --systematics \
  %(opt)s
