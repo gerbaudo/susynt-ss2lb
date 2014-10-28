@@ -7,6 +7,7 @@
 # Oct 2014
 
 import os
+import pprint
 import sys
 
 from rootUtils import (buildBotTopPads
@@ -42,43 +43,48 @@ def main():
     fakeSystematics = [s for s in fake.systematics if s!='NOM']
 
     c = r.TCanvas('c','')
-    var = 'mcoll'
+    variables = ['mcoll', 'pt1']
 
-    h_emu = fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
-    h_mue = fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
-    h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
-    h_ratio.Divide(h_emu)
-    plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
-                            filename="{0}/emu_over_mue_wout_sys_err.png".format(outputdir))
+    for var in variables:
+        print ">>>plotting ",var
+        h_emu = fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
+        h_mue = fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
+        h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
+        h_ratio.Divide(h_emu)
+        plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
+                                filename=outputdir+'/'+var+'_mue_over_emu_wout_sys_err')
+        h_with_totErrBand = {} # histo with stat+syst err (to get the correct error in the ratio)
+        for sel in regions_to_plot():
+            print ">>>plotting ",sel
+            fake.setSystNominal()
+            nominalHistoData    = None
+            nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
+            nominalHistosBkg    = {'fake', nominalHistoFakeBkg}
+            nominalHistoTotBkg  = buildTotBackgroundHisto(histoFakeBkg=nominalHistoFakeBkg, histosSimBkgs={})
+            statErrBand = buildStatisticalErrorBand(nominalHistoTotBkg)
+            systErrBand = buildFakeSystematicErrorBand(fake=fake, nominalHistosSimBkg={}, variable=var, selection=sel,
+                                                       variations=fakeSystematics, verbose=verbose)
+            totErrBand = systUtils.addErrorBandsInQuadrature(statErrBand, systErrBand)
+            c.cd()
+            c.Clear()
+            nominalHistoFakeBkg.Draw()
+            totErrBand.Draw('E2 same')
+            totErrBand.SetFillStyle(3005)
+            for ext in ['png', 'eps']:
+                c.SaveAs("{0}/{1}_{2}.{3}".format(outputdir, sel, var, ext))
+            h_with_totErrBand[sel] = systUtils.setHistErrFromErrBand(nominalHistoFakeBkg, totErrBand)
+            pprint.pprint(h_with_totErrBand)
+        h_emu = [h for k,h in h_with_totErrBand.iteritems() if 'emu' in k][0]
+        h_mue = [h for k,h in h_with_totErrBand.iteritems() if 'mue' in k][0]
 
-    h_with_totErrBand = {} # histo with stat+syst err (to get the correct error in the ratio)
-    for sel in regions_to_plot():
-        fake.setSystNominal()
-        nominalHistoData    = None
-        nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
-        nominalHistosBkg    = {'fake', nominalHistoFakeBkg}
-        nominalHistoTotBkg  = buildTotBackgroundHisto(histoFakeBkg=nominalHistoFakeBkg, histosSimBkgs={})
-        statErrBand = buildStatisticalErrorBand(nominalHistoTotBkg)
-        systErrBand = buildFakeSystematicErrorBand(fake=fake, nominalHistosSimBkg={}, variable=var, selection=sel,
-                                                   variations=fakeSystematics, verbose=verbose)
-        totErrBand = systUtils.addErrorBandsInQuadrature(statErrBand, systErrBand)
-        c.cd()
-        c.Clear()
-        nominalHistoFakeBkg.Draw()
-        totErrBand.Draw('E2 same')
-        totErrBand.SetFillStyle(3005)
-        c.SaveAs("{0}/{1}_{2}.png".format(outputdir, sel, var))
-        h_with_totErrBand[sel] = systUtils.setHistErrFromErrBand(nominalHistoFakeBkg, totErrBand)
-    h_emu = [h for k,h in h_with_totErrBand.iteritems() if 'emu' in k][0]
-    h_mue = [h for k,h in h_with_totErrBand.iteritems() if 'mue' in k][0]
-
-    h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
-    h_ratio.Divide(h_emu)
-    plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
-                            filename="{0}/emu_over_mue_with_sys_err.png".format(outputdir))
+        h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
+        h_ratio.Divide(h_emu)
+        plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
+                                filename=outputdir+'/'+var+'mue_over_emu_with_sys_err')
     return
 
-def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None, filename=''):
+def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None,
+                            filename='', figformats=['png', 'eps']):
     c = canvas
     c.Clear()
     c._graphics = []
@@ -129,7 +135,8 @@ def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None, f
     refline.Draw()
     c._graphics.append(refline)
     c.Update()
-    c.SaveAs(filename)
+    for ext in figformats:
+        c.SaveAs("{0}.{1}".format(filename, ext))
 
 def regions_to_plot() : return ['sr_mue_os', 'sr_emu_os']
 
