@@ -272,6 +272,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         met = addTlv(event.met)
         l0_is_el, l0_is_mu = l0.isEl, l0.isMu
         l1_is_el, l1_is_mu = l1.isEl, l1.isMu
+        l0_is_t, l1_is_t = l0.isTight, l1.isTight
         is_emu = int(l0_is_el and l1_is_mu)
         is_mue = int(l0_is_mu and l1_is_el)
         is_same_sign = int((l0.charge * l1.charge)>0)
@@ -285,6 +286,14 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
             if not pass_sel : continue
+            # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
+            def fmt(b) : return '1' if b else '0'
+            # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(sel,
+            #                                                               fmt(l0_is_el), fmt(l1_is_el),
+            #                                                               fmt(l0_is_t), fmt(l1_is_t),
+            #                                                               l0_pt, l1_pt,
+            #                                                               l0.p4.Eta(), l1.p4.Eta())
+
             histos[sel]['onebin'].Fill(1.0, weight)
             histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
             histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
