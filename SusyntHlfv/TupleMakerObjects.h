@@ -82,14 +82,16 @@ struct FourMom {
 /// container to hold the event parameters
 struct EventParameters {
     double weight;
+    double qflipWeight;
     unsigned int eventNumber;
     unsigned int runNumber;
     unsigned int numTaus;
     unsigned int numFjets; ///< number of forward jets
     unsigned int numBjets; ///< number of b-tagged jets
-    EventParameters() : weight(0), eventNumber(0), runNumber(0), numTaus(0), numFjets(0), numBjets(0) {}
+    EventParameters() : weight(0), qflipWeight(0), eventNumber(0), runNumber(0), numTaus(0), numFjets(0), numBjets(0) {}
 #ifndef __CINT__
     EventParameters& setWeight(const double &w) { weight=w; return *this; }
+    EventParameters& setQflipWeight(const double &w) { qflipWeight=w; return *this; }
     EventParameters& setEvent(const unsigned int &e) { eventNumber=e; return *this; }
     EventParameters& setRun(const unsigned int &r) { runNumber=r; return *this; }
 #endif
