@@ -11,8 +11,10 @@
 #include "SusyNtuple/SusyDefs.h"
 #include "SusyNtuple/EventlistHandler.h"
 
+#include <string>
 
 // fw decl
+class chargeFlip;
 class DilTrigLogic;
 class MCWeighter;
 class JVFUncertaintyTool;
@@ -102,6 +104,12 @@ protected:
        Need access to several internal variables, so cannot be static
      */
     double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
+    /// probability that an OS dilepton pair is reconstructed as a SS one
+    /**
+       We use opposite-sign simulated events to estimate the same-sign
+       ones that are due to an electron charge-flip.
+     */
+    double computeQflipWeight(const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met);
 public:
     /// select the jets we are interested in (central, high-pt)
     static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
@@ -119,7 +127,14 @@ public:
     static bool eventIsEmu(const LeptonVector &leptons);
     /// two same-sign leptons
     static bool eventIsSameSign(const LeptonVector &leptons);
+    /// the charge flip map used for this analysis (see ChargeFlip/data/README)
+    static std::string chargeFlipFilename() {
+        return "${ROOTCOREBIN}/data/ChargeFlip/chargeflip_map_12nov2014_scale_with_mc_last_ptbin.root";
+//        return "${ROOTCOREBIN}/data/ChargeFlip/d0_chargeflip_map.root";
+    }
 protected:
+    /// initialize the charge flip tool from WeakProduction/ChargeFlip
+    bool initChargeFlipTool();
     /// initialize the 2L trig logic
     bool initDilTrigLogic();
     /// initialize weighter used for normalization
@@ -135,6 +150,7 @@ protected:
        proof. We're not using proof, so who cares.
      */
     bool initEventList(TTree *tree);
+    chargeFlip*         m_qflipper;     ///< charge flip tool
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress
