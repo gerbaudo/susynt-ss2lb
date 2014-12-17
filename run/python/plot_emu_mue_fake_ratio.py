@@ -42,17 +42,17 @@ def main():
     fake.exploreAvailableSystematics(verbose)
     fakeSystematics = [s for s in fake.systematics if s!='NOM']
 
+    fake.setSyst() # reset to nominal (state is undetermined after 'explore')
     c = r.TCanvas('c','')
     variables = ['mcoll', 'pt1']
 
     for var in variables:
-        print ">>>plotting ",var
         h_emu = fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
         h_mue = fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
-        h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
-        h_ratio.Divide(h_emu)
+        h_ratio = h_emu.Clone(h_emu.GetName().replace('emu', 'emu_over_mue'))
+        h_ratio.Divide(h_mue)
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
-                                filename=outputdir+'/'+var+'_mue_over_emu_wout_sys_err')
+                                filename=outputdir+'/'+var+'_emu_over_mue_wout_sys_err')
         h_with_totErrBand = {} # histo with stat+syst err (to get the correct error in the ratio)
         for sel in regions_to_plot():
             print ">>>plotting ",sel
@@ -77,10 +77,10 @@ def main():
         h_emu = [h for k,h in h_with_totErrBand.iteritems() if 'emu' in k][0]
         h_mue = [h for k,h in h_with_totErrBand.iteritems() if 'mue' in k][0]
 
-        h_ratio = h_mue.Clone(h_mue.GetName().replace('mue', 'mue_over_emu'))
-        h_ratio.Divide(h_emu)
+        h_ratio = h_emu.Clone(h_mue.GetName().replace('emu', 'emu_over_mue'))
+        h_ratio.Divide(h_mue)
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
-                                filename=outputdir+'/'+var+'mue_over_emu_with_sys_err')
+                                filename=outputdir+'/'+var+'_emu_over_mue_with_sys_err')
     return
 
 def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None,
@@ -121,7 +121,7 @@ def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None,
     xax = h_ratio.GetXaxis()
     yax = h_ratio.GetYaxis()
     yax.SetRangeUser(0.0, 2.0)
-    yax.SetTitle('#mue / e#mu ratio')
+    yax.SetTitle('e#mu / #mue ratio')
     xA, yA = h_ratio.GetXaxis(), h_ratio.GetYaxis()
     textScaleUp = 1.0/botPad.GetHNDC()
     yA.SetNdivisions(-104)
