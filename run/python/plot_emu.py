@@ -255,6 +255,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
     count and fill for one sample (or group), one syst.
     """
     sysGroup = systUtils.Group(sample).setSyst(syst)
+    is_mc = systUtils.Group(sample).isMc
     selections = regions_to_plot()
     counters = book_counters(selections)
     histos = book_histograms(sample_name=sample, variables=variables_to_plot(),
@@ -262,9 +263,9 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
                              )[syst]
     weight_expr = 'event.pars.weight'
     weight_expr = sysGroup.weightLeafname
+    qflip_expr = 'event.pars.qflipWeight'
     print 'weight_expr: ',weight_expr
     for iEntry, event in enumerate(chain):
-        weight = eval(weight_expr)
         run_num = event.pars.runNumber
         evt_num = event.pars.eventNumber
         l0 = addTlv(event.l0)
@@ -277,6 +278,10 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         is_mue = int(l0_is_mu and l1_is_el)
         is_same_sign = int((l0.charge * l1.charge)>0)
         is_opp_sign  = not is_same_sign
+        is_qflippable = is_opp_sign and (l0_is_el or l1_is_el) and is_mc
+        weight = eval(weight_expr)
+        qflip_prob = eval(qflip_expr)
+        # print "event : same sign {0}, opp_sign {1}, qflippable {2}, qflip_prob {3}".format(is_same_sign, is_opp_sign, is_qflippable, eval(qflip_expr))
         l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
         dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
         dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
@@ -293,12 +298,14 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
             #                                                               fmt(l0_is_t), fmt(l1_is_t),
             #                                                               l0_pt, l1_pt,
             #                                                               l0.p4.Eta(), l1.p4.Eta())
-
-            histos[sel]['onebin'].Fill(1.0, weight)
-            histos[sel]['pt0'].Fill(l0.p4.Pt(), weight)
-            histos[sel]['pt1'].Fill(l1.p4.Pt(), weight)
-            histos[sel]['mcoll'].Fill(m_coll, weight)
-            counters[sel] += (weight) # if passSels[sel] else 0.0)
+            is_ss_sel = sel.endswith('_ss')
+            as_qflip = is_qflippable and is_ss_sel
+            fill_weight = (weight * qflip_prob) if as_qflip else weight
+            histos[sel]['onebin'].Fill(1.0, fill_weight)
+            histos[sel]['pt0'].Fill(l0.p4.Pt(), fill_weight)
+            histos[sel]['pt1'].Fill(l1.p4.Pt(), fill_weight)
+            histos[sel]['mcoll'].Fill(m_coll, fill_weight)
+            counters[sel] += (fill_weight)
     if verbose:
         for v in ['onebin', 'pt0', 'pt1']:
             for sel in selections:
@@ -334,13 +341,15 @@ def selection_formulas(sel=None):
         'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req,
         'sr_emu_mue' : '(is_emu or is_mue) and '+common_req,
         }
+    os_expr = '(is_opp_sign)'
+    ss_expr = '(is_same_sign or is_qflippable)'
     formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
                      for k, v in formulas.iteritems()
-                     for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]])
+                     for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]])
     # symmetric selection
     pt_sym_req = 'l0_pt>20.0 and l1_pt>20.0'
     for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
-        for ssos, ssos_expr in [('ss', 'is_same_sign'), ('os', 'is_opp_sign')]:
+        for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]:
             formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
     # validation region used by Matt in the 2L paper, see sec6.4 ATL-COM-PHYS-2012-1808
     formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
