@@ -59,6 +59,24 @@ bool TupleMaker::fill(const double weight, const unsigned int run, const unsigne
 //----------------------------------------------------------
 bool TupleMaker::fill(const double weight, const unsigned int run, const unsigned int event,
                       const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
+                      const JetVector &jets)
+{
+    bool someBytesWritten(false);
+    if(tree_) {
+        eventPars_.setWeight(weight).setRun(run).setEvent(event);
+        l0.isMu() ? l0_.setMu(l0) : l0_.setEl(l0);
+        l1.isMu() ? l1_.setMu(l1) : l1_.setEl(l1);
+        met_.setMetCorr(met);
+        jets_.clear();
+        lowptLepts_.clear();
+        std::transform(jets.begin(), jets.end(), std::back_inserter(jets_), jet2FourMom);
+        someBytesWritten = (tree_->Fill()>0);
+    }
+    return someBytesWritten;
+}
+//----------------------------------------------------------
+bool TupleMaker::fill(const double weight, const unsigned int run, const unsigned int event,
+                      const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
                       const LeptonVector &otherLeptons, const JetVector &jets)
 {
     // note to self: to avoid duplication between the two fill

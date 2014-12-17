@@ -111,7 +111,7 @@ Bool_t Selector::Process(Long64_t entry)
                         .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
                         .setNumFjets(vars.numForwardJets)
                         .setNumBjets(vars.numBtagJets)
-                        .fill(weight, run, event, l0, l1, *m_met);
+                        .fill(weight, run, event, l0, l1, *m_met, cljets);
                 }
             } // is_event_to_be_saved
         } // eventHasTwoLeptons

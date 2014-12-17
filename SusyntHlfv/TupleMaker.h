@@ -59,6 +59,10 @@ public:
     /// fill variables for event parameters, dilepton, and met
     bool fill(const double weight, const unsigned int run, const unsigned int event,
               const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met);
+    /// fill as above, + jets
+    bool fill(const double weight, const unsigned int run, const unsigned int event,
+              const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
+              const JetVector &jets);
     /// fill as above, + other leptons and jets
     bool fill(const double weight, const unsigned int run, const unsigned int event,
               const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met,
