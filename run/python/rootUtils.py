@@ -105,18 +105,19 @@ def dummyHisto(name='dummy', title='', n=1, x_min=0.0, x_max=1.0):
 def getMinMaxFromTGraph(gr) :
     points = range(gr.GetN())
     y = np.array([gr.GetY()[p] for p in points])
-    return min(y), max(y)
+    return (min(y), max(y)) if points else (0.0, 0.0)
 def getMinMaxFromTGraphAsymmErrors(gr) :
     points = range(gr.GetN())
     y    = np.array([gr.GetY()[p] for p in points])
     y_el = np.array([abs(gr.GetErrorYlow (i)) for i in points])
     y_eh = np.array([abs(gr.GetErrorYhigh(i)) for i in points])
-    return min(y-y_el), max(y+y_eh)
+    print 'points ',points
+    return (min(y-y_el), max(y+y_eh)) if points else (0.0, 0.0)
 def getMinMaxFromTH1(h) :
     bins = range(1, 1+h.GetNbinsX())
     y   = np.array([h.GetBinContent(b) for b in bins])
     y_e = np.array([h.GetBinError(b)   for b in bins])
-    return min(y-y_e), max(y+y_e)
+    return (min(y-y_e), max(y+y_e)) if bins else (0.0, 0.0)
 def getMinMax(histosOrGraphs=[]) :
     def mM(obj) :
         cname = obj.Class().GetName()
