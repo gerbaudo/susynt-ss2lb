@@ -62,7 +62,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     if(eventFlags.passAllEventCriteria()) {
         // cout<<"passAllEventCriteria"<<endl;
         const JetVector& jets = m_signalJets2Lep;
-        const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
+        const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
         const LeptonVector& l = m_baseLeptons;
         const Met*          m = m_met;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep

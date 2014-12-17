@@ -83,8 +83,8 @@ Bool_t Selector::Process(Long64_t entry)
     EventFlags eventFlags = computeEventFlags();
     if(incrementEventCounters(eventFlags, weightComponents)){
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
-        const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
-        const JetVector&  jets= m_signalJets; // shouldn't we use m_signalJets2Lep?
+        const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
+        const JetVector&  jets= m_signalJets2Lep;
         const LeptonVector& l = m_signalLeptons;
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
