@@ -61,6 +61,8 @@ Example usage ('fill' mode):
  --verbose \\
  2>&1 | tee log/plot_emu/Jul_26/fill.log
 
+You can also add '--batch --log-dir log/plot_emu/Jul_26'.
+
 Example usage ('plot' mode):
 %prog \\
  --input-dir out/plot_emu/Jul_26/histos \\
@@ -84,6 +86,7 @@ def main() :
                       help='list what is already in output_dir')
     parser.add_option('-L', '--list-all-systematics', action='store_true', default=False,
                       help='list all possible systematics')
+    parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('--debug', action='store_true', default=False)
@@ -233,7 +236,7 @@ def submit_batch_fill_job_per_group(group, opts):
     newOptions += (" --syst {0}".format(opts.syst) if opts.syst else '')
     newOptions += (" --exclude {0}".format(opts.exclude) if opts.exclude else '')
     template = 'batch/templates/plot_emu.sh'
-    log_dir = mkdirIfNeeded('log/plot_emu')
+    log_dir = mkdirIfNeeded(opts.log_dir)
     script_dir = mkdirIfNeeded('batch/plot_emu')
     script_name = os.path.join(script_dir, group_name+("_{0}".format(systematic) if systematic else '')+'.sh')
     log_name = log_dir+'/'+group_name+("_{0}".format(systematic) if systematic else '')+'.log'
@@ -288,6 +291,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
         dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
         m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
+        # n_jets = len(event.jets) + event.pars.numFjets + event.pars.numBjets
+        n_jets = event.pars.numFjets + event.pars.numBjets
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
             if not pass_sel : continue
@@ -330,29 +335,38 @@ def printCounters(counters):
 #___________________________________________________________
 def selection_formulas(sel=None):
     pt_req = 'l0_pt>45.0 and l1_pt>12.0'
-    common_req = (pt_req+' and '+
-                  'dphi_l1_met<0.7 and dphi_l0_l1>2.3 and '+
-                  'dpt_l0_l1>7.0 and dphi_l0_met>2.5')
+    common_req_sr = (pt_req+
+                     ' and n_jets==0'+
+                     ' and dphi_l1_met<0.7'+
+                     ' and dphi_l0_l1>2.3 '+
+                     # dpt_l0_l1>7.0
+                     ' and dphi_l0_met>2.5')
+    common_req_vr = (pt_req+
+                     ' and n_jets==0'+
+                     ' and (dphi_l1_met<0.7 or dphi_l0_l1>2.3 or dphi_l0_met>2.5)')
     formulas = {
-        'pre_emu' : 'is_emu and '+pt_req,
-        'pre_mue' : 'is_mue and '+pt_req,
-        'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
-        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req,
-        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req,
-        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req,
+        # 'pre_emu' : 'is_emu and '+pt_req,
+        # 'pre_mue' : 'is_mue and '+pt_req,
+        # 'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
+        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req_sr,
+        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req_sr,
+        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req_sr,
+        'vr_emu' : 'l0_is_el and l1_is_mu and '+common_req_vr,
+        'vr_mue' : 'l0_is_mu and l1_is_el and '+common_req_vr,
+        'vr_emu_mue' : '(is_emu or is_mue) and '+common_req_vr,
         }
     os_expr = '(is_opp_sign)'
     ss_expr = '(is_same_sign or is_qflippable)'
     formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
                      for k, v in formulas.iteritems()
                      for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]])
-    # symmetric selection
-    pt_sym_req = 'l0_pt>20.0 and l1_pt>20.0'
-    for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
-        for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]:
-            formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
+    # # symmetric selection
+    # pt_sym_req = 'l0_pt>20.0 and l1_pt>20.0'
+    # for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
+    #     for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]:
+    #         formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
     # validation region used by Matt in the 2L paper, see sec6.4 ATL-COM-PHYS-2012-1808
-    formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
+    # formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
     # formulas['vrss_btag'] = formulas_vrss_btag
     return formulas[sel] if sel else formulas
 #___________________________________________________________
@@ -366,11 +380,12 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         mljjLab = 'm_{lj}' if '1j' in sel else 'm_{ljj}'
         h = None
         if   v=='onebin'  : h = r.TH1F(histoName(sam, sys, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
-        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          12, 0.0, 240.0)
-        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          12, 0.0, 240.0)
-        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sys, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    12, 0.0, 240.0)
-        elif v=='mll'     : h = r.TH1F(histoName(sam, sys, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         12, 0.0, 240.0)
-        elif v=='ptll'    : h = r.TH1F(histoName(sam, sys, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       12, 0.0, 240.0)
+        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          24, 0.0, 240.0)
+        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          24, 0.0, 240.0)
+        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sys, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    40, 0.0, 400.0)
+        elif v=='mll'     : h = r.TH1F(histoName(sam, sys, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         24, 0.0, 240.0)
+        elif v=='ptll'    : h = r.TH1F(histoName(sam, sys, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       24, 0.0, 240.0)
+        elif v=='met'     : h = r.TH1F(histoName(sam, sys, sel, 'met'    ), ';MET [GeV]; entries/bin',               24, 0.0, 240.0)
         elif v=='dphil0met': h= r.TH1F(histoName(sam, sys, sel, 'dphil0met'),';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
         elif v=='dphil1met': h= r.TH1F(histoName(sam, sys, sel, 'dphil1met'),';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
         else : print "unknown variable %s"%v
@@ -399,6 +414,7 @@ def getGroupColor(g) :
     return colors[g]
 
 def regions_to_plot():
+    return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     return selection_formulas().keys()
 
 def variables_to_plot():
@@ -414,7 +430,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     "Note: blinding can be required for only a subrange of the histo, so it is taken care of when filling"
     setAtlasStyle()
     padMaster = histoData
-    if verbose : print "plotting ",padMaster.GetName()
+    if verbose : print "plotting ",padMaster.GetName(),' (',padMaster.GetEntries(),' entries)'
     can = r.TCanvas(canvasName, padMaster.GetTitle(), 800, 600)
     can.cd()
     can._hists = [padMaster]
