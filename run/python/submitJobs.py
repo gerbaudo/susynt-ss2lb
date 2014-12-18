@@ -60,7 +60,7 @@ def parse_options():
     parser.add_option('-e', '--exclude-regexp', help="exclude matching samples")
     parser.add_option("-S", "--submit", action='store_true', default=False, help="submit jobs (default dry run)")
     parser.add_option("-t", "--tag", help="batch tag")
-    parser.add_option("-C", "--no-cache", action='store_true', default=False, help="do not cache TEventList")
+    parser.add_option("-C", "--use-cache", action='store_true', default=False, help="create TEventList cache (or use existing one)")
     parser.add_option("-v", "--verbose", action="store_true", default=False, help="print more details about what is going on")
     (options, args) = parser.parse_args()
     options.executable = get_executable(parser, options)
@@ -130,7 +130,7 @@ def get_batch_script(dset, options):
     out_rootfile = outdir+'/'+dsname+'.root'
     out_logfile  = logdir+'/'+dsname+'.log'
     exe_options = ''
-    exe_options += '' if options.no_cache else " --event-list %s"%(cachedir+'/'+dsname+'.root')
+    exe_options += " --event-list %s"%(cachedir+'/'+dsname+'.root') if options.use_cache else ''
 
     if options.do_not_overwrite and os.path.exists(batch_script):
         if options.verbose : print "file exists : {0}".format(batch_script)
