@@ -333,8 +333,8 @@ def printCounters(counters):
     print 4*'-',' blind regions ',4*'-'
     print tableBld.csv()
 #___________________________________________________________
-def selection_formulas(sel=None):
-    pt_req = 'l0_pt>45.0 and l1_pt>12.0'
+def selection_formulas():
+    pt_req = 'l0_pt>45.0 and l1_pt>12.0 and (l0_pt-l1_pt)>7.0 '
     common_req_sr = (pt_req+
                      ' and n_jets==0'+
                      ' and dphi_l1_met<0.7'+
