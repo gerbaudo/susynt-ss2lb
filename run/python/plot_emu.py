@@ -36,7 +36,7 @@ from utils import (first
                    )
 
 import utils
-from kin import addTlv, computeCollinearMassLepTau
+from kin import addTlv, computeCollinearMassLepTau, computeRazor
 
 susyntutils = utils.import_susyntutils()
 r = susyntutils.import_root()
@@ -279,6 +279,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         l0_is_t, l1_is_t = l0.isTight, l1.isTight
         is_emu = int(l0_is_el and l1_is_mu)
         is_mue = int(l0_is_mu and l1_is_el)
+        is_mumu = int(l0_is_mu and l1_is_mu)
+        is_ee = int(l0_is_el and l1_is_el)
         is_same_sign = int((l0.charge * l1.charge)>0)
         is_opp_sign  = not is_same_sign
         is_qflippable = is_opp_sign and (l0_is_el or l1_is_el) and is_mc
@@ -291,14 +293,19 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
         dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
         m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
-        # n_jets = len(event.jets) + event.pars.numFjets + event.pars.numBjets
-        n_jets = event.pars.numFjets + event.pars.numBjets
+        dphillbeta, mdr = computeRazor(l0.p4, l1.p4, met.p4)
+        def jet_pt2(j) : return j.px*j.px+j.py*j.py
+        n_cl_jets = sum(1 for j in event.jets if jet_pt2(j)>30.*30.)
+        n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
+        # n_jets = event.pars.numFjets + event.pars.numBjets
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
             if not pass_sel : continue
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
+            lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
+            qqtype = "{0}{1}".format('T' if l0_is_t else 'L', 'T' if l1_is_t else 'L')
             def fmt(b) : return '1' if b else '0'
-            # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(sel,
+            # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(lltype+' '+qqtype, #sel,
             #                                                               fmt(l0_is_el), fmt(l1_is_el),
             #                                                               fmt(l0_is_t), fmt(l1_is_t),
             #                                                               l0_pt, l1_pt,
@@ -368,7 +375,11 @@ def selection_formulas():
     # validation region used by Matt in the 2L paper, see sec6.4 ATL-COM-PHYS-2012-1808
     # formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
     # formulas['vrss_btag'] = formulas_vrss_btag
-    return formulas[sel] if sel else formulas
+
+    formulas['vr_emu_razor_ss'] = '(is_emu or is_mue) and mdr>20.0 and '+ss_expr
+    formulas['vr_ee_razor_ss'] = 'is_ee and mdr>20.0 and '+ss_expr
+    formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
+    return formulas
 #___________________________________________________________
 def variablesToPlot() :
     return ['onebin','mljj', 'ptll', 'mll', 'dphil0met', 'dphimumet']
@@ -414,7 +425,10 @@ def getGroupColor(g) :
     return colors[g]
 
 def regions_to_plot():
-    return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
+    # return ['vr_emu_mue_ss'] # test to debug fake
+    # return ['vr_emu_ss_razor']
+    # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
+    # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     return selection_formulas().keys()
 
 def variables_to_plot():
