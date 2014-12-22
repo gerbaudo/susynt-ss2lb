@@ -92,14 +92,18 @@ Bool_t Selector::Process(Long64_t entry)
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
-            bool is_data(!nt.evt()->isMC), two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
-
+            bool is_data(!nt.evt()->isMC), is_mc(!is_data);
+            bool two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
+            bool is_e_mu(eventIsEmu(l));
+            bool has_some_electron = is_e_mu;
+            bool is_qflippable(is_mc && has_some_electron && eventIsOppositeSign(l));
+            bool is_same_sign(eventIsSameSign(l) || is_qflippable);
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          (is_data || two_mc_prompt) &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
-                                         eventIsEmu(l));
+                                         (is_e_mu || is_same_sign));
             if(is_event_to_be_saved){
                 if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
                 if(m_writeTuple) {
@@ -405,6 +409,11 @@ bool Selector::eventIsEmu(const LeptonVector &leptons)
                  (l0.isMu() && l1.isEle()) );
     }
     return isEmu;
+}
+//-----------------------------------------
+bool Selector::eventIsOppositeSign(const LeptonVector &leptons)
+{
+    return (leptons.size()==2 && (leptons[0]->q*leptons[1]->q <0));
 }
 //-----------------------------------------
 bool Selector::eventIsSameSign(const LeptonVector &leptons)
