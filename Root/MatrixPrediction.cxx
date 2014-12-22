@@ -73,11 +73,12 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             assignNonStaticWeightComponents(l, bj, Systematic::CENTRAL, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
+            bool is_e_mu(eventIsEmu(l)), is_same_sign(eventIsSameSign(l));
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
-                                         eventIsEmu(l));
+                                         (is_e_mu || is_same_sign));
             if(is_event_to_be_saved){
                 uint nVtx = nt.evt()->nVtx;
                 bool isMC = nt.evt()->isMC;
