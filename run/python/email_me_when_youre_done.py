@@ -25,7 +25,7 @@ def main() :
     subject   = opts.subject
     everyNsec = opts.polleverysec
     nChecksDone = 0
-    countJobsCmd="qstat -u %(user)s | grep %(user)s | wc -l"% {'user':username}
+    countJobsCmd="qstat -u %(user)s | grep %(user)s | egrep '(Q|R)' | wc -l"% {'user':username}
     nJobsRunning = int(getCommandOutput(countJobsCmd)['stdout'])    
     while nJobsRunning > 0 :
         sleep(everyNsec)
