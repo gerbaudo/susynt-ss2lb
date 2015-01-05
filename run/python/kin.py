@@ -68,9 +68,9 @@ def computeRazor(l0, l1, met, throw_on_neg_sqrt=False):
     razor variables from hep-ph/1310.4827.
     Inputs are TLorentzVector objects
     """
-    metlv = met
-    l0    = l0
-    l1    = l1
+    metlv = tlv(met) # don't boost the input TLV, make a copy
+    l0    = tlv(l0)
+    l1    = tlv(l1)
     # lab frame
     vBETA_z = (l0+l1).Vect()*r.Double(1./(l0.E()+l1.E()))
     vBETA_z.SetX(0.0)
