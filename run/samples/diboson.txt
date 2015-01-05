@@ -45,10 +45,10 @@ group.phys-susy.mc12_8TeV.157814.Sherpa_CT10_VVtoeeqq.SusyNt.e1515_s1499_s1504_r
 group.phys-susy.mc12_8TeV.157815.Sherpa_CT10_VVtomumuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
 group.phys-susy.mc12_8TeV.157816.Sherpa_CT10_VVtotautauqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
 
-# VV -> lnuqq
-group.phys-susy.mc12_8TeV.157817.Sherpa_CT10_VVtoenuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.157818.Sherpa_CT10_VVtomunuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.157819.Sherpa_CT10_VVtotaunuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
+# # VV -> lnuqq (no real contribution)
+# group.phys-susy.mc12_8TeV.157817.Sherpa_CT10_VVtoenuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.157818.Sherpa_CT10_VVtomunuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.157819.Sherpa_CT10_VVtotaunuqq.SusyNt.e1515_s1499_s1504_r3658_r3549_p1512_n0155
 
 # Sherpa_llnunu
 group.phys-susy.mc12_8TeV.126988.Sherpa_CT10_llnunu_SS_EW6.SusyNt.e1434_s1499_s1504_r3658_r3549_p1512_n0155
@@ -59,13 +59,13 @@ group.phys-susy.mc12_8TeV.167006.MadGraphPythia_WWWStar_lnulnulnu.SusyNt.e1447_s
 group.phys-susy.mc12_8TeV.167007.MadGraphPythia_AUET2BCTEQ6L1_ZWWStar_lllnulnu.SusyNt.e1466_s1499_s1504_r3658_r3549_p1512_n0155
 group.phys-susy.mc12_8TeV.167008.MadGraphPythia_AUET2BCTEQ6L1_ZZZStar_nunullll.SusyNt.e1466_s1499_s1504_r3658_r3549_p1512_n0155
 
-# VVjj
-group.phys-susy.mc12_8TeV.147191.Sherpa_CT10_lnlnjj_WWjj_ls_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
-# group.phys-susy.mc12_8TeV.147192.Sherpa_CT10_lnln_WW_ls.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.147193.Sherpa_CT10_lnlnjj_WWjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.147194.Sherpa_CT10_lllnjj_WZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.147195.Sherpa_CT10_llnnjj_ZZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
-group.phys-susy.mc12_8TeV.147196.Sherpa_CT10_lllljj_ZZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# # VVjj # double counting with 12698[89] (to be double-checked)
+# group.phys-susy.mc12_8TeV.147191.Sherpa_CT10_lnlnjj_WWjj_ls_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# # group.phys-susy.mc12_8TeV.147192.Sherpa_CT10_lnln_WW_ls.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.147193.Sherpa_CT10_lnlnjj_WWjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.147194.Sherpa_CT10_lllnjj_WZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.147195.Sherpa_CT10_llnnjj_ZZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
+# group.phys-susy.mc12_8TeV.147196.Sherpa_CT10_lllljj_ZZjj_EW6.SusyNt.e1613_s1499_s1504_r3658_r3549_p1512_n0155
 
 # ZZ via g-g fusion
 group.phys-susy.mc12_8TeV.116600.gg2ZZJimmy_AUET2CT10_ZZ4lep.SusyNt.e1525_s1499_s1504_r3658_r3549_p1512_n0155
@@ -84,10 +84,10 @@ group.phys-susy.mc12_8TeV.169477.gg2wwJimmy_AUET2CT10_WpWmtaunutaunu.SusyNt.e172
 group.phys-susy.mc12_8TeV.169478.gg2wwJimmy_AUET2CT10_WpWmtaunuenu.SusyNt.e1723_s1581_s1586_r3658_r3549_p1512_n0155
 group.phys-susy.mc12_8TeV.169479.gg2wwJimmy_AUET2CT10_WpWmtaunumunu.SusyNt.e1723_s1581_s1586_r3658_r3549_p1512_n0155
 
-# Sherpa_llnunu_MassiveCB
-group.phys-susy.mc12_8TeV.177997.Sherpa_CT10_llnunu_WW_MassiveCB.SusyNt.e2098_s1581_s1586_r4485_r4540_p1512_n0155
+# Sherpa_llnunu_MassiveCB # double counting 126988?
+# group.phys-susy.mc12_8TeV.177997.Sherpa_CT10_llnunu_WW_MassiveCB.SusyNt.e2098_s1581_s1586_r4485_r4540_p1512_n0155
 
-# Sherpa_VVtollqq_MassiveCB
-group.phys-susy.mc12_8TeV.183734.Sherpa_CT10_WWtoenuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
-group.phys-susy.mc12_8TeV.183736.Sherpa_CT10_WWtomunuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
-group.phys-susy.mc12_8TeV.183738.Sherpa_CT10_WWtotaunuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
+# # Sherpa_VVtollqq_MassiveCB # no real contribution
+# group.phys-susy.mc12_8TeV.183734.Sherpa_CT10_WWtoenuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
+# group.phys-susy.mc12_8TeV.183736.Sherpa_CT10_WWtomunuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
+# group.phys-susy.mc12_8TeV.183738.Sherpa_CT10_WWtotaunuqq_MassiveCB.SusyNt.e2347_s1581_s1586_r4485_r4540_p1512_n0155
