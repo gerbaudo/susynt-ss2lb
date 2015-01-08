@@ -288,6 +288,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         qflip_prob = eval(qflip_expr)
         # print "event : same sign {0}, opp_sign {1}, qflippable {2}, qflip_prob {3}".format(is_same_sign, is_opp_sign, is_qflippable, eval(qflip_expr))
         l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
+        m_ll = (l0.p4 + l1.p4).M()
+        pt_ll = (l0.p4 + l1.p4).Pt()
         dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
         dphi_l1_met = abs(l1.p4.DeltaPhi(met.p4))
         dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
@@ -300,26 +302,34 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         # n_jets = event.pars.numFjets + event.pars.numBjets
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
+            is_ss_sel = sel.endswith('_ss')
+            as_qflip = is_qflippable and is_ss_sel
+            if as_qflip and not is_qflip : pass_sel = False
             if not pass_sel : continue
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
             lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
             qqtype = "{0}{1}".format('T' if l0_is_t else 'L', 'T' if l1_is_t else 'L')
             def fmt(b) : return '1' if b else '0'
-            # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(lltype+' '+qqtype, #sel,
+            # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(lltype+' '+qqtype, #+' '+sel,
             #                                                               fmt(l0_is_el), fmt(l1_is_el),
             #                                                               fmt(l0_is_t), fmt(l1_is_t),
             #                                                               l0_pt, l1_pt,
             #                                                               l0.p4.Eta(), l1.p4.Eta())
-            is_ss_sel = sel.endswith('_ss')
-            as_qflip = is_qflippable and is_ss_sel
             fill_weight = (weight * qflip_prob) if as_qflip else weight
             histos[sel]['onebin'].Fill(1.0, fill_weight)
+            histos[sel]['njets'].Fill(n_jets, fill_weight)
             histos[sel]['pt0'].Fill(l0.p4.Pt(), fill_weight)
             histos[sel]['pt1'].Fill(l1.p4.Pt(), fill_weight)
-            histos[sel]['mcoll'].Fill(m_coll, fill_weight)
+            histos[sel]['mll'      ].Fill(m_ll, fill_weight)
+            histos[sel]['ptll'     ].Fill(pt_ll, fill_weight)
+            histos[sel]['met'      ].Fill(met.p4.Pt(), fill_weight)
+            histos[sel]['dphil0met'].Fill(dphi_l0_met, fill_weight)
+            histos[sel]['dphil1met'].Fill(dphi_l1_met, fill_weight)
+            if is_data and not (blinded and 100.0<m_coll and m_coll<150.0) :
+                histos[sel]['mcoll'].Fill(m_coll, fill_weight)
             counters[sel] += (fill_weight)
     if verbose:
-        for v in ['onebin', 'pt0', 'pt1']:
+        for v in ['onebin']: #, 'pt0', 'pt1']:
             for sel in selections:
                 h = histos[sel][v]
                 print "{0}: integral {1}, entries {2}".format(h.GetName(), h.Integral(), h.GetEntries())
@@ -381,8 +391,6 @@ def selection_formulas():
     formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
     return formulas
 #___________________________________________________________
-def variablesToPlot() :
-    return ['onebin','mljj', 'ptll', 'mll', 'dphil0met', 'dphimumet']
 def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
     "book a dict of histograms with keys [systematics][selection][var]"
     histoName = systUtils.BaseSampleGroup.histoname
@@ -391,8 +399,9 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         mljjLab = 'm_{lj}' if '1j' in sel else 'm_{ljj}'
         h = None
         if   v=='onebin'  : h = r.TH1F(histoName(sam, sys, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
-        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          24, 0.0, 240.0)
-        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          24, 0.0, 240.0)
+        elif v=='njets'   : h = r.TH1F(histoName(sam, sys, sel, 'njets'  ), ';N_{jets}; entries',                    10,-0.5,   9.5)
+        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          48, 0.0, 240.0)
+        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          48, 0.0, 240.0)
         elif v=='mcoll'   : h = r.TH1F(histoName(sam, sys, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    40, 0.0, 400.0)
         elif v=='mll'     : h = r.TH1F(histoName(sam, sys, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         24, 0.0, 240.0)
         elif v=='ptll'    : h = r.TH1F(histoName(sam, sys, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       24, 0.0, 240.0)
@@ -429,10 +438,13 @@ def regions_to_plot():
     # return ['vr_emu_ss_razor']
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
     # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
+    # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
     return selection_formulas().keys()
 
 def variables_to_plot():
-    return ['onebin', 'pt0', 'pt1', 'mcoll']
+    return ['onebin', 'njets', 'pt0', 'pt1', 'mcoll',
+            'mll', 'ptll', 'met', 'dphil0met', 'dphil1met'
+            ]
 
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
