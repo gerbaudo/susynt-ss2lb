@@ -125,7 +125,7 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_simbkg',
                                 label='SR: simbkg')
-        continue # if you don't have vr
+        # continue # if you don't have vr
         # vr
         h_emu = fake.getHistogram(variable=var, selection='vr_emu_os', cacheIt=True)
         h_mue = fake.getHistogram(variable=var, selection='vr_mue_os', cacheIt=True)
