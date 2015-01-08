@@ -111,7 +111,6 @@ def getMinMaxFromTGraphAsymmErrors(gr) :
     y    = np.array([gr.GetY()[p] for p in points])
     y_el = np.array([abs(gr.GetErrorYlow (i)) for i in points])
     y_eh = np.array([abs(gr.GetErrorYhigh(i)) for i in points])
-    print 'points ',points
     return (min(y-y_el), max(y+y_eh)) if points else (0.0, 0.0)
 def getMinMaxFromTH1(h) :
     bins = range(1, 1+h.GetNbinsX())
