@@ -199,18 +199,19 @@ def maxSepVerticalLine(hSig, hBkg, yMin=0.0, yMax=1.0) :
     sep = [abs(a-b) for a,b in zip(bcS, bcB)]
     return r.TLine(xPos, yMin, xPos, yMax)
 
-def topRightLabel(pad, label, xpos=None, ypos=None, align=33) :
+def topRightLabel(pad, label, xpos=None, ypos=None, align=33, scale=1.0) :
     pad.cd()
     tex = r.TLatex(0.0, 0.0, '')
     tex.SetNDC()
     tex.SetTextAlign(align)
+    tex.SetTextSize(scale*tex.GetTextSize())
     tex.DrawLatex((1.0-pad.GetRightMargin()) if not xpos else xpos, (1.0-pad.GetTopMargin()) if not ypos else ypos, label)
     pad._label = tex
     return tex
 
-def drawAtlasLabel(pad, xpos=None, ypos=None, align=33) :
+def drawAtlasLabel(pad, xpos=None, ypos=None, align=33, scale=1.0) :
     label = "#bf{#it{ATLAS}} Internal, #sqrt{s} = 8 TeV, 20.3 fb^{-1}"
-    return topRightLabel(pad, label, xpos, ypos, align)
+    return topRightLabel(pad, label, xpos, ypos, align, scale)
 
 def getBinning(h) :
     cname = h.Class().GetName()
@@ -371,3 +372,9 @@ def graphWithPoissonError(histo, fillZero=False) :
             gr.SetPointError(point, xErr, xErr, ed, eu)
     histo._poissonErr = gr # attach to histo for persistency
     return gr
+
+def getXrange(h) :
+    nbins = h.GetNbinsX()
+    x_lo = h.GetBinCenter(1) - 0.5*h.GetBinWidth(1)
+    x_hi = h.GetBinCenter(nbins) + 0.5*h.GetBinWidth(nbins)
+    return x_lo, x_hi
