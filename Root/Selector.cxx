@@ -95,15 +95,15 @@ Bool_t Selector::Process(Long64_t entry)
             bool is_data(!nt.evt()->isMC), is_mc(!is_data);
             bool two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
             bool is_e_mu(eventIsEmu(l));
-            bool has_some_electron = is_e_mu;
+            bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
             bool is_qflippable(is_mc && has_some_electron && eventIsOppositeSign(l));
-            bool is_same_sign(eventIsSameSign(l) || is_qflippable);
+            bool is_same_sign(eventIsSameSign(l));
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          (is_data || two_mc_prompt) &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
-                                         (is_e_mu || is_same_sign));
+                                         (is_e_mu || is_same_sign || is_qflippable));
             if(is_event_to_be_saved){
                 if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
                 if(m_writeTuple) {
