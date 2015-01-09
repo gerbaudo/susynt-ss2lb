@@ -30,6 +30,9 @@ class DatasetGroup(object):
     @property
     def is_data(self):
         return 'data' in self.name or all(d.is_data for d in self.datasets)
+    @property
+    def is_qflip(self):
+        return 'qflip' in self.name
     @classmethod
     def parse_datasets_from_file(cls, filename=''):
         datasets = []
@@ -55,6 +58,14 @@ class DatasetGroup(object):
             ds.filename = self.filename.replace('data', 'fake')
         else:
             print "Warning: you are trying to generate the fake group from something other than data"
+        return ds
+    @classmethod
+    def build_qflip_from_simulated_samples(cls, simulated_groups=[]):
+        "qflip is the sum of all simulated samples"
+        ds = DatasetGroup('qflip')
+        first_group = simulated_groups[0]
+        ds.filename = first_group.filename.replace(first_group.name, 'qflip')
+        ds.datasets = [d for g in simulated_groups for d in g.datasets if not g.is_data]
         return ds
 
 class Dataset(object):
