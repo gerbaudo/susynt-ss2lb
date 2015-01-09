@@ -11,7 +11,7 @@ import math
 import optparse
 import os
 import pprint
-
+import time
 import dataset
 from rootUtils import (drawAtlasLabel
                        ,dummyHisto
@@ -25,6 +25,10 @@ from rootUtils import (drawAtlasLabel
                        ,setAtlasStyle
                        ,topRightLabel
                        ,writeObjectsToFile
+                       ,buildRatioHistogram
+                       ,buildBotTopPads
+                       ,getXrange
+                       ,referenceLine
                        )
 r = importRoot()
 from utils import (first
@@ -90,6 +94,7 @@ def main() :
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('--debug', action='store_true', default=False)
+    parser.add_option('--unblind', action='store_true', default=False)
 
     (opts, args) = parser.parse_args()
     if opts.list_all_systematics :
@@ -120,13 +125,20 @@ def runFill(opts) :
     inputGenDir  = opts.input_other
     outputDir    = opts.output_dir
     verbose      = opts.verbose
+    debug        = opts.debug
+    blinded      = not opts.unblind
 
-    if opts.debug : dataset.Dataset.verbose_parsing = True
+    if debug : dataset.Dataset.verbose_parsing = True
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
+    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
-    print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
-
+    if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
+    if debug :
+        print '\n'.join("group {0} : {1} samples: {2}".format(g.name,
+                                                              len(g.datasets),
+                                                              '\n\t'+'\n\t'.join(d.name for d in g.datasets))
+                        for g in groups)
     if verbose : print "filling histos"
     mkdirIfNeeded(outputDir)
     systematics = get_list_of_syst_to_fill(opts)
@@ -154,7 +166,8 @@ def runFill(opts) :
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
                 counters, histos = count_and_fill(chain=chain, sample=group.name,
-                                                  syst=systematic, verbose=verbose)
+                                                  syst=systematic, verbose=verbose,
+                                                  blinded=blinded)
                 out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
                 print 'out_filename: ',out_filename
                 writeObjectsToFile(out_filename, histos, verbose)
@@ -173,6 +186,7 @@ def runPlot(opts) :
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
+    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
     plot_groups = [systUtils.Group(g.name) for g in groups]
     for group in plot_groups :
         group.setHistosDir(inputDir)
@@ -253,21 +267,27 @@ def submit_batch_fill_job_per_group(group, opts):
     if out['stderr'] : print  out['stderr']
 
 #-------------------
-def count_and_fill(chain, sample='', syst='', verbose=False):
+def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
     """
     count and fill for one sample (or group), one syst.
     """
     sysGroup = systUtils.Group(sample).setSyst(syst)
     is_mc = systUtils.Group(sample).isMc
+    is_data = systUtils.Group(sample).isData
+    is_qflip_sample = dataset.DatasetGroup(sample).is_qflip
     selections = regions_to_plot()
     counters = book_counters(selections)
     histos = book_histograms(sample_name=sample, variables=variables_to_plot(),
                              systematics=[syst], selections=selections
                              )[syst]
+    if is_qflip_sample : # for qflip, only fill ss histos
+        selections = [s for s in selections if s.endswith('_ss')]
     weight_expr = 'event.pars.weight'
     weight_expr = sysGroup.weightLeafname
     qflip_expr = 'event.pars.qflipWeight'
     print 'weight_expr: ',weight_expr
+    start_time = time.clock()
+    num_processed_entries = 0
     for iEntry, event in enumerate(chain):
         run_num = event.pars.runNumber
         evt_num = event.pars.eventNumber
@@ -300,11 +320,13 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
         n_cl_jets = sum(1 for j in event.jets if jet_pt2(j)>30.*30.)
         n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
         # n_jets = event.pars.numFjets + event.pars.numBjets
+        pass_sels = {}
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
+            pass_sels[sel] = pass_sel
             is_ss_sel = sel.endswith('_ss')
-            as_qflip = is_qflippable and is_ss_sel
-            if as_qflip and not is_qflip : pass_sel = False
+            as_qflip = is_qflippable and (is_opp_sign and is_ss_sel)
+            if is_qflip_sample and not as_qflip : pass_sel = False
             if not pass_sel : continue
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
             lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
@@ -328,6 +350,18 @@ def count_and_fill(chain, sample='', syst='', verbose=False):
             if is_data and not (blinded and 100.0<m_coll and m_coll<150.0) :
                 histos[sel]['mcoll'].Fill(m_coll, fill_weight)
             counters[sel] += (fill_weight)
+        # print ('e' if l0_is_el else 'm'),('e' if l1_is_el else 'm'),' : ',
+        # print ' is_opp_sign: ',is_opp_sign,
+        # print ' is_qflippable: ',is_qflippable,
+        # print pass_sels
+        num_processed_entries += 1
+    end_time = time.clock()
+    delta_time = end_time - start_time
+    if verbose:
+        print ("processed {0:d} entries ".format(num_processed_entries)
+               +"in "+("{0:d} min ".format(int(delta_time/60)) if delta_time>60 else
+                       "{0:.1f} s ".format(delta_time))
+               +"({0:.1f} kHz)".format(num_processed_entries/delta_time))
     if verbose:
         for v in ['onebin']: #, 'pt0', 'pt1']:
             for sel in selections:
@@ -389,6 +423,7 @@ def selection_formulas():
     formulas['vr_emu_razor_ss'] = '(is_emu or is_mue) and mdr>20.0 and '+ss_expr
     formulas['vr_ee_razor_ss'] = 'is_ee and mdr>20.0 and '+ss_expr
     formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
+    # return {'vr_mumu_razor_ss' : formulas['vr_mumu_razor_ss']}
     return formulas
 #___________________________________________________________
 def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
@@ -428,7 +463,7 @@ def countTotalBkg(counters={'sample' : {'sel':0.0}}) :
 def getGroupColor(g) :
     oldColors = [('data', r.kBlack), ('diboson',r.kSpring+2), ('higgs',r.kAzure-4),
                  ('signal',r.kMagenta), ('top', r.kRed+1), ('zjets', r.kOrange-2),
-                 ('fake',r.kGray)]
+                 ('fake',r.kGray), ('qflip', r.kYellow-9)]
     newColors = [] #[('signal',r.kMagenta), ('WW',r.kAzure-9), ('Higgs',r.kYellow-9)]
     colors = dict((g,c) for g,c in  oldColors + newColors)
     return colors[g]
@@ -457,16 +492,20 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     setAtlasStyle()
     padMaster = histoData
     if verbose : print "plotting ",padMaster.GetName(),' (',padMaster.GetEntries(),' entries)'
-    can = r.TCanvas(canvasName, padMaster.GetTitle(), 800, 600)
+    can = r.TCanvas(canvasName, padMaster.GetTitle(), 800, 800)
+    botPad, topPad = buildBotTopPads(can, squeezeMargins=False)
     can.cd()
-    can._hists = [padMaster]
+    topPad.Draw()
+    # draw top
+    topPad.cd()
+    topPad._hists = [padMaster]
     padMaster.Draw('axis')
-    can.Update() # necessary to fool root's dumb object ownership of the stack
+    topPad.Update() # necessary to fool root's dumb object ownership of the stack
     stack = r.THStack('stack_'+padMaster.GetName(), '')
     r.SetOwnership(stack, False)
-    can._hists.append(stack)
+    topPad._hists.append(stack)
     leg = topRightLegend(can, 0.225, 0.325)
-    can._leg = leg
+    topPad._leg = leg
     leg.SetBorderSize(0)
     leg._reversedEntries = []
     def integralWou(h):
@@ -477,7 +516,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
         histo.SetLineWidth(2)
         histo.SetLineColor(r.kBlack)
         stack.Add(histo)
-        can._hists.append(histo)
+        topPad._hists.append(histo)
         leg._reversedEntries.append((histo, "{0}: {1:.2f}".format(group, integralWou(histo)), 'F'))
     leg._reversedEntries.append((dummyHisto(), "{0}, {1:.2f}".format('bkg', sum([integralWou(h) for h in stack.GetHists()])), 'l'))
     leg._reversedEntries.append((histoData, "{0}, {1:.2f}".format('data', integralWou(histoData)), 'p'))
@@ -506,7 +545,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
         totErrBand.SetFillStyle(3005)
         leg.AddEntry(totErrBand, 'stat+syst', 'f')
     leg.Draw('same')
-    can.Update()
+    topPad.Update()
     tex = r.TLatex()
     tex.SetTextSize(0.5 * tex.GetTextSize())
     tex.SetNDC(True)
@@ -517,16 +556,49 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
         label += "#pm #splitline{%.3f}{%.3f} (syst)"%(sysUp, sysDo)
     if drawYieldAndError :
         tex.DrawLatex(0.10, 0.95, label)
-        can.SetTopMargin(2.0*can.GetTopMargin())
-    drawAtlasLabel(can, xpos=0.125, align=13)
+        topPad.SetTopMargin(2.0*topPad.GetTopMargin())
+    atlasLabel = drawAtlasLabel(can, xpos=0.125, align=13, scale=0.75)
     if topLabel : topRightLabel(can, topLabel, ypos=1.0)
     yMin, yMax = getMinMax([histoData, dataGraph, histoTotBkg, histoSignal, totErrBand])
     padMaster.SetMinimum(0.0)
     padMaster.SetMaximum(1.1 * yMax)
+    padMaster.GetXaxis().SetLabelSize(0)
+    padMaster.GetXaxis().SetTitleSize(0)
     increaseAxisFont(padMaster.GetXaxis())
     increaseAxisFont(padMaster.GetYaxis())
-    can.RedrawAxis()
-    can.Update() # force stack to create padMaster
+    topPad.RedrawAxis()
+    topPad.Update() # force stack to create padMaster
+    # draw bot (ratio)
+    can.cd()
+    botPad.Draw()
+    botPad.cd()
+    ratio = buildRatioHistogram(histoData, histoTotBkg)
+    yMin, yMax = 0.0, 2.0
+    ratio.SetMinimum(yMin)
+    ratio.SetMaximum(yMax)
+    ratio.SetStats(0)
+    ratio.Draw('axis')
+    x_lo, x_hi = getXrange(ratio)
+    refLines = [referenceLine(x_lo, x_hi, y, y) for y in [0.5, 1.0, 1.5]]
+    for l in refLines : l.Draw()
+    err_band_r = systUtils.buildErrBandRatioGraph(totErrBand)
+    err_band_r.Draw('E2 same')
+    ratio.Draw('ep same')
+    xA, yA = ratio.GetXaxis(), ratio.GetYaxis()
+    textScaleUp = 0.75*1.0/botPad.GetHNDC()
+    # if xaxis_title : xA.SetTitle(xaxis_title)
+    yA.SetNdivisions(-104)
+    yA.SetTitle('Data/SM')
+    yA.CenterTitle()
+    yA.SetTitleOffset(yA.GetTitleOffset()/textScaleUp)
+    xA.SetTitleSize(yA.GetTitleSize()) # was set to 0 for padmaster, restore it
+    xA.SetLabelSize(yA.GetLabelSize())
+    for a in [xA, yA] :
+        a.SetLabelSize(a.GetLabelSize()*textScaleUp)
+        a.SetTitleSize(a.GetTitleSize()*textScaleUp)
+    botPad._graphical_objects = [ratio, err_band_r] + refLines # avoid garbage collection
+    botPad.Update()
+    can.Update()
     for ext in ['png','eps'] : can.SaveAs(outdir+'/'+can.GetName()+'.'+ext)
 
 def listExistingSyst(dirname) :
