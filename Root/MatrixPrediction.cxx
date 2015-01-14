@@ -57,9 +57,10 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
-    incrementEventCounters(eventFlags, weightComponents);
+    // incrementEventCounters(eventFlags, weightComponents);
     // cout<<eventFlags.str()<<endl;
-    if(eventFlags.passAllEventCriteria()) {
+    // if(eventFlags.passAllEventCriteria()) {
+    if(incrementEventCounters(eventFlags, weightComponents)) {
         // cout<<"passAllEventCriteria"<<endl;
         const JetVector& jets = m_signalJets2Lep;
         const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
