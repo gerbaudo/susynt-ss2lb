@@ -57,6 +57,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
+    eventFlags.eq2slep = true; // for fakes we only need baseline leptons
     // incrementEventCounters(eventFlags, weightComponents);
     // cout<<eventFlags.str()<<endl;
     // if(eventFlags.passAllEventCriteria()) {
