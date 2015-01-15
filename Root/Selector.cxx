@@ -103,6 +103,8 @@ Bool_t Selector::Process(Long64_t entry)
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
+                                         abs(vars.eta0)<2.4 &&
+                                         abs(vars.eta1)<2.4 &&
                                          (is_e_mu || is_same_sign || is_qflippable));
             if(is_event_to_be_saved){
                 if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
