@@ -117,6 +117,10 @@ Bool_t Selector::Process(Long64_t entry)
                         .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
                         .setNumFjets(vars.numForwardJets)
                         .setNumBjets(vars.numBtagJets)
+                        .setL0EtConeCorr(computeCorrectedEtCone(&l0))
+                        .setL0PtConeCorr(computeCorrectedPtCone(&l0))
+                        .setL1EtConeCorr(computeCorrectedEtCone(&l1))
+                        .setL1PtConeCorr(computeCorrectedPtCone(&l1))
                         .fill(weight, run, event, l0, l1, *m_met, cljets);
                 }
             } // is_event_to_be_saved
@@ -454,4 +458,38 @@ JetVector Selector::filterBtagJets(const JetVector &jets)
     }
     return outjets;
 }
-//-----------------------------------------
+//----------------------------------------------------------
+float Selector::computeCorrectedEtCone(const Lepton *l)
+{
+    float correctedEtCone = 0.0;
+    if(l){
+        uint nVtx(nt.evt()->nVtx);
+        bool isMC(nt.evt()->isMC);
+        if(l->isEle()) {
+            if(const Electron* e = static_cast<const Electron*>(l))
+                correctedEtCone = SusyNtTools::elEtTopoConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+        } else if(l->isMu()) {
+            if(const Muon* m = static_cast<const Muon*>(l))
+                correctedEtCone = SusyNtTools::muEtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+        }
+    }
+    return correctedEtCone;
+}
+//----------------------------------------------------------
+float Selector::computeCorrectedPtCone(const Lepton *l)
+{
+    float correctedPtCone = 0.0;
+    if(l){
+        uint nVtx(nt.evt()->nVtx);
+        bool isMC(nt.evt()->isMC);
+        if(l->isEle()) {
+            if(const Electron* e = static_cast<const Electron*>(l))
+                correctedPtCone = SusyNtTools::elPtConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+        } else if(l->isMu()) {
+            if(const Muon* m = static_cast<const Muon*>(l))
+                correctedPtCone = SusyNtTools::muPtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+        }
+    }
+    return correctedPtCone;
+}
+//----------------------------------------------------------

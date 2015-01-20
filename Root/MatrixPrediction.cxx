@@ -103,8 +103,10 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                     .setNumBjets(vars.numBtagJets)
                     .setL0IsTight(l0IsSig)//.setL0Source(l0Source) // not available in data
                     .setL1IsTight(l1IsSig)//.setL1Source(l1Source)
-                    //.setL0EtConeCorr(computeCorrectedEtCone(l0)).setL0PtConeCorr(computeCorrectedPtCone(l0)) //
-                    //.setL1EtConeCorr(computeCorrectedEtCone(l1)).setL1PtConeCorr(computeCorrectedPtCone(l1))
+                    .setL0EtConeCorr(computeCorrectedEtCone(&l0))
+                    .setL0PtConeCorr(computeCorrectedPtCone(&l0))
+                    .setL1EtConeCorr(computeCorrectedEtCone(&l1))
+                    .setL1PtConeCorr(computeCorrectedPtCone(&l1))
                     .fill(weight, run, event, l0, l1, *m_met, cljets);
                 // const JetVector clJets(SusySelection::filterClJets(m_signalJets2Lep));
                 // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m, lowPtLep, m_signalJets2Lep);

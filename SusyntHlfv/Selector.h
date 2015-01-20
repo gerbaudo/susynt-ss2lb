@@ -110,6 +110,10 @@ protected:
        ones that are due to an electron charge-flip.
      */
     double computeQflipWeight(const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met);
+    /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
+    float computeCorrectedEtCone(const Lepton *l);
+    /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
+    float computeCorrectedPtCone(const Lepton *l);
 public:
     /// select the jets we are interested in (central, high-pt)
     static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
@@ -134,6 +138,7 @@ public:
         return "${ROOTCOREBIN}/data/ChargeFlip/chargeflip_map_12nov2014_scale_with_mc_last_ptbin.root";
 //        return "${ROOTCOREBIN}/data/ChargeFlip/d0_chargeflip_map.root";
     }
+
 protected:
     /// initialize the charge flip tool from WeakProduction/ChargeFlip
     bool initChargeFlipTool();
