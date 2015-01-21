@@ -430,7 +430,7 @@ def selection_formulas():
                      ' and dphi_l0_met>2.5')
     common_req_vr = (pt_req+
                      ' and n_jets==0'+
-                     ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5)')
+                     ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5 or (l0_pt-l1_pt)<7.0)')
     formulas = {
         'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req_sr,
         'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req_sr,
