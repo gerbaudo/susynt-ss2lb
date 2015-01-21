@@ -38,7 +38,7 @@ from utils import (first
                    ,remove_duplicates
                    ,sortedAs
                    )
-
+import fakeUtils as fakeu
 import utils
 from kin import addTlv, computeCollinearMassLepTau, computeRazor
 
@@ -92,9 +92,11 @@ def main() :
                       help='list all possible systematics')
     parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
+    parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
     parser.add_option('-v', '--verbose', action='store_true', default=False)
     parser.add_option('--debug', action='store_true', default=False)
     parser.add_option('--unblind', action='store_true', default=False)
+    parser.add_option('--require-tight-tight', action='store_true', default=False, help='fill histos only when both leps are tight')
 
     (opts, args) = parser.parse_args()
     if opts.list_all_systematics :
@@ -127,6 +129,7 @@ def runFill(opts) :
     verbose      = opts.verbose
     debug        = opts.debug
     blinded      = not opts.unblind
+    tightight    = opts.require_tight_tight
 
     if debug : dataset.Dataset.verbose_parsing = True
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
@@ -140,6 +143,8 @@ def runFill(opts) :
                                                               '\n\t'+'\n\t'.join(d.name for d in g.datasets))
                         for g in groups)
     if verbose : print "filling histos"
+    # eval will take care of aborting on typos
+    onthefly_tight_def = eval(opts.tight_def) if opts.tight_def else None
     mkdirIfNeeded(outputDir)
     systematics = get_list_of_syst_to_fill(opts)
     if verbose : print "about to loop over these systematics:\n %s"%str(systematics)
@@ -167,7 +172,9 @@ def runFill(opts) :
                                                                       len(group.datasets))
                 counters, histos = count_and_fill(chain=chain, sample=group.name,
                                                   syst=systematic, verbose=verbose,
-                                                  blinded=blinded)
+                                                  blinded=blinded,
+                                                  onthefly_tight_def=onthefly_tight_def,
+                                                  tightight=tightight)
                 out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
                 print 'out_filename: ',out_filename
                 writeObjectsToFile(out_filename, histos, verbose)
@@ -186,7 +193,7 @@ def runPlot(opts) :
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
-    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
+    # groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
     plot_groups = [systUtils.Group(g.name) for g in groups]
     for group in plot_groups :
         group.setHistosDir(inputDir)
@@ -246,9 +253,14 @@ def submit_batch_fill_job_per_group(group, opts):
     newOptions += " --input-fake %s" % opts.input_fake
     newOptions += " --output-dir %s" % opts.output_dir
     newOptions += " --group %s" % group_name
+    newOptions += (" --unblind " if opts.unblind else '')
     newOptions += (" --verbose " if opts.verbose else '')
+    newOptions += (" --debug " if opts.debug else '')
     newOptions += (" --syst {0}".format(opts.syst) if opts.syst else '')
     newOptions += (" --exclude {0}".format(opts.exclude) if opts.exclude else '')
+    newOptions += (" --require-tight-tight " if opts.require_tight_tight else '')
+    newOptions += (" --tight-def {0}".format(opts.tight_def) if opts.tight_def else '')
+    print 'todo: re-implement submit_batch_fill_job_per_group (just mod group opt)'
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded(opts.log_dir)
     script_dir = mkdirIfNeeded('batch/plot_emu')
@@ -267,7 +279,8 @@ def submit_batch_fill_job_per_group(group, opts):
     if out['stderr'] : print  out['stderr']
 
 #-------------------
-def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
+def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
+                   onthefly_tight_def=None, tightight=False):
     """
     count and fill for one sample (or group), one syst.
     """
@@ -277,7 +290,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
     is_qflip_sample = dataset.DatasetGroup(sample).is_qflip
     selections = regions_to_plot()
     counters = book_counters(selections)
-    histos = book_histograms(sample_name=sample, variables=variables_to_plot(),
+    histos = book_histograms(sample_name=sample, variables=variables_to_fill(),
                              systematics=[syst], selections=selections
                              )[syst]
     if is_qflip_sample : # for qflip, only fill ss histos
@@ -296,7 +309,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
         met = addTlv(event.met)
         l0_is_el, l0_is_mu = l0.isEl, l0.isMu
         l1_is_el, l1_is_mu = l1.isEl, l1.isMu
-        l0_is_t, l1_is_t = l0.isTight, l1.isTight
+        l0_is_t = onthefly_tight_def(l0) if onthefly_tight_def else l0.isTight
+        l1_is_t = onthefly_tight_def(l1) if onthefly_tight_def else l1.isTight
         is_emu = int(l0_is_el and l1_is_mu)
         is_mue = int(l0_is_mu and l1_is_el)
         is_mumu = int(l0_is_mu and l1_is_mu)
@@ -308,6 +322,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
         qflip_prob = eval(qflip_expr)
         # print "event : same sign {0}, opp_sign {1}, qflippable {2}, qflip_prob {3}".format(is_same_sign, is_opp_sign, is_qflippable, eval(qflip_expr))
         l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
+        l0_eta, l1_eta = l0.p4.Eta(), l1.p4.Eta()
         m_ll = (l0.p4 + l1.p4).M()
         pt_ll = (l0.p4 + l1.p4).Pt()
         dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
@@ -321,34 +336,54 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
         n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
         # n_jets = event.pars.numFjets + event.pars.numBjets
         pass_sels = {}
+        if tightight and not (l0_is_t and l1_is_t) : continue
         for sel in selections:
             pass_sel = eval(selection_formulas()[sel])
             pass_sels[sel] = pass_sel
             is_ss_sel = sel.endswith('_ss')
             as_qflip = is_qflippable and (is_opp_sign and is_ss_sel)
             if is_qflip_sample and not as_qflip : pass_sel = False
+            if not is_qflip_sample and as_qflip : pass_sel = False
             if not pass_sel : continue
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
             lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
             qqtype = "{0}{1}".format('T' if l0_is_t else 'L', 'T' if l1_is_t else 'L')
             def fmt(b) : return '1' if b else '0'
+            # --- begin dbg
             # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(lltype+' '+qqtype, #+' '+sel,
             #                                                               fmt(l0_is_el), fmt(l1_is_el),
             #                                                               fmt(l0_is_t), fmt(l1_is_t),
             #                                                               l0_pt, l1_pt,
             #                                                               l0.p4.Eta(), l1.p4.Eta())
+            # print "event: {0:12s} {1} {2} {3:.2f} {4:.2f}".format(lltype+' '+qqtype+' '+sel,
+            #                                                       run_num, evt_num,
+            #                                                       l0_pt, l1_pt)
+            # --- end dbg
             fill_weight = (weight * qflip_prob) if as_qflip else weight
-            histos[sel]['onebin'].Fill(1.0, fill_weight)
-            histos[sel]['njets'].Fill(n_jets, fill_weight)
-            histos[sel]['pt0'].Fill(l0.p4.Pt(), fill_weight)
-            histos[sel]['pt1'].Fill(l1.p4.Pt(), fill_weight)
-            histos[sel]['mll'      ].Fill(m_ll, fill_weight)
-            histos[sel]['ptll'     ].Fill(pt_ll, fill_weight)
-            histos[sel]['met'      ].Fill(met.p4.Pt(), fill_weight)
-            histos[sel]['dphil0met'].Fill(dphi_l0_met, fill_weight)
-            histos[sel]['dphil1met'].Fill(dphi_l1_met, fill_weight)
-            if is_data and not (blinded and 100.0<m_coll and m_coll<150.0) :
-                histos[sel]['mcoll'].Fill(m_coll, fill_weight)
+            h = histos[sel]
+            h['onebin'   ].Fill(1.0, fill_weight)
+            h['njets'    ].Fill(n_jets, fill_weight)
+            h['pt0'      ].Fill(l0_pt, fill_weight)
+            h['pt1'      ].Fill(l1_pt, fill_weight)
+            h['eta0'     ].Fill(l0.p4.Eta(), fill_weight)
+            h['eta1'     ].Fill(l1.p4.Eta(), fill_weight)
+            h['phi0'     ].Fill(l0.p4.Phi(), fill_weight)
+            h['phi1'     ].Fill(l1.p4.Phi(), fill_weight)
+            h['mll'      ].Fill(m_ll, fill_weight)
+            h['ptll'     ].Fill(pt_ll, fill_weight)
+            h['met'      ].Fill(met.p4.Pt(), fill_weight)
+            h['dphil0met'].Fill(dphi_l0_met, fill_weight)
+            h['dphil1met'].Fill(dphi_l1_met, fill_weight)
+
+            h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt, fill_weight)
+            h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
+            h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
+            h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
+
+            if is_data and (blinded and 100.0<m_coll and m_coll<150.0) : pass
+            else :
+                h['mcoll'].Fill(m_coll, fill_weight)
+                h['mcoll_vs_pt1'].Fill(l1_pt, m_coll, fill_weight)
             counters[sel] += (fill_weight)
         # print ('e' if l0_is_el else 'm'),('e' if l1_is_el else 'm'),' : ',
         # print ' is_opp_sign: ',is_opp_sign,
@@ -361,7 +396,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True):
         print ("processed {0:d} entries ".format(num_processed_entries)
                +"in "+("{0:d} min ".format(int(delta_time/60)) if delta_time>60 else
                        "{0:.1f} s ".format(delta_time))
-               +"({0:.1f} kHz)".format(num_processed_entries/delta_time))
+               +"({0:.1f} kHz)".format((num_processed_entries/delta_time) if delta_time else 1.0e9)
+               )
     if verbose:
         for v in ['onebin']: #, 'pt0', 'pt1']:
             for sel in selections:
@@ -386,25 +422,29 @@ def printCounters(counters):
 #___________________________________________________________
 def selection_formulas():
     pt_req = 'l0_pt>45.0 and l1_pt>12.0 and (l0_pt-l1_pt)>7.0 '
+    pt_req += ' and abs(l0_eta)<2.4 and abs(l1_eta)<2.4' # tmp to be dropped, fixed upstream in ee8b767
     common_req_sr = (pt_req+
                      ' and n_jets==0'+
                      ' and dphi_l1_met<0.7'+
                      ' and dphi_l0_l1>2.3 '+
-                     # dpt_l0_l1>7.0
                      ' and dphi_l0_met>2.5')
     common_req_vr = (pt_req+
                      ' and n_jets==0'+
-                     ' and (dphi_l1_met<0.7 or dphi_l0_l1>2.3 or dphi_l0_met>2.5)')
+                     ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5)')
     formulas = {
+        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req_sr,
+        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req_sr,
+        'vr_emu' : 'l0_is_el and l1_is_mu and '+common_req_vr,
+        'vr_mue' : 'l0_is_mu and l1_is_el and '+common_req_vr,
+        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req_sr,
+        'sr_ee' : 'l0_is_el and l1_is_el and '+common_req_sr,
+        'sr_mumu' : 'l0_is_mu and l1_is_mu and '+common_req_sr,
+        'vr_emu_mue' : '(is_emu or is_mue) and '+common_req_vr,
+        'vr_ee' : 'l0_is_el and l1_is_el and '+common_req_vr,
+        'vr_mumu' : 'l0_is_mu and l1_is_mu and '+common_req_vr,
         # 'pre_emu' : 'is_emu and '+pt_req,
         # 'pre_mue' : 'is_mue and '+pt_req,
         # 'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
-        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req_sr,
-        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req_sr,
-        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req_sr,
-        'vr_emu' : 'l0_is_el and l1_is_mu and '+common_req_vr,
-        'vr_mue' : 'l0_is_mu and l1_is_el and '+common_req_vr,
-        'vr_emu_mue' : '(is_emu or is_mue) and '+common_req_vr,
         }
     os_expr = '(is_opp_sign)'
     ss_expr = '(is_same_sign or is_qflippable)'
@@ -433,16 +473,24 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         twopi = +2.0*math.pi
         mljjLab = 'm_{lj}' if '1j' in sel else 'm_{ljj}'
         h = None
-        if   v=='onebin'  : h = r.TH1F(histoName(sam, sys, sel, 'onebin' ), ';; entries',                             1, 0.5,   1.5)
-        elif v=='njets'   : h = r.TH1F(histoName(sam, sys, sel, 'njets'  ), ';N_{jets}; entries',                    10,-0.5,   9.5)
-        elif v=='pt0'     : h = r.TH1F(histoName(sam, sys, sel, 'pt0'    ), ';p_{T,l0} [GeV]; entries/bin',          48, 0.0, 240.0)
-        elif v=='pt1'     : h = r.TH1F(histoName(sam, sys, sel, 'pt1'    ), ';p_{T,l1} [GeV]; entries/bin',          48, 0.0, 240.0)
-        elif v=='mcoll'   : h = r.TH1F(histoName(sam, sys, sel, 'mcoll'  ), ';m_{coll,l0,l1} [GeV]; entries/bin',    40, 0.0, 400.0)
-        elif v=='mll'     : h = r.TH1F(histoName(sam, sys, sel, 'mll'    ), ';m_{l0,l1} [GeV]; entries/bin',         24, 0.0, 240.0)
-        elif v=='ptll'    : h = r.TH1F(histoName(sam, sys, sel, 'ptll'   ), ';p_{T,l0+l1} [GeV]; entries/bin',       24, 0.0, 240.0)
-        elif v=='met'     : h = r.TH1F(histoName(sam, sys, sel, 'met'    ), ';MET [GeV]; entries/bin',               24, 0.0, 240.0)
-        elif v=='dphil0met': h= r.TH1F(histoName(sam, sys, sel, 'dphil0met'),';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='dphil1met': h= r.TH1F(histoName(sam, sys, sel, 'dphil1met'),';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
+        if   v=='onebin'   : h = r.TH1F(histoName(sam, sys, sel, v), ';; entries',                               1, 0.5,   1.5)
+        elif v=='njets'    : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets}; entries',                      10,-0.5,   9.5)
+        elif v=='pt0'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0} [GeV]; entries/bin',            48, 0.0, 240.0)
+        elif v=='pt1'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l1} [GeV]; entries/bin',            48, 0.0, 240.0)
+        elif v=='eta0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l0}; entries/bin',                 26,-2.6,  +2.6)
+        elif v=='eta1'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l1}; entries/bin',                 26,-2.6,  +2.6)
+        elif v=='phi0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#phi_{l0} [rad]; entries/bin',           10, 0.0, twopi)
+        elif v=='phi1'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#phi_{l1} [rad]; entries/bin',           10, 0.0, twopi)
+        elif v=='mcoll'    : h = r.TH1F(histoName(sam, sys, sel, v), ';m_{coll,l0,l1} [GeV]; entries/bin',      40, 0.0, 400.0)
+        elif v=='mll'      : h = r.TH1F(histoName(sam, sys, sel, v), ';m_{l0,l1} [GeV]; entries/bin',           24, 0.0, 240.0)
+        elif v=='ptll'     : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0+l1} [GeV]; entries/bin',         24, 0.0, 240.0)
+        elif v=='met'      : h = r.TH1F(histoName(sam, sys, sel, v), ';MET [GeV]; entries/bin',                 24, 0.0, 240.0)
+        elif v=='dphil0met': h= r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='dphil1met': h= r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='mcoll_vs_pt1'     : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      48, 0.0, 240.0, 40, 0.0, 400.0)
+        elif v=='pt0_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      48, 0.0, 240.0, 48, 0.0, 240.0)
+        elif v=='met_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; MET [GeV]',                 48, 0.0, 240.0, 24, 0.0, 240.0)
+        elif v=='dphil0met_vs_pt1' : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 48, 0.0, 240.0, 10, 0.0, twopi)
         else : print "unknown variable %s"%v
         h.Sumw2()
         h.SetDirectory(0)
@@ -474,12 +522,16 @@ def regions_to_plot():
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
     # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
+    return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os']
     return selection_formulas().keys()
 
 def variables_to_plot():
-    return ['onebin', 'njets', 'pt0', 'pt1', 'mcoll',
-            'mll', 'ptll', 'met', 'dphil0met', 'dphil1met'
+    return ['onebin', 'njets', 'pt0', 'pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
+            'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
             ]
+def variables_to_fill():
+    "do not plot 2d variables, but still fill the corresponding histograms"
+    return variables_to_plot() + ['mcoll_vs_pt1', 'pt0_vs_pt1', 'met_vs_pt1', 'dphil0met_vs_pt1']
 
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
