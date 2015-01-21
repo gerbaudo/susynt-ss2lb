@@ -522,7 +522,8 @@ def regions_to_plot():
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
     # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
-    return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os']
+    return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os',
+            'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',]
     return selection_formulas().keys()
 
 def variables_to_plot():
