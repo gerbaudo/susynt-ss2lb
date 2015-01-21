@@ -260,6 +260,8 @@ def submit_batch_fill_job_per_group(group, opts):
     newOptions += (" --exclude {0}".format(opts.exclude) if opts.exclude else '')
     newOptions += (" --require-tight-tight " if opts.require_tight_tight else '')
     newOptions += (" --tight-def {0}".format(opts.tight_def) if opts.tight_def else '')
+    newOptions += (" --samples-dir {0}".format(opts.samples_dir) if opts.samples_dir else '')
+
     print 'todo: re-implement submit_batch_fill_job_per_group (just mod group opt)'
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded(opts.log_dir)
