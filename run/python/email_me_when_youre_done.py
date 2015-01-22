@@ -16,7 +16,7 @@ def main() :
     parser.add_option('--to-address',   default='davide.gerbaudo@gmail.com')
     parser.add_option('--message',      default='all jobs done, bam!')
     parser.add_option('--polleverysec', default=60*5, type='int')
-    parser.add_option('--subject',      default='All jobs done')
+    parser.add_option('--subject',      default='jobs done from `pwd`')
     parser.add_option('--user',         default=os.environ['USER'])
     (opts, args) = parser.parse_args() 
     receiver  = opts.to_address
@@ -36,7 +36,7 @@ def main() :
     message = preamble+message
     message += ("\n(after %(nchk)d checks every %(nsec)d sec)"
                 %{'nchk' : nChecksDone, 'nsec' : everyNsec})
-    subject = "jobs done from `pwd`"    
+    subject = opts.subject
     mailCmd = ("echo -e \"%(msg)s\" | mail -s \"%(sbj)s\" %(dest)s"
                % {'dest' : receiver, 'msg' : message, 'sbj':subject})
     print mailCmd
