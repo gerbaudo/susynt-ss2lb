@@ -423,13 +423,14 @@ def printCounters(counters):
     print tableBld.csv()
 #___________________________________________________________
 def selection_formulas():
-    pt_req = 'l0_pt>45.0 and l1_pt>12.0 and (l0_pt-l1_pt)>7.0 '
+    pt_req = 'l0_pt>45.0 and l1_pt>12.0 '
     pt_req += ' and abs(l0_eta)<2.4 and abs(l1_eta)<2.4' # tmp to be dropped, fixed upstream in ee8b767
     common_req_sr = (pt_req+
                      ' and n_jets==0'+
                      ' and dphi_l1_met<0.7'+
                      ' and dphi_l0_l1>2.3 '+
-                     ' and dphi_l0_met>2.5')
+                     ' and dphi_l0_met>2.5'+
+                     ' and (l0_pt-l1_pt)>7.0')
     common_req_vr = (pt_req+
                      ' and n_jets==0'+
                      ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5 or (l0_pt-l1_pt)<7.0)')
