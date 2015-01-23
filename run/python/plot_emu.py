@@ -133,7 +133,7 @@ def runFill(opts) :
 
     if debug : dataset.Dataset.verbose_parsing = True
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
-    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
+    # groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
     if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
@@ -466,7 +466,11 @@ def selection_formulas():
     formulas['vr_emu_razor_ss'] = '(is_emu or is_mue) and mdr>20.0 and '+ss_expr
     formulas['vr_ee_razor_ss'] = 'is_ee and mdr>20.0 and '+ss_expr
     formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
-    # return {'vr_mumu_razor_ss' : formulas['vr_mumu_razor_ss']}
+    # fake extraction formulas; trig_match is already applied when making the ntuples
+    formulas['ext_mumu_ss'] = 'is_mumu and is_same_sign'
+    formulas['ext_emu_mue_ss'] = '(is_emu or is_mue) and is_same_sign'
+    formulas['ext_emu_pt0_40_ss']= 'is_emu and is_same_sign and l0_pt>40.0'
+    formulas['ext_mue_pt0_40_ss']= 'is_mue and is_same_sign and l0_pt>40.0'
     return formulas
 #___________________________________________________________
 def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
@@ -526,7 +530,9 @@ def regions_to_plot():
     # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
     return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os',
-            'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',]
+            'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',
+            'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss'
+            ]
     return selection_formulas().keys()
 
 def variables_to_plot():
