@@ -40,7 +40,7 @@ from utils import (first
                    )
 import fakeUtils as fakeu
 import utils
-from kin import addTlv, computeCollinearMassLepTau, computeRazor
+from kin import addTlv, computeCollinearMassLepTau, computeRazor, computeMt
 
 susyntutils = utils.import_susyntutils()
 r = susyntutils.import_root()
@@ -172,7 +172,7 @@ def runFill(opts) :
                                                                       len(group.datasets))
                 counters, histos = count_and_fill(chain=chain, sample=group.name,
                                                   syst=systematic, verbose=verbose,
-                                                  blinded=blinded,
+                                                  debug=debug, blinded=blinded,
                                                   onthefly_tight_def=onthefly_tight_def,
                                                   tightight=tightight)
                 out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
@@ -281,7 +281,7 @@ def submit_batch_fill_job_per_group(group, opts):
     if out['stderr'] : print  out['stderr']
 
 #-------------------
-def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
+def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinded=True,
                    onthefly_tight_def=None, tightight=False):
     """
     count and fill for one sample (or group), one syst.
@@ -303,6 +303,14 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
     print 'weight_expr: ',weight_expr
     start_time = time.clock()
     num_processed_entries = 0
+    fields_to_print = ['l0_pt', 'l1_pt', 'l0_eta', 'l1_eta',
+                       'met_pt',
+                       'm_ll', 'pt_ll', 'dpt_l0_l1',
+                       'dphi_l0_met', 'dphi_l1_met', 'dphi_l0_l1',
+                       'mt0', 'mt1',
+                       'n_soft_jets',
+                       'eta_csj0', 'phi_csj0', 'eta_csj1', 'phi_csj1']
+    if debug : print ",".join(fields_to_print)
     for iEntry, event in enumerate(chain):
         run_num = event.pars.runNumber
         evt_num = event.pars.eventNumber
@@ -325,6 +333,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
         # print "event : same sign {0}, opp_sign {1}, qflippable {2}, qflip_prob {3}".format(is_same_sign, is_opp_sign, is_qflippable, eval(qflip_expr))
         l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
         l0_eta, l1_eta = l0.p4.Eta(), l1.p4.Eta()
+        l0_phi, l1_phi = l0.p4.Phi(), l1.p4.Phi()
+        met_pt = met.p4.Pt()
         m_ll = (l0.p4 + l1.p4).M()
         pt_ll = (l0.p4 + l1.p4).Pt()
         dphi_l0_met = abs(l0.p4.DeltaPhi(met.p4))
@@ -332,11 +342,22 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
         dphi_l0_l1 = abs(l0.p4.DeltaPhi(l1.p4))
         dpt_l0_l1 = l0.p4.Pt()-l1.p4.Pt()
         m_coll = computeCollinearMassLepTau(l0.p4, l1.p4, met.p4)
+        mt0, mt1 = computeMt(l0.p4, met.p4), computeMt(l1.p4, met.p4)
         dphillbeta, mdr = computeRazor(l0.p4, l1.p4, met.p4)
         def jet_pt2(j) : return j.px*j.px+j.py*j.py
         n_cl_jets = sum(1 for j in event.jets if jet_pt2(j)>30.*30.)
         n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
         # n_jets = event.pars.numFjets + event.pars.numBjets
+        soft_jets = [addTlv(j) for j in event.jets if jet_pt2(j)<30.**2]
+        n_soft_jets = len(soft_jets)
+        csj0 = first(sorted(soft_jets, key=lambda j : j.p4.DeltaR(l0.p4)))
+        csj1 = first(sorted(soft_jets, key=lambda j : j.p4.DeltaR(l1.p4)))
+        eta_csj0 = csj0.p4.Eta() if csj0 else -5.0
+        phi_csj0 = csj0.p4.Phi() if csj0 else -5.0
+        eta_csj1 = csj1.p4.Eta() if csj1 else -5.0
+        phi_csj1 = csj1.p4.Phi() if csj1 else -5.0
+        drl0csj  = csj0.p4.DeltaR(l0.p4) if csj0 else None
+        drl1csj  = csj1.p4.DeltaR(l1.p4) if csj1 else None
         pass_sels = {}
         if tightight and not (l0_is_t and l1_is_t) : continue
         for sel in selections:
@@ -350,6 +371,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
             lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
             qqtype = "{0}{1}".format('T' if l0_is_t else 'L', 'T' if l1_is_t else 'L')
+            if debug : print ','.join([str(eval(_)) for _ in fields_to_print])
             def fmt(b) : return '1' if b else '0'
             # --- begin dbg
             # print "event: {0:12s} {1} {2} {3} {4} {5} {6} {7} {8}".format(lltype+' '+qqtype, #+' '+sel,
@@ -367,13 +389,13 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
             h['njets'    ].Fill(n_jets, fill_weight)
             h['pt0'      ].Fill(l0_pt, fill_weight)
             h['pt1'      ].Fill(l1_pt, fill_weight)
-            h['eta0'     ].Fill(l0.p4.Eta(), fill_weight)
-            h['eta1'     ].Fill(l1.p4.Eta(), fill_weight)
-            h['phi0'     ].Fill(l0.p4.Phi(), fill_weight)
-            h['phi1'     ].Fill(l1.p4.Phi(), fill_weight)
+            h['eta0'     ].Fill(l0_eta, fill_weight)
+            h['eta1'     ].Fill(l1_eta, fill_weight)
+            h['phi0'     ].Fill(l0_phi, fill_weight)
+            h['phi1'     ].Fill(l1_phi, fill_weight)
             h['mll'      ].Fill(m_ll, fill_weight)
             h['ptll'     ].Fill(pt_ll, fill_weight)
-            h['met'      ].Fill(met.p4.Pt(), fill_weight)
+            h['met'      ].Fill(met_pt, fill_weight)
             h['dphil0met'].Fill(dphi_l0_met, fill_weight)
             h['dphil1met'].Fill(dphi_l1_met, fill_weight)
 
@@ -381,7 +403,9 @@ def count_and_fill(chain, sample='', syst='', verbose=False, blinded=True,
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
-
+            if n_soft_jets:
+                h['drl0csj'].Fill(drl0csj)
+                h['drl1csj'].Fill(drl1csj)
             if is_data and (blinded and 100.0<m_coll and m_coll<150.0) : pass
             else :
                 h['mcoll'].Fill(m_coll, fill_weight)
@@ -492,8 +516,10 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         elif v=='mll'      : h = r.TH1F(histoName(sam, sys, sel, v), ';m_{l0,l1} [GeV]; entries/bin',           24, 0.0, 240.0)
         elif v=='ptll'     : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0+l1} [GeV]; entries/bin',         24, 0.0, 240.0)
         elif v=='met'      : h = r.TH1F(histoName(sam, sys, sel, v), ';MET [GeV]; entries/bin',                 24, 0.0, 240.0)
-        elif v=='dphil0met': h= r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='dphil1met': h= r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='dphil0met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='dphil1met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
+        elif v=='drl0csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#R(l0, j_{close,soft});entries/bin',10, 0.0,  2.0)
+        elif v=='drl1csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#R(l1, j_{close,soft});entries/bin',10, 0.0,  2.0)
         elif v=='mcoll_vs_pt1'     : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      48, 0.0, 240.0, 40, 0.0, 400.0)
         elif v=='pt0_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      48, 0.0, 240.0, 48, 0.0, 240.0)
         elif v=='met_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; MET [GeV]',                 48, 0.0, 240.0, 24, 0.0, 240.0)
@@ -538,6 +564,7 @@ def regions_to_plot():
 def variables_to_plot():
     return ['onebin', 'njets', 'pt0', 'pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
+            'drl0csj', 'drl1csj'
             ]
 def variables_to_fill():
     "do not plot 2d variables, but still fill the corresponding histograms"
