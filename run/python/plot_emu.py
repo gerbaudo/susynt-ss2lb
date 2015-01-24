@@ -332,6 +332,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         qflip_prob = eval(qflip_expr)
         # print "event : same sign {0}, opp_sign {1}, qflippable {2}, qflip_prob {3}".format(is_same_sign, is_opp_sign, is_qflippable, eval(qflip_expr))
         l0_pt, l1_pt = l0.p4.Pt(), l1.p4.Pt()
+        d_pt0_pt1 = l0_pt - l1_pt
         l0_eta, l1_eta = l0.p4.Eta(), l1.p4.Eta()
         l0_phi, l1_phi = l0.p4.Phi(), l1.p4.Phi()
         met_pt = met.p4.Pt()
@@ -389,6 +390,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['njets'    ].Fill(n_jets, fill_weight)
             h['pt0'      ].Fill(l0_pt, fill_weight)
             h['pt1'      ].Fill(l1_pt, fill_weight)
+            h['d_pt0_pt1'].Fill(d_pt0_pt1, fill_weight)
             h['eta0'     ].Fill(l0_eta, fill_weight)
             h['eta1'     ].Fill(l1_eta, fill_weight)
             h['phi0'     ].Fill(l0_phi, fill_weight)
@@ -403,9 +405,10 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
+            h['nsj'             ].Fill(n_soft_jets, fill_weight)
             if n_soft_jets:
-                h['drl0csj'].Fill(drl0csj)
-                h['drl1csj'].Fill(drl1csj)
+                h['drl0csj'].Fill(drl0csj, fill_weight)
+                h['drl1csj'].Fill(drl1csj, fill_weight)
             if is_data and (blinded and 100.0<m_coll and m_coll<150.0) : pass
             else :
                 h['mcoll'].Fill(m_coll, fill_weight)
@@ -495,6 +498,8 @@ def selection_formulas():
     formulas['ext_emu_mue_ss'] = '(is_emu or is_mue) and is_same_sign'
     formulas['ext_emu_pt0_40_ss']= 'is_emu and is_same_sign and l0_pt>40.0'
     formulas['ext_mue_pt0_40_ss']= 'is_mue and is_same_sign and l0_pt>40.0'
+    # dbg low pt
+    formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
     return formulas
 #___________________________________________________________
 def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
@@ -508,6 +513,7 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         elif v=='njets'    : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets}; entries',                      10,-0.5,   9.5)
         elif v=='pt0'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0} [GeV]; entries/bin',            48, 0.0, 240.0)
         elif v=='pt1'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l1} [GeV]; entries/bin',            48, 0.0, 240.0)
+        elif v=='d_pt0_pt1': h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0}-p_{T,l1} [GeV]; entries/bin',   24, 0.0, 120.0)
         elif v=='eta0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l0}; entries/bin',                 26,-2.6,  +2.6)
         elif v=='eta1'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l1}; entries/bin',                 26,-2.6,  +2.6)
         elif v=='phi0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#phi_{l0} [rad]; entries/bin',           10, 0.0, twopi)
@@ -518,8 +524,9 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         elif v=='met'      : h = r.TH1F(histoName(sam, sys, sel, v), ';MET [GeV]; entries/bin',                 24, 0.0, 240.0)
         elif v=='dphil0met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
         elif v=='dphil1met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='drl0csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#R(l0, j_{close,soft});entries/bin',10, 0.0,  2.0)
-        elif v=='drl1csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#R(l1, j_{close,soft});entries/bin',10, 0.0,  2.0)
+        elif v=='nsj'      : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets,20<pt<30};entries/bin',           10,-0.5,  9.5)
+        elif v=='drl0csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l0, j_{close,soft});entries/bin',10, 0.0,   2.0)
+        elif v=='drl1csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l1, j_{close,soft});entries/bin',10, 0.0,   2.0)
         elif v=='mcoll_vs_pt1'     : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      48, 0.0, 240.0, 40, 0.0, 400.0)
         elif v=='pt0_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      48, 0.0, 240.0, 48, 0.0, 240.0)
         elif v=='met_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; MET [GeV]',                 48, 0.0, 240.0, 24, 0.0, 240.0)
@@ -564,7 +571,8 @@ def regions_to_plot():
 def variables_to_plot():
     return ['onebin', 'njets', 'pt0', 'pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
-            'drl0csj', 'drl1csj'
+            'drl0csj', 'drl1csj',
+            'nsj',
             ]
 def variables_to_fill():
     "do not plot 2d variables, but still fill the corresponding histograms"
