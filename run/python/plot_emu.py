@@ -498,6 +498,7 @@ def selection_formulas():
     formulas['ext_emu_mue_ss'] = '(is_emu or is_mue) and is_same_sign'
     formulas['ext_emu_pt0_40_ss']= 'is_emu and is_same_sign and l0_pt>40.0'
     formulas['ext_mue_pt0_40_ss']= 'is_mue and is_same_sign and l0_pt>40.0'
+    formulas['ext_mumu_pt0_40_ss']= 'is_mumu and is_same_sign and l0_pt>40.0'
     # dbg low pt
     formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
     return formulas
@@ -564,12 +565,13 @@ def regions_to_plot():
     # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
     return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os',
             'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',
-            'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss'
+            'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss', 'ext_mumu_pt0_40_ss',
+            'sr_mue_os_low_pt1_15'
             ]
     return selection_formulas().keys()
 
 def variables_to_plot():
-    return ['onebin', 'njets', 'pt0', 'pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
+    return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
             'drl0csj', 'drl1csj',
             'nsj',
