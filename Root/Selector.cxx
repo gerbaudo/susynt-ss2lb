@@ -2,6 +2,7 @@
 #include "SusyntHlfv/WeightComponents.h"
 #include "SusyntHlfv/EventFlags.h"
 #include "SusyntHlfv/DileptonVariables.h"
+#include "SusyntHlfv/LeptonTruthType.h"
 #include "SusyntHlfv/NtUtils.h"
 
 // #include "SusyntHlfv/EventFlags.h"
@@ -110,13 +111,20 @@ Bool_t Selector::Process(Long64_t entry)
                 if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
                 if(m_writeTuple) {
                     double weight(weightComponents.product());
-                    unsigned int run(nt.evt()->run), event(nt.evt()->event);
+                    unsigned int run(nt.evt()->run), event(nt.evt()->event), nVtx(nt.evt()->nVtx);
+                    bool isMc = nt.evt()->isMC;
                     const Lepton &l0 = *m_signalLeptons[0];
                     const Lepton &l1 = *m_signalLeptons[1];
+                    LeptonTruthType::Value l0Source = (isMc ? LeptonTruthType::Unknown : getLeptonSource(l0));
+                    LeptonTruthType::Value l1Source = (isMc ? LeptonTruthType::Unknown : getLeptonSource(l1));
+                    bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                    bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     m_tupleMaker
                         .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
                         .setNumFjets(vars.numForwardJets)
                         .setNumBjets(vars.numBtagJets)
+                        .setL0IsTight(l0IsTight).setL0Source(l0Source)
+                        .setL1IsTight(l1IsTight).setL1Source(l1Source)
                         .setL0EtConeCorr(computeCorrectedEtCone(&l0))
                         .setL0PtConeCorr(computeCorrectedPtCone(&l0))
                         .setL1EtConeCorr(computeCorrectedEtCone(&l1))

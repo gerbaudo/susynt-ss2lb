@@ -4,6 +4,10 @@
 
 #include <string>
 
+namespace Susy {
+class Lepton;
+}
+
 namespace hlfv {
 
 /// Possible lepton sources from simulation truth
@@ -52,6 +56,9 @@ inline LeptonTruthType::Value int2source(const int &v) {
 }
 /// string representation
 std::string source2string(const LeptonTruthType::Value &v);
+
+/// helper functions
+LeptonTruthType::Value getLeptonSource(const Susy::Lepton &l);
 
 } // hlfv
 #endif
