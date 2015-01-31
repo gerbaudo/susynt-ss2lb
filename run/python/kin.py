@@ -103,3 +103,59 @@ def computeRazor(l0, l1, met, throw_on_neg_sqrt=False):
     MDELTAR = 2.*l0.E()
     costhetaRp1 = l0.Vect().Dot(vBETA_R)/(l0.Vect().Mag()*vBETA_R.Mag())
     return dphi_LL_vBETA_T, MDELTAR
+#___________________________________________________________
+def selection_formulas():
+    "return a dictionary with the criteria for several selection regions"
+    pt_req = 'l0_pt>45.0 and l1_pt>12.0 '
+    pt_req += ' and abs(l0_eta)<2.4 and abs(l1_eta)<2.4' # tmp to be dropped, fixed upstream in ee8b767
+    common_req_sr = (pt_req+
+                     ' and n_jets==0'+
+                     ' and dphi_l1_met<0.7'+
+                     ' and dphi_l0_l1>2.3 '+
+                     ' and dphi_l0_met>2.5'+
+                     ' and (l0_pt-l1_pt)>7.0')
+    common_req_vr = (pt_req+
+                     ' and n_jets==0'+
+                     ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5 or (l0_pt-l1_pt)<7.0)')
+    formulas = {
+        'sr_emu' : 'l0_is_el and l1_is_mu and '+common_req_sr,
+        'sr_mue' : 'l0_is_mu and l1_is_el and '+common_req_sr,
+        'vr_emu' : 'l0_is_el and l1_is_mu and '+common_req_vr,
+        'vr_mue' : 'l0_is_mu and l1_is_el and '+common_req_vr,
+        'sr_emu_mue' : '(is_emu or is_mue) and '+common_req_sr,
+        'sr_ee' : 'l0_is_el and l1_is_el and '+common_req_sr,
+        'sr_mumu' : 'l0_is_mu and l1_is_mu and '+common_req_sr,
+        'vr_emu_mue' : '(is_emu or is_mue) and '+common_req_vr,
+        'vr_ee' : 'l0_is_el and l1_is_el and '+common_req_vr,
+        'vr_mumu' : 'l0_is_mu and l1_is_mu and '+common_req_vr,
+        # 'pre_emu' : 'is_emu and '+pt_req,
+        # 'pre_mue' : 'is_mue and '+pt_req,
+        # 'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
+        }
+    os_expr = '(is_opp_sign)'
+    ss_expr = '(is_same_sign or is_qflippable)'
+    formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
+                     for k, v in formulas.iteritems()
+                     for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]])
+    # # symmetric selection
+    # pt_sym_req = 'l0_pt>20.0 and l1_pt>20.0'
+    # for lf, lf_expr in [('emu', 'is_emu'), ('mue', 'is_mue'), ('emu_mue', '(is_emu or is_mue)')]:
+    #     for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]:
+    #         formulas['sym_'+lf+'_'+ssos] = pt_sym_req+' and '+lf_expr+' and '+ssos_expr
+    # validation region used by Matt in the 2L paper, see sec6.4 ATL-COM-PHYS-2012-1808
+    # formulas_vrss_btag = 'num_b_jets==1 and et_miss_rel>50.0 and abs(m_ll-91.2)>10.0 if is_ee else True) and ((m_ll<90.0 or m_ll>120) if is_mumu else True)'
+    # formulas['vrss_btag'] = formulas_vrss_btag
+
+    formulas['vr_emu_razor_ss'] = '(is_emu or is_mue) and mdr>20.0 and '+ss_expr
+    formulas['vr_ee_razor_ss'] = 'is_ee and mdr>20.0 and '+ss_expr
+    formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
+    # fake extraction formulas; trig_match is already applied when making the ntuples
+    formulas['ext_mumu_ss'] = 'is_mumu and is_same_sign'
+    formulas['ext_emu_mue_ss'] = '(is_emu or is_mue) and is_same_sign'
+    formulas['ext_emu_pt0_40_ss']= 'is_emu and is_same_sign and l0_pt>40.0'
+    formulas['ext_mue_pt0_40_ss']= 'is_mue and is_same_sign and l0_pt>40.0'
+    formulas['ext_mumu_pt0_40_ss']= 'is_mumu and is_same_sign and l0_pt>40.0'
+    # dbg low pt
+    formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
+    return formulas
+#___________________________________________________________
