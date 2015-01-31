@@ -76,7 +76,6 @@ Example usage ('plot' mode):
 
 def main() :
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option('-b', '--batch',  action='store_true', help='submit to batch (used in fill mode)')
     parser.add_option('-g', '--group', help='group to be processed (used only in fill mode)')
     parser.add_option('-f', '--input-fake', help='location of fake trees')
     parser.add_option('-O', '--input-other', help='location other trees')
@@ -86,17 +85,17 @@ def main() :
                       help='directory with the list of samples; default ./samples/')
     parser.add_option('-s', '--syst', help="variations to process (default all)."
                       " Give a comma-sep list or say 'weight', 'object', or 'fake'")
-    parser.add_option('-l', '--list-systematics', action='store_true', default=False,
-                      help='list what is already in output_dir')
-    parser.add_option('-L', '--list-all-systematics', action='store_true', default=False,
-                      help='list all possible systematics')
     parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
-    parser.add_option('-v', '--verbose', action='store_true', default=False)
-    parser.add_option('--debug', action='store_true', default=False)
-    parser.add_option('--unblind', action='store_true', default=False)
-    parser.add_option('--require-tight-tight', action='store_true', default=False, help='fill histos only when both leps are tight')
+    # reminder: submit_batch_fill_job_per_group expects argument-less opt to default to False
+    parser.add_option('--debug', action='store_true')
+    parser.add_option('--verbose', action='store_true')
+    parser.add_option('--unblind', action='store_true')
+    parser.add_option('-b', '--batch',  action='store_true', help='submit to batch (used in fill mode)')
+    parser.add_option('-l', '--list-systematics', action='store_true', help='list what is already in output_dir')
+    parser.add_option('-L', '--list-all-systematics', action='store_true', help='list all possible systematics')
+    parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
 
     (opts, args) = parser.parse_args()
     if opts.list_all_systematics :
@@ -245,24 +244,13 @@ def runPlot(opts) :
         group.printVariationsSummary()
 
 def submit_batch_fill_job_per_group(group, opts):
-    verbose = opts.verbose
-
-    group_name = group.name if hasattr(group, 'name') else group
-    systematic = opts.syst if opts.syst else None
-    newOptions  = " --input-other %s" % opts.input_other
-    newOptions += " --input-fake %s" % opts.input_fake
-    newOptions += " --output-dir %s" % opts.output_dir
-    newOptions += " --group %s" % group_name
-    newOptions += (" --unblind " if opts.unblind else '')
-    newOptions += (" --verbose " if opts.verbose else '')
-    newOptions += (" --debug " if opts.debug else '')
-    newOptions += (" --syst {0}".format(opts.syst) if opts.syst else '')
-    newOptions += (" --exclude {0}".format(opts.exclude) if opts.exclude else '')
-    newOptions += (" --require-tight-tight " if opts.require_tight_tight else '')
-    newOptions += (" --tight-def {0}".format(opts.tight_def) if opts.tight_def else '')
-    newOptions += (" --samples-dir {0}".format(opts.samples_dir) if opts.samples_dir else '')
-
-    print 'todo: re-implement submit_batch_fill_job_per_group (just mod group opt)'
+    options_dict = vars(opts)
+    options_dict['group'] = group.name if hasattr(group, 'name') else group
+    options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
+    # note to self: the line below assumes that the argument-less options have a default=False
+    options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True)
+    cmd_line_options = ' '.join(["--%s %s"%(k,str(v)) for k,v in options_with_value.iteritems()]
+                                +["--%s"%k for k in options_with_toggle.keys()])
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded(opts.log_dir)
     script_dir = mkdirIfNeeded('batch/plot_emu')
@@ -270,7 +258,7 @@ def submit_batch_fill_job_per_group(group, opts):
     log_name = log_dir+'/'+group_name+("_{0}".format(systematic) if systematic else '')+'.log'
     script_file = open(script_name, 'w')
     script_file.write(open(template).read()
-                      .replace('%(opt)s', newOptions)
+                      .replace('%(opt)s', cmd_line_options)
                       .replace('%(logfile)s', log_name)
                       .replace('%(jobname)s', group_name))
     script_file.close()
