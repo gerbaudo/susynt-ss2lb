@@ -36,7 +36,8 @@ def denominator_std(l) :
     return 1.0/pt if pt>0.0 else None
 
 def elecIsFromPv(l):
-    maxD0Sig, maxZ0SinTheta = 3.0, 0.4 # see SusyNtTools::isSignalElectron
+    # maxD0Sig, maxZ0SinTheta = 3.0, 0.4 # see SusyNtTools::isSignalElectron, WH values
+    maxD0Sig, maxZ0SinTheta = 5.0, 0.4 # see SusyNtTools::isSignalElectron, std values
     return abs(l.d0Signif) < maxD0Sig and abs(l.z0SinTheta) < maxZ0SinTheta
 
 def muonIsFromPv(l):
