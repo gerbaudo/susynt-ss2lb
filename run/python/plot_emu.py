@@ -245,11 +245,15 @@ def runPlot(opts) :
 
 def submit_batch_fill_job_per_group(group, opts):
     options_dict = vars(opts)
-    options_dict['group'] = group.name if hasattr(group, 'name') else group
+    group_name = group.name if hasattr(group, 'name') else group
+    systematic = opts.syst if opts.syst else None
+    verbose = opts.verbose
+    options_dict['group'] = group_name
     options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
     # note to self: the line below assumes that the argument-less options have a default=False
-    options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True)
-    cmd_line_options = ' '.join(["--%s %s"%(k,str(v)) for k,v in options_with_value.iteritems()]
+    options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
+    cmd_line_options = ' '.join(["--%s %s"%(k.replace('_','-'), str(v))
+                                 for k,v in options_with_value.iteritems()]
                                 +["--%s"%k for k in options_with_toggle.keys()])
     template = 'batch/templates/plot_emu.sh'
     log_dir = mkdirIfNeeded(opts.log_dir)
