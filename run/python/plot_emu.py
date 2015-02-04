@@ -327,6 +327,12 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         d_pt0_pt1 = l0_pt - l1_pt
         l0_eta, l1_eta = l0.p4.Eta(), l1.p4.Eta()
         l0_phi, l1_phi = l0.p4.Phi(), l1.p4.Phi()
+        l0_d0Sig, l1_d0Sig = l0.d0Signif, l1.d0Signif
+        l0_z0Sin, l1_z0Sin = l0.z0SinTheta, l1.z0SinTheta
+        l0_etCone, l1_etCone = l0.etCone, l1.etCone
+        l0_ptCone, l1_ptCone = l0.ptCone, l1.ptCone
+        l0_etConeCorr, l1_etConeCorr = l0.etConeCorr, l1.etConeCorr
+        l0_ptConeCorr, l1_ptConeCorr = l0.ptConeCorr, l1.ptConeCorr
         met_pt = met.p4.Pt()
         m_ll = (l0.p4 + l1.p4).M()
         pt_ll = (l0.p4 + l1.p4).Pt()
@@ -392,12 +398,25 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['met'      ].Fill(met_pt, fill_weight)
             h['dphil0met'].Fill(dphi_l0_met, fill_weight)
             h['dphil1met'].Fill(dphi_l1_met, fill_weight)
+            h['l0_d0Sig'     ].Fill(l0_d0Sig,      fill_weight)
+            h['l1_d0Sig'     ].Fill(l1_d0Sig,      fill_weight)
+            h['l0_z0Sin'     ].Fill(l0_z0Sin,      fill_weight)
+            h['l1_z0Sin'     ].Fill(l1_z0Sin,      fill_weight)
+            h['l0_etCone'    ].Fill(l0_etCone,     fill_weight)
+            h['l1_etCone'    ].Fill(l1_etCone,     fill_weight)
+            h['l0_ptCone'    ].Fill(l0_ptCone,     fill_weight)
+            h['l1_ptCone'    ].Fill(l1_ptCone,     fill_weight)
+            h['l0_etConeCorr'].Fill(l0_etConeCorr, fill_weight)
+            h['l1_etConeCorr'].Fill(l1_etConeCorr, fill_weight)
+            h['l0_ptConeCorr'].Fill(l0_ptConeCorr, fill_weight)
+            h['l1_ptConeCorr'].Fill(l1_ptConeCorr, fill_weight)
 
             h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt, fill_weight)
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['nsj'             ].Fill(n_soft_jets, fill_weight)
+
             if n_soft_jets:
                 h['drl0csj'].Fill(drl0csj, fill_weight)
                 h['drl1csj'].Fill(drl1csj, fill_weight)
@@ -446,7 +465,6 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
     histoName = systUtils.BaseSampleGroup.histoname
     def histo(variable, sam, sys, sel) :
         twopi = +2.0*math.pi
-        mljjLab = 'm_{lj}' if '1j' in sel else 'm_{ljj}'
         h = None
         if   v=='onebin'   : h = r.TH1F(histoName(sam, sys, sel, v), ';; entries',                               1, 0.5,   1.5)
         elif v=='njets'    : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets}; entries',                      10,-0.5,   9.5)
@@ -466,6 +484,18 @@ def book_histograms(sample_name='', variables=[], systematics=[], selections=[])
         elif v=='nsj'      : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets,20<pt<30};entries/bin',           10,-0.5,  9.5)
         elif v=='drl0csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l0, j_{close,soft});entries/bin',10, 0.0,   2.0)
         elif v=='drl1csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l1, j_{close,soft});entries/bin',10, 0.0,   2.0)
+        elif v=='l0_d0Sig'       : h = r.TH1F(histoName(sam, sys, sel, v), ';d_{0 sig, l0}; entries/bin',        50, -50.0, +50.0)
+        elif v=='l0_z0Sin'       : h = r.TH1F(histoName(sam, sys, sel, v), ';z_{0, l0}sin#theta; entries/bin',   50, -50.0, +50.0)
+        elif v=='l0_etCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T,cone, l0} [GeV]; entries/bin', 60, -10.0, +50.0)
+        elif v=='l0_ptCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,cone, l0} [GeV]; entries/bin', 50,   0.0, +50.0)
+        elif v=='l0_etConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T, cone, corr, l0}; entries/bin',60, -10.0, +50.0)
+        elif v=='l0_ptConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T, cone, corr, l0}; entries/bin',50,   0.0, +50.0)
+        elif v=='l1_d0Sig'       : h = r.TH1F(histoName(sam, sys, sel, v), ';d_{0 sig, l1}; entries/bin',        50, -50.0, +50.0)
+        elif v=='l1_z0Sin'       : h = r.TH1F(histoName(sam, sys, sel, v), ';z_{0, l1}sin#theta; entries/bin',   50, -50.0, +50.0)
+        elif v=='l1_etCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T,cone, l1} [GeV]; entries/bin', 60, -10.0, +50.0)
+        elif v=='l1_ptCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,cone, l1} [GeV]; entries/bin', 50,   0.0, +50.0)
+        elif v=='l1_etConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T, cone, corr, l1}; entries/bin',60, -10.0, +50.0)
+        elif v=='l1_ptConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T, cone, corr, l1}; entries/bin',50,   0.0, +50.0)
         elif v=='mcoll_vs_pt1'     : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      48, 0.0, 240.0, 40, 0.0, 400.0)
         elif v=='pt0_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      48, 0.0, 240.0, 48, 0.0, 240.0)
         elif v=='met_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; MET [GeV]',                 48, 0.0, 240.0, 24, 0.0, 240.0)
@@ -513,6 +543,8 @@ def variables_to_plot():
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
             'drl0csj', 'drl1csj',
             'nsj',
+            'l0_d0Sig', 'l0_z0Sin', 'l0_etCone', 'l0_ptCone', 'l0_etConeCorr', 'l0_ptConeCorr',
+            'l1_d0Sig', 'l1_z0Sin', 'l1_etCone', 'l1_ptCone', 'l1_etConeCorr', 'l1_ptConeCorr',
             ]
 def variables_to_fill():
     "do not plot 2d variables, but still fill the corresponding histograms"
