@@ -42,6 +42,21 @@ void MatrixPrediction::Begin(TTree* /*tree*/)
   m_allconfigured = initMatrixTool();
 }
 //----------------------------------------------------------
+bool leptonIsFromPv(const Lepton &l)
+{
+    bool from_pv = false;
+    if(!l.isMu() && !l.isEle()){
+        cout<<"leptonIsFromPv, invalid lepton type"<<endl;
+    } else {
+        float d0Sig = fabs(l.d0Sig(true));
+        float z0SinTheta = fabs(l.z0SinTheta(true));
+        float d0Sig_max = l.isEle() ? ELECTRON_D0SIG_CUT : MUON_D0SIG_CUT;
+        float z0SinTheta_max = l.isEle() ? ELECTRON_Z0_SINTHETA_CUT : MUON_Z0_SINTHETA_CUT;
+        from_pv = ((d0Sig < d0Sig_max) && (z0SinTheta < z0SinTheta_max));
+    }
+    return from_pv;
+}
+//----------------------------------------------------------
 Bool_t MatrixPrediction::Process(Long64_t entry)
 {
 #warning todo rename smm hmp
@@ -72,6 +87,8 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             double gev=1.0;
             unsigned int run(nt.evt()->run), event(nt.evt()->event);
+            const Lepton &l0 = *l[0];
+            const Lepton &l1 = *l[1];
             assignNonStaticWeightComponents(l, bj, Systematic::CENTRAL, vars, weightComponents);
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
@@ -80,12 +97,12 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
+                                         leptonIsFromPv(l0) &&
+                                         leptonIsFromPv(l1) &&
                                          (is_e_mu || is_same_sign));
             if(is_event_to_be_saved){
                 uint nVtx = nt.evt()->nVtx;
                 bool isMC = nt.evt()->isMC;
-                const Lepton &l0 = *l[0];
-                const Lepton &l1 = *l[1];
                 float metRel = getMetRel(m, l, jets);
                 bool l0IsSig(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMC));
                 bool l1IsSig(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMC));

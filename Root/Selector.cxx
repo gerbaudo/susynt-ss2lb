@@ -94,7 +94,8 @@ Bool_t Selector::Process(Long64_t entry)
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             bool is_data(!nt.evt()->isMC), is_mc(!is_data);
-            bool two_mc_prompt(is_data || vars.hasTwoPromptLeptons);
+            bool two_mc_prompt = vars.hasTwoPromptLeptons;
+            // two_mc_prompt = !two_mc_prompt; // tmp debug: save simulated fake
             bool is_e_mu(eventIsEmu(l));
             bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
             bool is_qflippable(is_mc && has_some_electron && eventIsOppositeSign(l));
