@@ -97,8 +97,6 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
                                          vars.hasTrigMatch &&
-                                         leptonIsFromPv(l0) &&
-                                         leptonIsFromPv(l1) &&
                                          (is_e_mu || is_same_sign));
             if(is_event_to_be_saved){
                 uint nVtx = nt.evt()->nVtx;
