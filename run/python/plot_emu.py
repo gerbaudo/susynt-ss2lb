@@ -31,7 +31,8 @@ from rootUtils import (drawAtlasLabel
                        ,referenceLine
                        )
 r = importRoot()
-from utils import (first
+from utils import (dictSum
+                   ,first
                    ,getCommandOutput
                    ,mkdirIfNeeded
                    ,filterWithRegexp
@@ -39,6 +40,7 @@ from utils import (first
                    ,sortedAs
                    )
 import fakeUtils as fakeu
+from indexed_chain import IndexedChain
 import settings
 import utils
 from kin import addTlv, computeCollinearMassLepTau, computeRazor, computeMt, selection_formulas
@@ -98,6 +100,7 @@ def main() :
     parser.add_option('-L', '--list-all-systematics', action='store_true', help='list all possible systematics')
     parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
     parser.add_option('--quick-test', action='store_true', help='run a quick test and fill only 1% of the events')
+    parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
 
     (opts, args) = parser.parse_args()
     if opts.list_all_systematics :
@@ -163,7 +166,7 @@ def runFill(opts) :
                 # note to self: here you will want to use a modified Sample.setHftInputDir
                 # for now we just have the fake syst that are in the nominal tree
                 tree_name = 'hlfv_tuple'
-                chain = r.TChain(tree_name)
+                chain = IndexedChain(tree_name)
                 input_dir = opts.input_fake if group.name=='fake' else opts.input_other
                 for ds in group.datasets:
                     chain.Add(os.path.join(input_dir, ds.name+'.root'))
@@ -171,14 +174,34 @@ def runFill(opts) :
                     print "{0} : {1} entries from {2} samples".format(group.name,
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
-                counters, histos = count_and_fill(chain=chain, sample=group.name,
+                chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
+                tcuts = [r.TCut(reg, selection_formulas()[reg]) for reg in regions_to_plot()]
+                chain.retrieve_entrylists(tcuts)
+                counters_pre, histos_pre = dict(), dict()
+                counters_npre, histos_npre = dict(), dict()
+                cached_tcuts = [] if opts.disable_cache else chain.tcuts_with_existing_list()
+                uncached_tcuts = tcuts if opts.disable_cache else chain.tcuts_without_existing_list()
+                for cut in cached_tcuts:
+                    chain.preselect(cut)
+                    c_pre, h_pre = count_and_fill(chain=chain, sample=group.name,
                                                   syst=systematic, verbose=verbose,
                                                   debug=debug, blinded=blinded,
                                                   onthefly_tight_def=onthefly_tight_def,
-                                                  tightight=tightight, quicktest=opts.quick_test)
+                                                  tightight=tightight, quicktest=opts.quick_test,
+                                                  cached_cut=cut)
+                    counters_pre = dictSum(counters_pre, c_pre)
+                    histos_pre = dictSum(histos_pre, h_pre)
+                if uncached_tcuts:
+                    counters_npre, histos_npre = count_and_fill(chain=chain, sample=group.name,
+                                                                syst=systematic, verbose=verbose,
+                                                                debug=debug, blinded=blinded,
+                                                                onthefly_tight_def=onthefly_tight_def,
+                                                                tightight=tightight, quicktest=opts.quick_test,
+                                                                noncached_cuts=uncached_tcuts)
                 out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
                 print 'out_filename: ',out_filename
-                writeObjectsToFile(out_filename, histos, verbose)
+                writeObjectsToFile(out_filename, dictSum(histos_pre, histos_npre), verbose)
+                chain.save_lists()
         # print counters
 
 def runPlot(opts) :
@@ -276,7 +299,8 @@ def submit_batch_fill_job_per_group(group, opts):
 
 #-------------------
 def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinded=True,
-                   onthefly_tight_def=None, tightight=False, quicktest=False):
+                   onthefly_tight_def=None, tightight=False, quicktest=False,
+                   cached_cut=None, noncached_cuts=[]):
     """
     count and fill for one sample (or group), one syst.
     """
@@ -284,7 +308,9 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
     is_mc = systUtils.Group(sample).isMc
     is_data = systUtils.Group(sample).isData
     is_qflip_sample = dataset.DatasetGroup(sample).is_qflip
-    selections = regions_to_plot()
+    assert bool(cached_cut) != bool(noncached_cuts),"must choose either cached selection or non-cached selections: {}, {}".format(cached_cut, noncached_cuts)
+    cuts = [cached_cut] if cached_cut else noncached_cuts
+    selections = [c.GetName() for c in cuts]
     counters = book_counters(selections)
     histos = book_histograms(sample_name=sample, variables=variables_to_fill(),
                              systematics=[syst], selections=selections
@@ -363,14 +389,17 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         drl1csj  = csj1.p4.DeltaR(l1.p4) if csj1 else None
         pass_sels = {}
         if tightight and not (l0_is_t and l1_is_t) : continue
-        for sel in selections:
-            pass_sel = eval(selection_formulas()[sel])
+        for cut in cuts:
+            sel = cut.GetName()
+            sel_expr = cut.GetTitle()
+            pass_sel = eval(sel_expr)
             pass_sels[sel] = pass_sel
             is_ss_sel = sel.endswith('_ss')
             as_qflip = is_qflippable and (is_opp_sign and is_ss_sel)
             if is_qflip_sample and not as_qflip : pass_sel = False
             if not is_qflip_sample and as_qflip : pass_sel = False
             if not pass_sel : continue
+            if pass_sel and not cached_cut : chain.add_entry_to_list(cut, iEntry)
             # <isElectron 1> <isElectron 2> <isTight 1> <isTight 2> <pt 1> <pt 2> <eta 1> <eta 2>
             lltype = "{0}{1}".format('e' if l0_is_el else 'mu', 'e' if l1_is_el else 'mu')
             qqtype = "{0}{1}".format('T' if l0_is_t else 'L', 'T' if l1_is_t else 'L')

@@ -15,7 +15,7 @@ class IndexedChain(r.TChain):
   The idea is that you run once on all events, and a TEntryList
   is cached for each selection. On the following runs one can
   loop on the interesting entries only.
-  
+
   Each selection is identified by a TCut, but the TCut itself is only
   used as a bookkeping tool (for example it can contain variables that
   are computed on the fly, not present in the tree).
@@ -24,17 +24,18 @@ class IndexedChain(r.TChain):
 
     chain = IndexedChain(treename)
     chain.Add(filename)
-    chain.retrieve_entrylists([cut1, cut2, cut3])
+    chain.retrieve_entrylists([TCut('cut1','x>0'),
+                               TCut('cut2','y>3')])
 
-    # loop on cut, then loop on entry
+    # we know our entries: loop on cut, then loop on entry
     for cut in chain.tcuts_with_existing_list():
       chain.preselect(cut)
-      for event in chain:
+      for entry in chain:
         # fill histograms
 
-    # loop on entry then loop on cut
-    for ientry in xrange(chain.GetEntries()):
-      chain.GetEntry(ientry)
+    # we don't know our entries: loop on entry then loop on cut
+    chain.preselect(None)
+    for ientry, entry in enumerate(chain):
       for cut in chain.tcuts_without_existing_list():
         # here you must assign all the variables needed by tcut
         cut_name, cut_expr = cut.GetName(), cut.GetTitle()
@@ -54,12 +55,13 @@ class IndexedChain(r.TChain):
     """
     r.TChain.__init__(self, *args)
     self.__current_entrylist = None
+    self.__has_entry_list = dict()
     self.__entry_list = dict()
     self.__entry_list_file = dict()
-    self.cache_directory = self.mkdir_if_needed('./cache_IndexedChain')
+    self.cache_directory = './cache_IndexedChain'
     self.hash_func = hashlib.md5
-    logging.basicConfig(filename='indexed_chain.log',level=logging.INFO)
-    # logging.basicConfig(filename='indexed_chain.log',level=logging.DEBUG)
+    # logging.basicConfig(filename='indexed_chain.log',level=logging.INFO)
+    logging.basicConfig(filename='indexed_chain.log',level=logging.DEBUG)
     self.logger = logging.getLogger(__name__)
 
   def __iter__(self):
@@ -78,15 +80,39 @@ class IndexedChain(r.TChain):
         self.GetEntry(ientry)
         yield self
 
+  def retrieve_entrylists(self, tcuts=[]):
+    """
+    Get the existing entry lists for a given list of TCuts.
+
+    Loop over the TCuts, and determine whether the corresponding
+    TEntryList is already available. When they are, store them in
+    the entry_list dict. Both TFiles and TEntryList are indexed by
+    'tcut_filename', encoding both selection and files.
+    """
+    self.check_cache_dir()
+    self.__tcuts = tcuts
+    for tcut in tcuts:
+      fname = self.tcut_filename(tcut)
+      if os.path.exists(fname):
+        entrylist_file = r.TFile.Open(fname)
+        self.__has_entry_list[fname] = True
+        self.__entry_list_file[fname] = entrylist_file
+        self.__entry_list[fname] = entrylist_file.Get(tcut.GetName())
+        self.logger.info("retrieved entry list for '%s' from '%s'" % (tcut.GetName(), fname))
+      else:
+        self.__has_entry_list[fname] = False
+        self.__entry_list[fname] = r.TEntryList(tcut.GetName(), self.string_to_be_hashed(tcut))
+        self.logger.info("creating entry list for '%s'" % tcut.GetName())
+
   def tcuts_with_existing_list(self):
-    return [t for t in self.__tcuts if self.tcut_filename(t) in self.__entry_list_file]
+    return [t for t in self.__tcuts if self.__has_entry_list[self.tcut_filename(t)]]
 
   def tcuts_without_existing_list(self):
-    return [t for t in self.__tcuts if self.tcut_filename(t) not in self.__entry_list_file]
+    return [t for t in self.__tcuts if not self.__has_entry_list[self.tcut_filename(t)]]
 
   def preselect(self, tcut):
-    key = self.tcut_filename(tcut)
-    if key in self.__entry_list:
+    key = self.tcut_filename(tcut) if tcut else None
+    if key in self.__entry_list and self.__has_entry_list[key]:
       entry_list = self.__entry_list[key]
       self.__current_entrylist = entry_list
       self.logger.info("preselected %d events (out of %d) for cut '%s'" % (entry_list.GetN(),
@@ -94,7 +120,10 @@ class IndexedChain(r.TChain):
                                                                            tcut.GetName()))
     else:
       self.__current_entrylist = None
-      self.logger.warning("requested entry list for cut '%s' not available" % tcut.GetName())
+      if tcut:
+        self.logger.warning("requested entry list for cut '%s' not available" % tcut.GetName())
+      else:
+        self.logger.info("no preselection: %d events" % self.GetEntries())
 
   def num_events_preselected(self):
     return 0 if not self.__current_entrylist else self.__current_entrylist.GetN()
@@ -104,6 +133,7 @@ class IndexedChain(r.TChain):
     self.__entry_list[key].Enter(ientry)
 
   def save_lists(self):
+    self.check_cache_dir()
     for tcut in self.tcuts_without_existing_list():
       filename = self.tcut_filename(tcut)
       key = filename
@@ -135,52 +165,41 @@ class IndexedChain(r.TChain):
       os.makedirs(dirname)
       dest_dir = dirname
     return dest_dir
-                              
-  def retrieve_entrylists(self, tcuts=[]):
-    """
-    Get the existing entry lists for a given list of TCuts.
 
-    Loop over the TCuts, and determine whether the corresponding
-    TEntryList is already available. When they are, store them in
-    the entry_list dict. Both TFiles and TEntryList are indexed by
-    'tcut_filename', encoding both selection and files.
+  def check_cache_dir(self):
     """
-    self.__tcuts = tcuts
-    for tcut in tcuts:
-      fname = self.tcut_filename(tcut)
-      if os.path.exists(fname):
-        entrylist_file = r.TFile.Open(fname)
-        self.__entry_list_file[fname] = entrylist_file
-        self.__entry_list[fname] = entrylist_file.Get(tcut.GetName())
-        self.logger.info("retrieved entry list for '%s' from '%s'" % (tcut.GetName(), fname))
-      else:
-        self.__entry_list[fname] = r.TEntryList(tcut.GetName(), self.string_to_hash(tcut))
-        self.logger.info("creating entry list for '%s'" % tcut.GetName())
-        
-  def clear_entrylists(self, tcuts=[]):
+    Check whether the cache directory exists; if not, make one
+    """
+    self.mkdir_if_needed(self.cache_directory)
+    assert os.path.isdir(self.cache_directory),"invalid cache directory '{}'".format(self.cache_directory)
+
+  def delete_entrylists(self, tcuts=[]):
     """
     Delete existing entry lists for a given list of cuts
+    Note-to-self: currently not clearing dicts, so need to create a new object
     """
+    if not tcuts:
+        self.logger.info("calling delete_entrylists without cuts...will do nothing")
     for tcut in tcuts:
       fname = self.tcut_filename(tcut)
       if os.path.exists(fname):
         os.remove(fname)
-        self.logger.info("deleted existing entrylist for cut '%s' %s()" % (tcut.GetName(), fname))
+        self.logger.info("deleted existing entrylist for cut '%s' %s" % (tcut.GetName(), fname))
 
-  def string_to_hash(self, tcut):
+  def string_to_be_hashed(self, tcut):
     """
     Encode a given selection (cutname + cutexpression + filenames) in a string"
     """
     return ''.join([tcut.GetName(), tcut.GetTitle(), self.GetName()] +self.filenames)
-    
+
   def hash(self, tcut):
-    return self.hash_func(self.string_to_hash(tcut)).hexdigest()
+    return self.hash_func(self.string_to_be_hashed(tcut)).hexdigest()
 
   def tcut_filename(self, tcut):
     """
     Given a TCut, provide the filename where the corresponding entry list is stored
     """
-    return os.path.join(self.cache_directory, self.hash(tcut)+'.root')
+    return os.path.join(self.cache_directory, tcut.GetName()+'_'+self.hash(tcut)+'.root')
 
 #
 # testing
@@ -209,6 +228,9 @@ def create_dummy_tree():
 def even_cut():
   return r.TCut("even entries", "x%2==0")
 
+def odd_cut():
+  return r.TCut("odd entries", "x%2!=0")
+
 class TestEntryList(unittest.TestCase) :
   def test_witout_entrylist(self):
     infile = r.TFile.Open(dummy_filename())
@@ -224,7 +246,7 @@ class TestEntryList(unittest.TestCase) :
     cut = even_cut()
     chain = IndexedChain(dummy_treename())
     chain.Add(dummy_filename())
-    chain.clear_entrylists() # make sure we start from scratch
+    chain.delete_entrylists([cut]) # make sure we start from scratch
     chain.retrieve_entrylists([cut])
     n_entries_available = chain.GetEntries()
     n_entries_processed = 0
@@ -236,7 +258,7 @@ class TestEntryList(unittest.TestCase) :
     cut = even_cut()
     chain = IndexedChain(dummy_treename())
     chain.Add(dummy_filename())
-    chain.clear_entrylists()
+    chain.delete_entrylists([cut])
     chain.retrieve_entrylists([cut])
     cutstring = cut.GetTitle()
 
@@ -269,8 +291,59 @@ class TestEntryList(unittest.TestCase) :
       n_entries_processed +=1
     self.assertEqual(n_entries_processed, n_entries_selected)
 
+  def test_with_partial_entrylist(self):
+    chain = IndexedChain(dummy_treename())
+    chain.Add(dummy_filename())
+
+    # clear things up
+    cuts = [even_cut(), odd_cut()]
+    chain.delete_entrylists(cuts)
+    # run once and just count
+    counters_pre = dict((c.GetName(), 0) for c in cuts)
+    counters_post = dict((c.GetName(), 0) for c in cuts)
+    for ientry, entry in enumerate(chain):
+      x = entry.x
+      for cut in cuts:
+        cut_name = cut.GetName()
+        cut_expr = cut.GetTitle()
+        if eval(cut_expr):
+          counters_pre[cut_name] += 1
+
+    # run once and fill the list for only one cut
+    cuts = [even_cut()]
+    chain.retrieve_entrylists(cuts)
+    for ientry, entry in enumerate(chain):
+      x = entry.x
+      for cut in cuts:
+        cut_name = cut.GetName()
+        cut_expr = cut.GetTitle()
+        if eval(cut_expr):
+          chain.add_entry_to_list(cut, ientry)
+    chain.save_lists()
+
+    # run again, but now with two cuts, one of which has an entrylist
+    cuts = [even_cut(), odd_cut()]
+    chain = IndexedChain(dummy_treename()) # new obj, see note in delete_entrylists
+    chain.Add(dummy_filename())
+    chain.retrieve_entrylists(cuts)
+
+    for cut in chain.tcuts_with_existing_list():
+      chain.preselect(cut)
+      for entry in chain:
+        counters_post[cut.GetName()] += 1
+
+    chain.preselect(None)
+    for ientry, entry in enumerate(chain):
+      x = entry.x
+      for cut in chain.tcuts_without_existing_list():
+        cut_name = cut.GetName()
+        cut_expr = cut.GetTitle()
+        if eval(cut_expr):
+          counters_post[cut_name] += 1
+
+    self.assertEqual(counters_pre, counters_post)
+
 
 if __name__ == "__main__":
   create_dummy_tree()
   unittest.main()
-                                                
