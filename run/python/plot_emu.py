@@ -39,6 +39,7 @@ from utils import (first
                    ,sortedAs
                    )
 import fakeUtils as fakeu
+import settings
 import utils
 from kin import addTlv, computeCollinearMassLepTau, computeRazor, computeMt, selection_formulas
 
@@ -96,6 +97,7 @@ def main() :
     parser.add_option('-l', '--list-systematics', action='store_true', help='list what is already in output_dir')
     parser.add_option('-L', '--list-all-systematics', action='store_true', help='list all possible systematics')
     parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
+    parser.add_option('--quick-test', action='store_true', help='run a quick test and fill only 1% of the events')
 
     (opts, args) = parser.parse_args()
     if opts.list_all_systematics :
@@ -173,7 +175,7 @@ def runFill(opts) :
                                                   syst=systematic, verbose=verbose,
                                                   debug=debug, blinded=blinded,
                                                   onthefly_tight_def=onthefly_tight_def,
-                                                  tightight=tightight)
+                                                  tightight=tightight, quicktest=opts.quick_test)
                 out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
                 print 'out_filename: ',out_filename
                 writeObjectsToFile(out_filename, histos, verbose)
@@ -274,7 +276,7 @@ def submit_batch_fill_job_per_group(group, opts):
 
 #-------------------
 def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinded=True,
-                   onthefly_tight_def=None, tightight=False):
+                   onthefly_tight_def=None, tightight=False, quicktest=False):
     """
     count and fill for one sample (or group), one syst.
     """
@@ -294,6 +296,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
     qflip_expr = 'event.pars.qflipWeight'
     print 'weight_expr: ',weight_expr
     start_time = time.clock()
+    num_total_entries = chain.GetEntries()
     num_processed_entries = 0
     fields_to_print = ['l0_pt', 'l1_pt', 'l0_eta', 'l1_eta',
                        'met_pt',
@@ -304,6 +307,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
                        'eta_csj0', 'phi_csj0', 'eta_csj1', 'phi_csj1']
     if debug : print ",".join(fields_to_print)
     for iEntry, event in enumerate(chain):
+        if quicktest and 100*iEntry > num_total_entries: break
         run_num = event.pars.runNumber
         evt_num = event.pars.eventNumber
         l0 = addTlv(event.l0)
@@ -463,50 +467,10 @@ def printCounters(counters):
 def book_histograms(sample_name='', variables=[], systematics=[], selections=[]) :
     "book a dict of histograms with keys [systematics][selection][var]"
     histoName = systUtils.BaseSampleGroup.histoname
-    def histo(variable, sam, sys, sel) :
-        twopi = +2.0*math.pi
-        h = None
-        if   v=='onebin'   : h = r.TH1F(histoName(sam, sys, sel, v), ';; entries',                               1, 0.5,   1.5)
-        elif v=='njets'    : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets}; entries',                      10,-0.5,   9.5)
-        elif v=='pt0'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0} [GeV]; entries/bin',            48, 0.0, 240.0)
-        elif v=='pt1'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l1} [GeV]; entries/bin',            48, 0.0, 240.0)
-        elif v=='d_pt0_pt1': h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0}-p_{T,l1} [GeV]; entries/bin',   24, 0.0, 120.0)
-        elif v=='eta0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l0}; entries/bin',                 26,-2.6,  +2.6)
-        elif v=='eta1'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#eta_{l1}; entries/bin',                 26,-2.6,  +2.6)
-        elif v=='phi0'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#phi_{l0} [rad]; entries/bin',           10, 0.0, twopi)
-        elif v=='phi1'     : h = r.TH1F(histoName(sam, sys, sel, v), ';#phi_{l1} [rad]; entries/bin',           10, 0.0, twopi)
-        elif v=='mcoll'    : h = r.TH1F(histoName(sam, sys, sel, v), ';m_{coll,l0,l1} [GeV]; entries/bin',      40, 0.0, 400.0)
-        elif v=='mll'      : h = r.TH1F(histoName(sam, sys, sel, v), ';m_{l0,l1} [GeV]; entries/bin',           24, 0.0, 240.0)
-        elif v=='ptll'     : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,l0+l1} [GeV]; entries/bin',         24, 0.0, 240.0)
-        elif v=='met'      : h = r.TH1F(histoName(sam, sys, sel, v), ';MET [GeV]; entries/bin',                 24, 0.0, 240.0)
-        elif v=='dphil0met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l0, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='dphil1met': h = r.TH1F(histoName(sam, sys, sel, v), ';#Delta#phi(l1, met) [rad]; entries/bin',  10, 0.0, twopi)
-        elif v=='nsj'      : h = r.TH1F(histoName(sam, sys, sel, v), ';N_{jets,20<pt<30};entries/bin',           10,-0.5,  9.5)
-        elif v=='drl0csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l0, j_{close,soft});entries/bin',10, 0.0,   2.0)
-        elif v=='drl1csj'  : h = r.TH1F(histoName(sam, sys, sel, v), ';#DeltaR(l1, j_{close,soft});entries/bin',10, 0.0,   2.0)
-        elif v=='l0_d0Sig'       : h = r.TH1F(histoName(sam, sys, sel, v), ';d_{0 sig, l0}; entries/bin',        40, -10.0, +10.0)
-        elif v=='l0_z0Sin'       : h = r.TH1F(histoName(sam, sys, sel, v), ';z_{0, l0}sin#theta; entries/bin',   40, -10.0, +10.0)
-        elif v=='l0_etCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T,cone, l0} [GeV]; entries/bin', 40, -10.0, +30.0)
-        elif v=='l0_ptCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,cone, l0} [GeV]; entries/bin', 50,   0.0, +25.0)
-        elif v=='l0_etConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T, cone, corr, l0}; entries/bin',60, -10.0, +20.0)
-        elif v=='l0_ptConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T, cone, corr, l0}; entries/bin',50,   0.0, +25.0)
-        elif v=='l1_d0Sig'       : h = r.TH1F(histoName(sam, sys, sel, v), ';d_{0 sig, l1}; entries/bin',        40, -10.0, +10.0)
-        elif v=='l1_z0Sin'       : h = r.TH1F(histoName(sam, sys, sel, v), ';z_{0, l1}sin#theta; entries/bin',   40, -10.0, +10.0)
-        elif v=='l1_etCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T,cone, l1} [GeV]; entries/bin', 40, -10.0, +30.0)
-        elif v=='l1_ptCone'      : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T,cone, l1} [GeV]; entries/bin', 50,   0.0, +25.0)
-        elif v=='l1_etConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';E_{T, cone, corr, l1}; entries/bin',60, -10.0, +20.0)
-        elif v=='l1_ptConeCorr'  : h = r.TH1F(histoName(sam, sys, sel, v), ';p_{T, cone, corr, l1}; entries/bin',50,   0.0, +25.0)
-        elif v=='mcoll_vs_pt1'     : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      48, 0.0, 240.0, 40, 0.0, 400.0)
-        elif v=='pt0_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      48, 0.0, 240.0, 48, 0.0, 240.0)
-        elif v=='met_vs_pt1'       : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; MET [GeV]',                 48, 0.0, 240.0, 24, 0.0, 240.0)
-        elif v=='dphil0met_vs_pt1' : h = r.TH2F(histoName(sam, sys, sel, v), '; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 48, 0.0, 240.0, 10, 0.0, twopi)
-        else : print "unknown variable %s"%v
-        h.Sumw2()
-        h.SetDirectory(0)
-        return h
+    histo = settings.histogram
     return dict([(sys,
                   dict([(sel,
-                         dict([(v, histo(v, sample_name, sys, sel))
+                         dict([(v, histo(v, histoName(sample_name, sys, sel, v)))
                                for v in variables]))
                         for sel in selections]))
                  for sys in systematics])
