@@ -121,6 +121,7 @@ def main() :
     eitherMode = inOtherSpecified != inDirSpecified
     if not eitherMode : parser.error("Run either in 'fill' or 'plot' mode")
     mode = 'fill' if inOtherSpecified else 'plot' if inDirSpecified else None
+    if opts.quick_test : opts.disable_cache = True # don't write bogus entrylists
     requiredOptions = (['input_fake', 'input_other', 'output_dir'] if mode=='fill'
                        else ['input_dir', 'output_dir'])
     def optIsNotSpecified(o) : return not hasattr(opts, o) or getattr(opts,o) is None
