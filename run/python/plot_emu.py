@@ -91,6 +91,8 @@ def main() :
     parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
+    parser.add_option('--include-regions', default='.*', help='fill histos only for some regions')
+    parser.add_option('--exclude-regions', default=None, help='fill histos except for some regions')
     # reminder: submit_batch_fill_job_per_group expects argument-less opt to default to False
     parser.add_option('--debug', action='store_true')
     parser.add_option('--verbose', action='store_true')
@@ -175,7 +177,8 @@ def runFill(opts) :
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
                 chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
-                tcuts = [r.TCut(reg, selection_formulas()[reg]) for reg in regions_to_plot()]
+                tcuts = [r.TCut(reg, selection_formulas()[reg])
+                         for reg in regions_to_plot(opts.include_regions, opts.exclude_regions)]
                 chain.retrieve_entrylists(tcuts)
                 counters_pre, histos_pre = dict(), dict()
                 counters_npre, histos_npre = dict(), dict()
@@ -212,7 +215,7 @@ def runPlot(opts) :
     buildTotBkg = systUtils.buildTotBackgroundHisto
     buildStat = systUtils.buildStatisticalErrorBand
     buildSyst = systUtils.buildSystematicErrorBand
-    selections = regions_to_plot()
+    selections = regions_to_plot(opts.include_regions, opts.exclude_regions)
     variables = variables_to_plot()
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
@@ -518,18 +521,22 @@ def getGroupColor(g) :
     colors = dict((g,c) for g,c in  oldColors + newColors)
     return colors[g]
 
-def regions_to_plot():
+def regions_to_plot(include='.*', exclude=None):
     # return ['vr_emu_mue_ss'] # test to debug fake
     # return ['vr_emu_ss_razor']
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
     # return [k for k in selection_formulas().keys() if 'vr' not in k] # tmp until I have vrs
     # return [k for k in selection_formulas().keys() if 'sr' in k] # tmp dbg
-    return ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os',
-            'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',
-            'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss', 'ext_mumu_pt0_40_ss',
-            'sr_mue_os_low_pt1_15'
-            ]
-    return selection_formulas().keys()
+    # used to be the default:
+    # ['sr_emu_os', 'sr_mue_os', 'vr_emu_os', 'vr_mue_os',
+    #  'sr_emu_ss', 'sr_mue_ss', 'vr_emu_ss', 'vr_mue_ss',
+    #  'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss', 'ext_mumu_pt0_40_ss',
+    #  'sr_mue_os_low_pt1_15'
+    #  ]
+    regions = selection_formulas().keys()
+    regions = utils.filterWithRegexp(regions, include)
+    regions = utils.excludeWithRegexp(regions, exclude) if exclude else regions
+    return regions
 
 def variables_to_plot():
     return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
