@@ -91,8 +91,9 @@ def main() :
     parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
-    parser.add_option('--include-regions', default='.*', help='fill histos only for some regions')
-    parser.add_option('--exclude-regions', default=None, help='fill histos except for some regions')
+    parser.add_option('--regions', default=None, help='comma-separated list of regions to consider')
+    parser.add_option('--include-regions', default='.*', help='regexp to filter regions')
+    parser.add_option('--exclude-regions', default=None, help='regext to exclude regions')
     # reminder: submit_batch_fill_job_per_group expects argument-less opt to default to False
     parser.add_option('--debug', action='store_true')
     parser.add_option('--verbose', action='store_true')
@@ -100,6 +101,7 @@ def main() :
     parser.add_option('-b', '--batch',  action='store_true', help='submit to batch (used in fill mode)')
     parser.add_option('-l', '--list-systematics', action='store_true', help='list what is already in output_dir')
     parser.add_option('-L', '--list-all-systematics', action='store_true', help='list all possible systematics')
+    parser.add_option('--list-all-regions', action='store_true', help='list all possible regions')
     parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
     parser.add_option('--quick-test', action='store_true', help='run a quick test and fill only 1% of the events')
     parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
@@ -110,6 +112,9 @@ def main() :
         return
     if opts.list_systematics :
         print listExistingSyst(opts.input_dir)
+        return
+    if opts.list_all_regions:
+        print "All regions:\n\t%s"%'\n\t'.join(sorted(selection_formulas().keys()))
         return
 
     inOtherSpecified, inDirSpecified = opts.input_other!=None, opts.input_dir!=None
@@ -178,7 +183,7 @@ def runFill(opts) :
                                                                       len(group.datasets))
                 chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
                 tcuts = [r.TCut(reg, selection_formulas()[reg])
-                         for reg in regions_to_plot(opts.include_regions, opts.exclude_regions)]
+                         for reg in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)]
                 chain.retrieve_entrylists(tcuts)
                 counters_pre, histos_pre = dict(), dict()
                 counters_npre, histos_npre = dict(), dict()
@@ -215,7 +220,7 @@ def runPlot(opts) :
     buildTotBkg = systUtils.buildTotBackgroundHisto
     buildStat = systUtils.buildStatisticalErrorBand
     buildSyst = systUtils.buildSystematicErrorBand
-    selections = regions_to_plot(opts.include_regions, opts.exclude_regions)
+    selections = regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)
     variables = variables_to_plot()
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
@@ -521,7 +526,7 @@ def getGroupColor(g) :
     colors = dict((g,c) for g,c in  oldColors + newColors)
     return colors[g]
 
-def regions_to_plot(include='.*', exclude=None):
+def regions_to_plot(include='.*', exclude=None, regions=None):
     # return ['vr_emu_mue_ss'] # test to debug fake
     # return ['vr_emu_ss_razor']
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
@@ -533,10 +538,12 @@ def regions_to_plot(include='.*', exclude=None):
     #  'ext_mumu_ss', 'ext_emu_mue_ss', 'ext_emu_pt0_40_ss', 'ext_mue_pt0_40_ss', 'ext_mumu_pt0_40_ss',
     #  'sr_mue_os_low_pt1_15'
     #  ]
-    regions = selection_formulas().keys()
-    regions = utils.filterWithRegexp(regions, include)
-    regions = utils.excludeWithRegexp(regions, exclude) if exclude else regions
-    return regions
+    selected_regions = selection_formulas().keys()
+    if regions:
+        selected_regions = [r for r in selected_regions if r in regions.split(',')]
+    selected_regions = utils.filterWithRegexp(selected_regions, include)
+    selected_regions = utils.excludeWithRegexp(selected_regions, exclude) if exclude else selected_regions
+    return selected_regions
 
 def variables_to_plot():
     return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
