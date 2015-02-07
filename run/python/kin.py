@@ -157,5 +157,6 @@ def selection_formulas():
     formulas['ext_mumu_pt0_40_ss']= 'is_mumu and is_same_sign and l0_pt>40.0'
     # dbg low pt
     formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
+    formulas['sr_mue_os_hi_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt>15.0')
     return formulas
 #___________________________________________________________
