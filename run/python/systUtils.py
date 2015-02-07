@@ -368,6 +368,7 @@ class Group(BaseSampleGroup) :
             elif cacheIt :
                 histo.SetDirectory(0)
                 self._histoCache[self.syst][hname] = histo
+                file.Close()
             else :
                 histo.SetDirectory(0)
                 file.Close()
