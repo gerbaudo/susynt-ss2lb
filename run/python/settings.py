@@ -4,6 +4,8 @@ r = importRoot()
 
 def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny=None, ymin=None, ymax=None) :
     twopi = +2.0*math.pi
+    mpi = -math.pi
+    ppi = +math.pi
     h = None
     attrs_1d = {
         'onebin'         :{'title':';; entries',                               'nx': 1, 'xmin':  0.5, 'xmax':  1.5},
@@ -13,14 +15,14 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         'd_pt0_pt1'      :{'title':';p_{T,l0}-p_{T,l1} [GeV]; entries/bin',    'nx':24, 'xmin':  0.0, 'xmax':120.0},
         'eta0'           :{'title':';#eta_{l0}; entries/bin',                  'nx':26, 'xmin': -2.6, 'xmax': +2.6},
         'eta1'           :{'title':';#eta_{l1}; entries/bin',                  'nx':26, 'xmin': -2.6, 'xmax': +2.6},
-        'phi0'           :{'title':';#phi_{l0} [rad]; entries/bin',            'nx':10, 'xmin':  0.0, 'xmax':twopi},
-        'phi1'           :{'title':';#phi_{l1} [rad]; entries/bin',            'nx':10, 'xmin':  0.0, 'xmax':twopi},
+        'phi0'           :{'title':';#phi_{l0} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
+        'phi1'           :{'title':';#phi_{l1} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
         'mcoll'          :{'title':';m_{coll,l0,l1} [GeV]; entries/bin',       'nx':40, 'xmin':  0.0, 'xmax':400.0},
         'mll'            :{'title':';m_{l0,l1} [GeV]; entries/bin',            'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'ptll'           :{'title':';p_{T,l0+l1} [GeV]; entries/bin',          'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'met'            :{'title':';MET [GeV]; entries/bin',                  'nx':24, 'xmin':  0.0, 'xmax':240.0},
-        'dphil0met'      :{'title':';#Delta#phi(l0, met) [rad]; entries/bin',  'nx':10, 'xmin':  0.0, 'xmax':twopi},
-        'dphil1met'      :{'title':';#Delta#phi(l1, met) [rad]; entries/bin',  'nx':10, 'xmin':  0.0, 'xmax':twopi},
+        'dphil0met'      :{'title':';|#Delta#phi(l0, met)| [rad]; entries/bin','nx':10, 'xmin':  0.0, 'xmax':  ppi},
+        'dphil1met'      :{'title':';|#Delta#phi(l1, met)| [rad]; entries/bin','nx':10, 'xmin':  0.0, 'xmax':  ppi},
         'nsj'            :{'title':';N_{jets,20<pt<30};entries/bin',           'nx':10, 'xmin': -0.5, 'xmax':  9.5},
         'drl0csj'        :{'title':';#DeltaR(l0, j_{close,soft});entries/bin', 'nx':10, 'xmin':  0.0, 'xmax':  2.0},
         'drl1csj'        :{'title':';#DeltaR(l1, j_{close,soft});entries/bin', 'nx':10, 'xmin':  0.0, 'xmax':  2.0},
