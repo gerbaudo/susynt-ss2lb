@@ -319,6 +319,8 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
     is_qflip_sample = dataset.DatasetGroup(sample).is_qflip
     assert bool(cached_cut) != bool(noncached_cuts),"must choose either cached selection or non-cached selections: {}, {}".format(cached_cut, noncached_cuts)
     cuts = [cached_cut] if cached_cut else noncached_cuts
+    if noncached_cuts:
+        chain.preselect(None)
     selections = [c.GetName() for c in cuts]
     counters = book_counters(selections)
     histos = book_histograms(sample_name=sample, variables=variables_to_fill(),
