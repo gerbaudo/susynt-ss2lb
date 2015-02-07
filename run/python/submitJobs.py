@@ -56,6 +56,7 @@ def parse_options():
     parser.add_option('-i', '--input', default='samples/', help='input directory or file (default: ./samples/)')
     parser.add_option("-o", "--do-not-overwrite", action="store_true", default=False, help="do not overwrite existing batch scripts")
     parser.add_option("-O", "--other-opt", help="other options that will be passed on to the executable; double quotes if necessary")
+    parser.add_option('-q', '--queue', default='atlas_all', help="batch queue, default atlas_all")
     parser.add_option('-s', '--include-regexp', help="select only matching samples (default '.*')")
     parser.add_option('-e', '--exclude-regexp', help="exclude matching samples")
     parser.add_option("-S", "--submit", action='store_true', default=False, help="submit jobs (default dry run)")
@@ -117,6 +118,7 @@ def get_filelist(dataset_name, filelist_dir='filelist/'):
 def get_batch_script(dset, options):
     exe     = options.executable
     tag     = options.tag
+    queue   = options.queue
     filelist = get_filelist(dset.name)
     outdir   = get_out_dir(exe, options.tag)
     logdir   = get_log_dir(exe, options.tag)
@@ -140,6 +142,7 @@ def get_batch_script(dset, options):
         # note to self: could use string.format, but this can also handle special cases (e.g. output)
         line = line.replace('%(filelist)s', filelist)
         line = line.replace('%(jobname)s', jobname)
+        line = line.replace('%(queue)s', queue)
         line = line.replace('%(logfile)s', out_logfile)
         line = line.replace('%(local_outfilename)s', os.path.basename(out_rootfile))
         line = line.replace('%(outfilename)s', out_rootfile) # will need special treatment for multiple output files

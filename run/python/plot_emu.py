@@ -90,6 +90,7 @@ def main() :
                       " Give a comma-sep list or say 'weight', 'object', or 'fake'")
     parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
+    parser.add_option('-q', '--queue', default='atlas_all', help="batch queue, default atlas_all")
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
     parser.add_option('--regions', default=None, help='comma-separated list of regions to consider')
     parser.add_option('--include-regions', default='.*', help='regexp to filter regions')
@@ -190,6 +191,7 @@ def runFill(opts) :
                 counters_npre, histos_npre = dict(), dict()
                 cached_tcuts = [] if opts.disable_cache else chain.tcuts_with_existing_list()
                 uncached_tcuts = tcuts if opts.disable_cache else chain.tcuts_without_existing_list()
+                if verbose : print 'filling cached cuts: ',' '.join([c.GetName() for c in cached_tcuts])
                 for cut in cached_tcuts:
                     chain.preselect(cut)
                     c_pre, h_pre = count_and_fill(chain=chain, sample=group.name,
@@ -201,6 +203,7 @@ def runFill(opts) :
                     counters_pre = dictSum(counters_pre, c_pre)
                     histos_pre = dictSum(histos_pre, h_pre)
                 if uncached_tcuts:
+                    if verbose : print 'filling uncached cuts: ',' '.join([c.GetName() for c in uncached_tcuts])
                     counters_npre, histos_npre = count_and_fill(chain=chain, sample=group.name,
                                                                 syst=systematic, verbose=verbose,
                                                                 debug=debug, blinded=blinded,
@@ -298,7 +301,8 @@ def submit_batch_fill_job_per_group(group, opts):
     script_file.write(open(template).read()
                       .replace('%(opt)s', cmd_line_options)
                       .replace('%(logfile)s', log_name)
-                      .replace('%(jobname)s', group_name))
+                      .replace('%(jobname)s', group_name)
+                      .replace('%(queue)s', opts.queue))
     script_file.close()
     cmd = "sbatch %s"%script_name
     if verbose : print cmd

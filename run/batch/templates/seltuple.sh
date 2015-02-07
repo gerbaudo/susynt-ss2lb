@@ -7,7 +7,7 @@
 # davide.gerbaudo@gmail.com
 # September 2014
 
-#SBATCH -p atlas_all
+#SBATCH -p %(queue)s
 #SBATCH --mem-per-cpu=1gb
 #SBATCH --time=04:00:00
 #SBATCH -o %(logfile)s
