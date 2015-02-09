@@ -88,7 +88,7 @@ def main() :
                       help='directory with the list of samples; default ./samples/')
     parser.add_option('-s', '--syst', help="variations to process (default all)."
                       " Give a comma-sep list or say 'weight', 'object', or 'fake'")
-    parser.add_option('--log-dir', default='log/plot_emu', help='directory where the batch logs will be')
+    parser.add_option('--log-dir', help='directory where the batch logs will be (default log/...)')
     parser.add_option('-e', '--exclude', help="skip some systematics, example 'EL_FR_.*'")
     parser.add_option('-q', '--queue', default='atlas_all', help="batch queue, default atlas_all")
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
@@ -293,7 +293,10 @@ def submit_batch_fill_job_per_group(group, opts):
                                  for k,v in options_with_value.iteritems()]
                                 +["--%s"%k for k in options_with_toggle.keys()])
     template = 'batch/templates/plot_emu.sh'
-    log_dir = mkdirIfNeeded(opts.log_dir)
+    default_log_dir = opts.output_dir.replace('out/', 'log/')
+    if default_log_dir.count('/histos')==1:
+        default_log_dir = default_log_dir.replace('/histos','')
+    log_dir = mkdirIfNeeded(opts.log_dir if opts.log_dir else default_log_dir)
     script_dir = mkdirIfNeeded('batch/plot_emu')
     script_name = os.path.join(script_dir, group_name+("_{0}".format(systematic) if systematic else '')+'.sh')
     log_name = log_dir+'/'+group_name+("_{0}".format(systematic) if systematic else '')+'.log'
