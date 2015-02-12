@@ -1,3 +1,4 @@
+import ROOT as r
 #___________________________________________________________
 def isTight_std(l):
     "tight with standard isolation"
@@ -55,3 +56,22 @@ def muonIsIsolated(l, denom, etConeThres, ptConeThres):
     return ((etCone*denom < etConeThres if etConeThres else True) and
             (ptCone*denom < ptConeThres if ptConeThres else True)
             if denom else False)
+
+def allLeptonSources():
+    return ['heavy',   'light', 'conv',  'real',  'qcd', 'unknown'] # see FakeLeptonSources.h
+
+def enum2source(l):
+    "convert the int(enum) stored in the tree to a 'lepton source' string"
+    return allLeptonSources()[l.source]
+
+def leptonSources():
+    return [s for s in allLeptonSources() if s not in ['qcd']] # qcd is just hf+lf
+
+def colorsFillSources() :
+    return dict(zip(leptonSources(), [r.kBlue-10, r.kMagenta-10, r.kRed-8, r.kGreen-6, r.kCyan-6, r.kGray+1]))
+
+def colorsLineSources() :
+    return dict(zip(leptonSources(), [r.kBlue, r.kMagenta, r.kRed, r.kGreen, r.kCyan, r.kGray+1]))
+
+def markersSources() :
+    return dict(zip(leptonSources(), [r.kPlus, r.kCircle, r.kMultiply, r.kOpenSquare, r.kOpenTriangleUp, r.kOpenCross]))
