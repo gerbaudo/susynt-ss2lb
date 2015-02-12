@@ -110,7 +110,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 size_t iRegion = m_matrix->getIndexRegion(regionName);
                 sf::Lepton fl0(l0IsSig, l0.isEle(), l0.Pt()*gev, l0.Eta());
                 sf::Lepton fl1(l1IsSig, l1.isEle(), l1.Pt()*gev, l1.Eta());
-                double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, metRel*gev, sys);
+                double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, sys);
                 WeightVariations wv = computeSystematicWeights(fl0, fl1, iRegion);
                 m_tupleMaker
                     .setWeightVariations(wv)
@@ -236,20 +236,19 @@ hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lept
 {
     using sf::Systematic;
     WeightVariations wv;
-    double mr = 0.0; // not currently using any metrel parametrization
     size_t &ri = regionIndex;
     if(m_computeSystematics){
-        double nominal = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_NOM);
+        double nominal = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_NOM);
         if(nominal!=0){
             double in = 1.0/nominal;
-            wv.fakeElRealUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_UP   ) * in;
-            wv.fakeElRealDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_RE_DOWN ) * in;
-            wv.fakeElFakeUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_UP   ) * in;
-            wv.fakeElFakeDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_EL_FR_DOWN ) * in;
-            wv.fakeMuRealUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_UP   ) * in;
-            wv.fakeMuRealDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_RE_DOWN ) * in;
-            wv.fakeMuFakeUp = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_UP   ) * in;
-            wv.fakeMuFakeDo = m_matrix->getTotalFake(l0, l1, ri, mr, Systematic::SYS_MU_FR_DOWN ) * in;
+            wv.fakeElRealUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_RE_UP   ) * in;
+            wv.fakeElRealDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_RE_DOWN ) * in;
+            wv.fakeElFakeUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_UP   ) * in;
+            wv.fakeElFakeDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_DOWN ) * in;
+            wv.fakeMuRealUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_RE_UP   ) * in;
+            wv.fakeMuRealDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_RE_DOWN ) * in;
+            wv.fakeMuFakeUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_UP   ) * in;
+            wv.fakeMuFakeDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_DOWN ) * in;
         }
     }
     return wv;
