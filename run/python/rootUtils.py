@@ -41,7 +41,7 @@ def importRootCorePackages() :
     [r.gSystem.Load(l.strip()) for l in open(os.path.join(rcoreDir, 'preload'))]
     [r.gSystem.Load('lib%s'%l.strip()) for l in open(os.path.join(rcoreDir, 'load'))]
 
-from utils import verticalSlice
+from utils import verticalSlice, commonPrefix, commonSuffix
 
 def referenceLine(xmin=0., xmax=100.0, ymin=1.0, ymax=1.0) :
     l1 = r.TLine(xmin, ymin, xmax, ymax)
@@ -153,9 +153,19 @@ def buildBotTopPads(canvas, splitFraction=0.275, squeezeMargins=True) :
     r.SetOwnership(topPad, False)
     canvas._pads = [topPad, botPad]
     return botPad, topPad
-def summedHisto(histos) :
+
+def summedHisto(histos=[], label='sum', remove_extra_underscore=True):
     "return an histogram that is the sum of the inputs"
-    hsum = histos[0].Clone(histos[0].GetName()+'_sum')
+    def guess_out_name(input_names=[]):
+        pref = commonPrefix(hnames)
+        suff = commonSuffix(hnames)
+        out_name = (pref+label+suff) if (pref or suff) else (input_names[0]+'_'+label)
+        out_name = out_name.replace('__','_') if remove_extra_underscore else out_name
+        out_name = out_name[:-1] if remove_extra_underscore and out_name.endswith('_') else out_name
+        return out_name
+    hnames = [h.GetName() for h in histos]
+    htemplate = histos[0]
+    hsum = htemplate.Clone(guess_out_name(hnames))
     hsum.Reset()
     for h in histos : hsum.Add(h)
     return hsum
@@ -378,3 +388,24 @@ def getXrange(h) :
     x_lo = h.GetBinCenter(1) - 0.5*h.GetBinWidth(1)
     x_hi = h.GetBinCenter(nbins) + 0.5*h.GetBinWidth(nbins)
     return x_lo, x_hi
+
+def computeStatErr2(nominal_histo=None) :
+    "Compute the bin-by-bin err2 (should include also mc syst, but for now it does not)"
+    bins = range(1, 1+nominal_histo.GetNbinsX())
+    bes = [nominal_histo.GetBinError(b)   for b in bins]
+    be2s = np.array([e*e for e in bes])
+    return {'up' : be2s, 'down' : be2s}
+
+def buildErrBandGraph(histo_tot_bkg, err2s) :
+    h = histo_tot_bkg
+    bins = range(1, 1+h.GetNbinsX())
+    x = np.array([h.GetBinCenter (b) for b in bins])
+    y = np.array([h.GetBinContent(b) for b in bins])
+    ex_lo = ex_hi = np.array([0.5*h.GetBinWidth(b) for b in bins])
+    ey_lo, ey_hi = np.sqrt(err2s['down']), np.sqrt(err2s['up'])
+    gr = r.TGraphAsymmErrors(len(bins), x, y, ex_lo, ex_hi, ey_lo, ey_hi)
+    gr.SetMarkerSize(0)
+    gr.SetFillStyle(3004)
+    gr.SetFillColor(r.kGray+3)
+    gr.SetLineWidth(2)
+    return gr
