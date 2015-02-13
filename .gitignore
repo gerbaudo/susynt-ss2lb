@@ -1,5 +1,8 @@
 StandAlone/
 bin/
 obj/
+run/batch
+run/trashbin
+run/selection_cache
 *.pyc
 *~
