@@ -40,7 +40,8 @@ Selector::Selector() :
   m_useExistingList(false),
   m_tupleMaker("",""),
   m_writeTuple(false),
-  m_outTupleFile("")
+  m_outTupleFile(""),
+  m_saveBaselineNonPrompt(false)
 {
   setAnaType(Ana_2Lep);
   setSelectTaus(true);
@@ -86,7 +87,8 @@ Bool_t Selector::Process(Long64_t entry)
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
         const JetVector&  jets= m_signalJets2Lep;
-        const LeptonVector& l = m_signalLeptons;
+        const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
+#warning todo re-enable qflippable
         if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
@@ -94,10 +96,10 @@ Bool_t Selector::Process(Long64_t entry)
             incrementObjectCounters(vars, weightComponents, m_counter);
             incrementObjectSplitCounters(vars, weightComponents);
             bool is_data(!nt.evt()->isMC), is_mc(!is_data);
-            bool two_mc_prompt = vars.hasTwoPromptLeptons;
+            bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
             bool is_e_mu(eventIsEmu(l));
             bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
-            bool is_qflippable(is_mc && has_some_electron && eventIsOppositeSign(l));
+            bool is_qflippable = false; //(is_mc && has_some_electron && eventIsOppositeSign(l));
             bool is_same_sign(eventIsSameSign(l));
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          (is_data || two_mc_prompt) &&
@@ -130,7 +132,7 @@ Bool_t Selector::Process(Long64_t entry)
                         .setL1EtConeCorr(computeCorrectedEtCone(&l1))
                         .setL1PtConeCorr(computeCorrectedPtCone(&l1))
                         .fill(weight, run, event, l0, l1, *m_met, cljets);
-                }
+                } // m_writeTuple
             } // is_event_to_be_saved
         } // eventHasTwoLeptons
     } // passAllEventCriteria

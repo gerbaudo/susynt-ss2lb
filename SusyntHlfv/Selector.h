@@ -50,6 +50,22 @@ public:
     /// toggle ouput ntuple option
     Selector& setWriteNtuple(bool val) { m_writeTuple = val; return *this; }
     Selector& setTupleFile(const std::string &name) { m_writeTuple = true; m_outTupleFile = name; return *this; }
+    /**
+       @brief select events with two baseline leptons instead of two signal leptons
+
+       This is to create the ntuples used for the fake estimate. All
+       selection requirements (see `is_event_to_be_saved`) are the
+       same as in the standard configuration, except for these two
+       requirements that are dropped:
+
+       \item the two leptons are baseline leptons rather than signal ones
+
+       \item in simulated events, the leptons are not required to be true (prompt)
+
+       The events in the resulting nutple are a superset of the events
+       in the standard ntuple.
+     */
+    Selector& selectBaselineNonPromptLeptons() { m_saveBaselineNonPrompt = true; return *this; }
 protected:
     /// assign the weight components that depend only on event-level variables
     /**
@@ -170,7 +186,8 @@ protected:
     hlfv::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
     bool m_writeTuple; ///< whether we want to write the output ntuple
     std::string m_outTupleFile; ///< name of the file where the nutple will be written
-    ClassDef(Selector, 1);
+    bool m_saveBaselineNonPrompt; ///< consider baseline and nonprompt in addition to signal leptons
+    ClassDef(Selector, 2);
 };
 
 } // hlfv

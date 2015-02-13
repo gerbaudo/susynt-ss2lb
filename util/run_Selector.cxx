@@ -27,6 +27,7 @@ void print_usage(const char *exeName) {
         <<"\t -h [--help]                   : print this message \n"
         <<"\t -v [--verbose]                : toggle verbose \n"
         <<"\t -d [--debug]                  : toggle debug \n"
+        <<"\t -f [--save-fake]              : two lep can be baseline and non-prompt \n"
         <<"\t -i [--input]   <file.txt>     : input root file (or filelist or dir) \n"
         <<"\t -n [--num-events] <int>       : number of events to be processed \n"
         <<"\t -s [--sample]  <samplename>   : sample name \n"
@@ -44,6 +45,7 @@ int main(int argc, char** argv) {
     ROOT::Cintex::Cintex::Enable();
     int num_events = -1;
     int nSkip = 0;
+    bool savefake=false;
     bool verbose=false;
     bool debug=false;
     string sample;
@@ -56,6 +58,7 @@ int main(int argc, char** argv) {
     int opt=0;
     static struct option long_options[] = {
         {"help",       no_argument,       0, 'h'},
+        {"save-fake"   ,no_argument,      0, 'f'},
         {"verbose",    no_argument,       0, 'v'},
         {"debug",      no_argument,       0, 'd'},
         {"input",      required_argument, 0, 'i'},
@@ -65,9 +68,10 @@ int main(int argc, char** argv) {
         {"event-list", required_argument, 0, 'e'},
         {0, 0, 0, 0}
     };
-    while ((opt=getopt_long (argc, argv, "hvd:i:n:e:s:t:", long_options, NULL)) != -1) {
+    while ((opt=getopt_long (argc, argv, "hfvd:i:n:e:s:t:", long_options, NULL)) != -1) {
         switch (opt) {
         case 'h' : print_usage(argv[0]); exit(0);
+        case 'f' : savefake=true; break;
         case 'v' : verbose=true; break;
         case 'd' : debug=true; break;
         case 'i' : input = optarg; break;
@@ -83,13 +87,14 @@ int main(int argc, char** argv) {
         while (optind < argc) cout<<argv[optind++]<<endl;
     }
     if(verbose)
-        cout<<"verbose   '"<<verbose   <<"'"<<endl
-            <<"debug     '"<<debug     <<"'"<<endl
-            <<"input     '"<<input     <<"'"<<endl
-            <<"num-events'"<<num_events<<"'"<<endl
-            <<"sample    '"<<sample    <<"'"<<endl
-            <<"tuple-out '"<<tuple_out <<"'"<<endl
-            <<"eventlist '"<<eventlist <<"'"<<endl;
+        cout<<"verbose    '"<<verbose    <<"'"<<endl
+            <<"savefake   '"<<savefake   <<"'"<<endl
+            <<"debug      '"<<debug      <<"'"<<endl
+            <<"input      '"<<input      <<"'"<<endl
+            <<"num-events '"<<num_events <<"'"<<endl
+            <<"sample     '"<<sample     <<"'"<<endl
+            <<"tuple-out  '"<<tuple_out  <<"'"<<endl
+            <<"eventlist  '"<<eventlist  <<"'"<<endl;
 
     TChain* chain = new TChain("susyNt");
     ChainHelper::addInput(chain, input, verbose);
@@ -99,6 +104,7 @@ int main(int argc, char** argv) {
 
     hlfv::Selector selector;
     if(debug) selector.setDebug(1);
+    if(savefake) selector.selectBaselineNonPromptLeptons();
     selector.setSampleName(sample);
     cout<<"eventlist : "<<eventlist<<endl;
     selector.setEventListFilename(eventlist); // setting the event list to '' is disabling it
