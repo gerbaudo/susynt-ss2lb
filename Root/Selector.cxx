@@ -117,8 +117,8 @@ Bool_t Selector::Process(Long64_t entry)
                     bool isMc = nt.evt()->isMC;
                     const Lepton &l0 = *m_signalLeptons[0];
                     const Lepton &l1 = *m_signalLeptons[1];
-                    LeptonTruthType::Value l0Source = (isMc ? LeptonTruthType::Unknown : getLeptonSource(l0));
-                    LeptonTruthType::Value l1Source = (isMc ? LeptonTruthType::Unknown : getLeptonSource(l1));
+                    LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
+                    LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
                     bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     m_tupleMaker
