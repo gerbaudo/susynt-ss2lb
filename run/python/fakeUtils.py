@@ -58,11 +58,13 @@ def muonIsIsolated(l, denom, etConeThres, ptConeThres):
             if denom else False)
 
 def allLeptonSources():
-    return ['heavy',   'light', 'conv',  'real',  'qcd', 'unknown'] # see FakeLeptonSources.h
+    "strings from hlfv::LeptonTruthType; used to label histograms etc."
+    return [r.hlfv.source2string(i)
+            for i in range(r.hlfv.LeptonTruthType.first(), r.hlfv.LeptonTruthType.last()+1)]
 
 def enum2source(l):
-    "convert the int(enum) stored in the tree to a 'lepton source' string"
-    return allLeptonSources()[l.source]
+    "convert the int(enum) stored in the tree to a 'LeptonTruthType' string"
+    return r.hlfv.source2string(l.source)
 
 def leptonSources():
     return [s for s in allLeptonSources() if s not in ['qcd']] # qcd is just hf+lf

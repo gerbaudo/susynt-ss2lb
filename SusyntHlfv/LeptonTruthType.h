@@ -48,12 +48,8 @@ struct LeptonTruthType{
 
 inline bool isValid(const LeptonTruthType::Value &v) { return v>=LeptonTruthType::first() && v<=LeptonTruthType::last(); }
 inline bool isValid(const int &v) { return isValid(static_cast<LeptonTruthType::Value>(v)); }
-/// safe conversion; unknown values are turned into unknown
-inline LeptonTruthType::Value int2source(const int &v) {
-    return isValid(v) ?
-        static_cast<LeptonTruthType::Value>(v) :
-        LeptonTruthType::Unknown;
-}
+/// safe conversion; out-of-range values are turned into unknown
+LeptonTruthType::Value int2source(const int &v);
 /// string representation
 std::string source2string(const LeptonTruthType::Value &v);
 

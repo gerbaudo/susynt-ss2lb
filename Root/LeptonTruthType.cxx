@@ -8,6 +8,13 @@ using hlfv::LeptonTruthType;
 namespace hlfv
 {
 //------------------------------------------------------------------------------
+LeptonTruthType::Value int2source(const int &v)
+{
+    return (isValid(v) ?
+            static_cast<LeptonTruthType::Value>(v) :
+            LeptonTruthType::Unknown);
+}
+//------------------------------------------------------------------------------
 std::string source2string(const LeptonTruthType::Value &v)
 {
     std::string s;
@@ -29,6 +36,12 @@ LeptonTruthType::Value getLeptonSource(const Susy::Lepton &l)
     // see MeasureFakeRate2::isRealLepton(). However, that implementation
     // is not clear, it might be outdated, and it has several question marks.
     // For now try to keep it simple.
+
+    // Reminder: below just a copy and paste of the enum from
+    // LeptonTruthTools/RecoTruthMatch.h used to fill the ntuples.
+    // Copying it here because I don't want to depend on that package:
+    // enum type{ PROMPT, CONV, HF, LF, UK, ELEC, MUON };
+    // The element of our LeptonTruthType::Value enum are just a subset of those
     return int2source(l.truthType);
 }
 //------------------------------------------------------------------------------
