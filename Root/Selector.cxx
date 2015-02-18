@@ -83,6 +83,8 @@ Bool_t Selector::Process(Long64_t entry)
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
+    if(m_saveBaselineNonPrompt)
+        eventFlags.eq2slep = eventFlags.eq2blep;
     if(incrementEventCounters(eventFlags, weightComponents)){
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
@@ -115,8 +117,8 @@ Bool_t Selector::Process(Long64_t entry)
                     double weight(weightComponents.product());
                     unsigned int run(nt.evt()->run), event(nt.evt()->event), nVtx(nt.evt()->nVtx);
                     bool isMc = nt.evt()->isMC;
-                    const Lepton &l0 = *m_signalLeptons[0];
-                    const Lepton &l1 = *m_signalLeptons[1];
+                    const Lepton &l0 = *l[0];
+                    const Lepton &l1 = *l[1];
                     LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
                     LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
                     bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
@@ -316,8 +318,8 @@ bool Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     if(f.ge2blep    ) m_counter.increment(weight, "ge2blep"    ); else return false;
     if(f.eq2blep    ) m_counter.increment(weight, "eq2blep"    ); else return false;
     if(f.mllMin     ) m_counter.increment(weight, "mllMin"     ); else return false; // todo: this should go in DileptonVariables
-    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"); else return false;
-    if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"); else return false; // todo: this should go in DileptonVariables
+    if(f.eq2slep    ) m_counter.increment(weight, "eq2slep"    ); else return false;
+    if(f.tauVeto    ) m_counter.increment(weight, "tauVeto"    ); else return false; // todo: this should go in DileptonVariables
     return true;
 }
 //-----------------------------------------
