@@ -283,7 +283,7 @@ def runPlot(opts) :
 def submit_batch_fill_job_per_group(group, opts):
     options_dict = vars(opts)
     group_name = group.name if hasattr(group, 'name') else group
-    systematic = opts.syst if opts.syst else None
+    systematic = opts.syst if hasattr(opts, 'syst') and opts.syst else None
     verbose = opts.verbose
     options_dict['group'] = group_name
     options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
@@ -528,13 +528,13 @@ def countTotalBkg(counters={'sample' : {'sel':0.0}}) :
     backgrounds = [g for g in counters.keys() if g!='signal' and g!='data']
     selections = first(counters).keys()
     counters['totBkg'] = dict((s, sum(counters[b][s] for b in backgrounds)) for s in selections)
-def getGroupColor(g) :
+def getGroupColor(g=None) :
     oldColors = [('data', r.kBlack), ('diboson',r.kSpring+2), ('higgs',r.kAzure-4),
                  ('signal',r.kMagenta), ('top', r.kRed+1), ('zjets', r.kOrange-2),
                  ('fake',r.kGray), ('qflip', r.kYellow-9)]
     newColors = [] #[('signal',r.kMagenta), ('WW',r.kAzure-9), ('Higgs',r.kYellow-9)]
     colors = dict((g,c) for g,c in  oldColors + newColors)
-    return colors[g]
+    return colors[g] if g else colors
 
 def regions_to_plot(include='.*', exclude=None, regions=None):
     # return ['vr_emu_mue_ss'] # test to debug fake
