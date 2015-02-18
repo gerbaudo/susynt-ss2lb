@@ -16,6 +16,7 @@ import pprint
 import time
 from utils import (dictSum
                    ,first
+                   ,getCommandOutput
                    ,mkdirIfNeeded
                    ,rmIfExists
                    )
@@ -64,8 +65,10 @@ def main():
     parser.add_option('-i', '--input-dir', default='./out/fakerate')
     parser.add_option('-o', '--output-dir', default='./out/tight_variables_plots', help='dir for plots')
     parser.add_option('-l', '--lepton', default='el', help='either el or mu')
+    parser.add_option('--log-dir', help='directory where the batch logs will be (default log/...)')
     parser.add_option('--samples-dir', default='samples/', help='directory with the list of samples; default ./samples/')
     parser.add_option('-f', '--fill-histos', action='store_true', default=False, help='force fill (default only if needed)')
+    parser.add_option('-q', '--queue', default='atlas_all', help="batch queue, default atlas_all")
     parser.add_option('--regions', default=None, help='comma-separated list of regions to consider')
     parser.add_option('--include-regions', default='.*', help='regexp to filter regions')
     parser.add_option('--exclude-regions', default=None, help='regext to exclude regions')
@@ -77,6 +80,7 @@ def main():
     parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
     parser.add_option('--quick-test', action='store_true', help='run a quick test and fill only 1% of the events')
     parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
+    parser.add_option('--skip-fill', action='store_true', help='do not fill histograms (use existing ones)')
 
     (opts, args) = parser.parse_args()
     inputDir  = opts.input_dir
@@ -91,7 +95,11 @@ def main():
     if lepton not in ['el', 'mu'] : parser.error("invalid lepton '%s'"%lepton)
     if opts.verbose : utils.print_running_conditions(parser, opts)
 
-    runFill(opts)
+    if not opts.skip_fill:
+        runFill(opts)
+    if opts.batch:
+        print "wait for the fill jobs to complete, then re-run with `--skip-fill`"
+        return
     runPlot(opts)
     print 'todo: fix errorband'
 
@@ -131,7 +139,6 @@ def runFill(opts):
     if verbose : print "filling histos"
     outputDir = outputDir+'/'+lepton+'/histos'
     mkdirIfNeeded(outputDir)
-    print
     if batchMode:
         for group in groups:
             submit_batch_fill_job_per_group(group, opts)
@@ -172,7 +179,7 @@ def runFill(opts):
             for sel, histos in all_histos.iteritems():
                 # write histos for each sel to a separate file (finer granularity, better caching)
                 out_filename = os.path.join(outputDir, group.name+'_'+sel+'.root')
-                print out_filename
+                if verbose : print 'saving to ',out_filename
                 writeObjectsToFile(out_filename, histos, verbose)
 
 def runPlot(opts):
@@ -242,6 +249,38 @@ def book_histograms(sample_name, variables, selections, sources) :
                                for so in sources]))
                         for v in variables]))
                  for se in selections])
+
+def submit_batch_fill_job_per_group(group, opts):
+    options_dict = vars(opts)
+    group_name = group.name if hasattr(group, 'name') else group
+    verbose = opts.verbose
+    options_dict['group'] = group_name
+    options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
+    # note to self: the line below assumes that the argument-less options have a default=False
+    options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
+    cmd_line_options = ' '.join(["--%s %s"%(k.replace('_','-'), str(v))
+                                 for k,v in options_with_value.iteritems()]
+                                +["--%s"%k for k in options_with_toggle.keys()])
+    template = 'batch/templates/plot_by_source.sh'
+    default_log_dir = opts.output_dir.replace('out/', 'log/')
+    if default_log_dir.count('/histos')==1:
+        default_log_dir = default_log_dir.replace('/histos','')
+    log_dir = mkdirIfNeeded(opts.log_dir if opts.log_dir else default_log_dir)
+    script_dir = mkdirIfNeeded('batch/plot_by_source')
+    script_name = os.path.join(script_dir, group_name+'.sh')
+    log_name = log_dir+'/'+group_name+'.log'
+    script_file = open(script_name, 'w')
+    script_file.write(open(template).read()
+                      .replace('%(opt)s', cmd_line_options)
+                      .replace('%(logfile)s', log_name)
+                      .replace('%(jobname)s', group_name)
+                      .replace('%(queue)s', opts.queue))
+    script_file.close()
+    cmd = "sbatch %s"%script_name
+    if verbose : print cmd
+    out = getCommandOutput(cmd)
+    if verbose : print out['stdout']
+    if out['stderr'] : print  out['stderr']
 
 def count_and_fill(chain,  opts, group=dataset.DatasetGroup('foo'),
                    cached_cut=None, noncached_cuts=[]):
