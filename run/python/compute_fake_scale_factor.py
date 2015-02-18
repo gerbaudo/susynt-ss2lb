@@ -9,7 +9,6 @@ import array
 import collections
 import glob
 import math
-import numpy as np
 import optparse
 import os
 import pprint
@@ -32,96 +31,117 @@ r.gROOT.SetStyle('Plain')
 r.gStyle.SetPadTickX(1)
 r.gStyle.SetPadTickY(1)
 rootUtils.importRootCorePackages()
-from datasets import datasets, setSameGroupForAllData
-from SampleUtils import (fastSamplesFromFilenames
-                         ,guessSampleFromFilename
-                         ,isBkgSample
-                         ,isDataSample)
-import SampleUtils
-import kin
+
+import dataset
 import fakeUtils as fakeu
+from indexed_chain import IndexedChain
+import settings
 import utils
+import kin
+import systUtils
+from kin import addTlv, computeCollinearMassLepTau, computeRazor, computeMt, selection_formulas
+from plot_emu import getGroupColor
 
 usage="""
 Example usage:
 %prog \\
  --verbose  \\
- --tag ${TAG} \\
  --lepton el \\
- --output-dir ./out/fakerate/el_sf_${TAG}
- >& log/fakerate/el_sf_${TAG}.log
+ --output-dir ./out/fake_scale_factor/
+ >& out/fake_scale_factor/
 """
 def main():
     parser = optparse.OptionParser(usage=usage)
+    parser.add_option('-g', '--group', help='group to be processed (used only in fill mode)')
     parser.add_option('-i', '--input-dir', default='./out/fakerate')
-    parser.add_option('-o', '--output-dir', default='./out/fake_scale_factor', help='dir for plots')
+    parser.add_option('-o', '--output-dir', default='./out/fake_scale_factor')
     parser.add_option('-l', '--lepton', default='el', help='either el or mu')
     parser.add_option('-r', '--region', help='one of the regions for which we saved the fake ntuples')
-    parser.add_option('-t', '--tag', help='tag used to select the input files (e.g. Apr_04)')
+    parser.add_option('--samples-dir', default='samples/', help='directory with the list of samples; default ./samples/')
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
     parser.add_option('-f', '--fill-histos', action='store_true', default=False, help='force fill (default only if needed)')
-    parser.add_option('-v', '--verbose', action='store_true', default=False)
+    parser.add_option('--debug', action='store_true')
+    parser.add_option('--verbose', action='store_true')
+    parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
     (options, args) = parser.parse_args()
     inputDir  = options.input_dir
     outputDir = options.output_dir
     lepton    = options.lepton
     region    = options.region
-    tag       = options.tag
+    debug     = options.debug
     verbose   = options.verbose
-    if not tag : parser.error('tag is a required option')
     if lepton not in ['el', 'mu'] : parser.error("invalid lepton '%s'"%lepton)
-    filestems, treenames = utils.verticalSlice(fakeu.tupleStemsAndNames)
-    regions = filestems
-    assert region in regions,"invalid region '%s', must be one of %s"%(region, str(regions))
+    regions = kin.selection_formulas().keys()
+    assert region in regions,"invalid region '%s', must be one of %s"%(region, str(sorted(regions)))
+    regions = [region]
 
-    templateInputFilename = "*_%(region)s_tuple_%(tag)s.root" % {'tag':tag, 'region':region}
-    templateOutputFilename =  "%(region)s_%(l)s_scale_histos.root" % {'region':region, 'l':lepton}
-    treeName = treenames[regions.index(region)]
+    dataset.Dataset.verbose_parsing = True if debug else False
+    groups = dataset.DatasetGroup.build_groups_from_files_in_dir(options.samples_dir)
+    if options.group : groups = [g for g in groups if g.name==options.group]
+    group_names = [g.name for g in groups]
+
     outputDir = outputDir+'/'+region+'/'+lepton # split the output in subdirectories, so we don't overwrite things
     mkdirIfNeeded(outputDir)
+    templateOutputFilename = "scale_factor_{0}.root".format(lepton)
     outputFileName = os.path.join(outputDir, templateOutputFilename)
-    cacheFileName = outputFileName.replace('.root', '_'+region+'_cache.root')
+    cacheFileName = outputFileName.replace('.root', '_cache.root')
     doFillHistograms = options.fill_histos or not os.path.exists(cacheFileName)
     onthefly_tight_def = eval(options.tight_def) if options.tight_def else None # eval will take care of aborting on typos
-    optionsToPrint = ['inputDir', 'outputDir', 'region', 'tag', 'doFillHistograms', 'onthefly_tight_def']
-    if verbose :
-        print "working from %s"%os.getcwd()
-        print "being called as : %s"%' '.join(os.sys.argv)
-        print "options:\n"+'\n'.join(["%s : %s"%(o, eval(o)) for o in optionsToPrint])
-    # collect inputs
-    if verbose : print 'input files ',os.path.join(inputDir, templateInputFilename)
-    tupleFilenames = glob.glob(os.path.join(inputDir, templateInputFilename))
-    samples = setSameGroupForAllData(fastSamplesFromFilenames(tupleFilenames, verbose))
-    samplesPerGroup = collections.defaultdict(list)
-    filenamesPerGroup = collections.defaultdict(list)
-    mkdirIfNeeded(outputDir)
-    for s, f in zip(samples, tupleFilenames) :
-        samplesPerGroup[s.group].append(s)
-        filenamesPerGroup[s.group].append(f)
+    if verbose : utils.print_running_conditions(parser, options)
     vars = ['mt0', 'mt1', 'pt0', 'pt1', 'eta1']
-    groups = samplesPerGroup.keys()
     #fill histos
     if doFillHistograms :
         start_time = time.clock()
         num_processed_entries = 0
-        histosPerGroup = bookHistos(vars, groups, region=region)
+        histosPerGroup = bookHistos(vars, group_names, region=region)
         histosPerSource = bookHistosPerSource(vars, leptonSources, region=region)
-        histosPerGroupPerSource = bookHistosPerSamplePerSource(vars, groups, leptonSources, region=region)
+        histosPerGroupPerSource = bookHistosPerSamplePerSource(vars, group_names, leptonSources, region=region)
         for group in groups:
-            isData = isDataSample(group)
-            filenames = filenamesPerGroup[group]
+            tree_name = 'hlfv_tuple'
+            chain = IndexedChain(tree_name)
+            for ds in group.datasets:
+                fname = os.path.join(inputDir, ds.name+'.root')
+                if os.path.exists(fname):
+                    chain.Add(fname)
             if verbose:
-                print " --- group : %s ---".format(group)
-                print '\n\t'.join(filenames)
-            histosThisGroup = histosPerGroup[group]
-            histosThisGroupPerSource = dict((v, histosPerGroupPerSource[v][group]) for v in histosPerGroupPerSource.keys())
-            chain = r.TChain(treeName)
-            [chain.Add(fn) for fn in filenames]
-            if verbose: print "%s : %d entries"%(group, chain.GetEntries())
-            num_processed_entries += fillHistos(chain, histosThisGroup, histosPerSource,
-                                                histosThisGroupPerSource,
-                                                lepton, group, region,
-                                                onthefly_tight_def=onthefly_tight_def, verbose=verbose)
+                print "{0} : {1} entries from {2} samples".format(group.name, chain.GetEntries(), len(group.datasets))
+            chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
+            tcuts = [r.TCut(reg, selection_formulas()[reg]) for reg in regions]
+            print 'tcuts ',[c.GetName() for c in tcuts]
+            chain.retrieve_entrylists(tcuts)
+            counters_pre, histos_pre = dict(), dict()
+            counters_npre, histos_npre = dict(), dict()
+            print 'tcuts_with_existing_list ',str([c.GetName() for c in chain.tcuts_with_existing_list()])
+            print 'tcuts_without_existing_list ',str([c.GetName() for c in chain.tcuts_without_existing_list()])
+            cached_tcuts = [] if options.disable_cache else chain.tcuts_with_existing_list()
+            print 'cached_tcuts ',[c.GetName() for c in cached_tcuts]
+            uncached_tcuts = tcuts if options.disable_cache else chain.tcuts_without_existing_list()
+            print 'todo: skip cuts for which the histo files are there'
+            if verbose:
+                print " --- group : {0} ---".format(group.name)
+                print '\n\t'.join(chain.filenames)
+            if verbose : print 'filling cached cuts: ',' '.join([c.GetName() for c in cached_tcuts])
+            if verbose: print "%s : %d entries"%(group.name, chain.GetEntries())
+            histosThisGroup = histosPerGroup[group.name]
+            histosThisGroupPerSource = dict((v, histosPerGroupPerSource[v][group.name]) for v in histosPerGroupPerSource.keys())
+            for cut in cached_tcuts:
+                print 'cached_tcut ',cut
+                chain.preselect(cut)
+                num_processed_entries += fillHistos(chain, histosThisGroup, histosPerSource,
+                                                    histosThisGroupPerSource,
+                                                    lepton, group, region,
+                                                    onthefly_tight_def=onthefly_tight_def, verbose=verbose)
+            if verbose : print 'filling uncached cuts: ',' '.join([c.GetName() for c in uncached_tcuts])
+            if uncached_tcuts:
+                chain.preselect(None)
+                num_processed_entries += fillHistos(chain, histosThisGroup, histosPerSource,
+                                                    histosThisGroupPerSource,
+                                                    lepton, group, region,
+                                                    onthefly_tight_def=onthefly_tight_def,
+                                                    verbose=verbose)
+                # currently not filling the lists correctly...todo
+                # chain.save_lists()
+
         writeHistos(cacheFileName, histosPerGroup, histosPerSource, histosPerGroupPerSource, verbose)
         end_time = time.clock()
         delta_time = end_time - start_time
@@ -130,14 +150,15 @@ def main():
                    +"in "+("{0:d} min ".format(int(delta_time/60)) if delta_time>60 else
                            "{0:.1f} s ".format(delta_time))
                    +"({0:.1f} kHz)".format(num_processed_entries/delta_time))
+    # return
     # compute scale factors
-    histosPerGroup = fetchHistos(cacheFileName, histoNames(vars, groups, region), verbose)
+    histosPerGroup = fetchHistos(cacheFileName, histoNames(vars, group_names, region), verbose)
     histosPerSource = fetchHistos(cacheFileName, histoNamesPerSource(vars, leptonSources, region), verbose)
-    histosPerSamplePerSource = fetchHistos(cacheFileName, histoNamesPerSamplePerSource(vars, groups, leptonSources, region), verbose)
+    histosPerSamplePerSource = fetchHistos(cacheFileName, histoNamesPerSamplePerSource(vars, group_names, leptonSources, region), verbose)
     plotStackedHistos(histosPerGroup, outputDir+'/by_group', region, verbose)
     plotStackedHistosSources(histosPerSource, outputDir+'/by_source', region, verbose)
     plotPerSourceEff(histosPerVar=histosPerSource, outputDir=outputDir+'/by_source', lepton=lepton, region=region, verbose=verbose)
-    for g in groups:
+    for g in group_names:
         hps = dict((v, histosPerSamplePerSource[v][g])for v in vars)
         plotPerSourceEff(histosPerVar=hps, outputDir=outputDir, lepton=lepton, region=region, sample=g, verbose=verbose)
 
@@ -172,25 +193,29 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
     totWeightLoose, totWeightTight = 0.0, 0.0
     normFactor = 1.0 if group=='heavyflavor' else 1.0 # bb/cc hand-waving normalization factor, see notes 2014-04-17
     addTlv, computeMt = kin.addTlv, kin.computeMt
-    isData = isDataSample(group)
+    print group
+    isData = group
     isHflf = region=='hflf'
+    print 'TODO: check isHflf'
+    print 'TODO: check hasTrigmatch (already in ntuple creation?)'
     isConversion = region=='conv'
     if group=='heavyflavor':
         if lepton=='el' and not isConversion : normFactor = 1.6
         if lepton=='mu' :                      normFactor = 0.87
     num_processed_entries = 0
+    sourceReal = r.hlfv.LeptonTruthType.Prompt
     for iEvent, event in enumerate(chain) :
         num_processed_entries += 1
         pars = event.pars
         weight, evtN, runN = pars.weight, pars.eventNumber, pars.runNumber
-        hasTrigmatch = pars.has2ltrigmatch==1
+        hasTrigmatch = True # pars.has2ltrigmatch==1
         weight = weight*normFactor
         tag, probe, met = addTlv(event.l0), addTlv(event.l1), addTlv(event.met)
         isSameSign = tag.charge*probe.charge > 0.
         isRightProbe = probe.isEl if lepton=='el' else probe.isMu if lepton=='mu' else False
         isTight = onthefly_tight_def(probe) if onthefly_tight_def else probe.isTight
+        # print 'isTight : ',isTight
         probeSource = probe.source
-        sourceReal = 3 # see FakeLeptonSources.h
         isReal = probeSource==sourceReal and not isData
         isFake = not isReal and not isData
         jets = event.jets
@@ -214,7 +239,7 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
         isLowMt = mt1 < 40.0 if region=='hflf' else True # used to reduce the contamination from real (mostly W+jets)
         isMuMu = tag.isMu and probe.isMu
         passTrigBias =  True
-        probeIsFromPv = fakeu.lepIsFromPv(probe)
+        # probeIsFromPv = fakeu.lepIsFromPv(probe)
         if   isHflf       : passTrigBias = pt0>20.0 and pt1>20.0
         elif isConversion : passTrigBias = pt1>20.0
         if tag.isMu and isRightProbe and isSameSign : # test 1 : no jet req
@@ -266,10 +291,12 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
 def histoNamePerSample(var, sample, tightOrLoose, region) : return 'h_'+var+'_'+sample+'_'+tightOrLoose+'_'+region
 def histoNamePerSource(var, leptonSource, tightOrLoose, region) : return 'h_'+var+'_'+leptonSource+'_'+tightOrLoose+'_'+region
 def histoNamePerSamplePerSource(var, sample, leptonSource, tightOrLoose, region) : return 'h_'+var+'_'+sample+'_'+leptonSource+'_'+tightOrLoose+'_'+region
+
 def bookHistos(variables, samples, leptonTypes=leptonTypes, region='') :
     "book a dict of histograms with keys [sample][var][tight, loose, real_tight, real_loose]"
     def histo(variable, hname):
         h = None
+        v = variable
         mtBinEdges = fakeu.mtBinEdges()
         ptBinEdges = fakeu.ptBinEdges()
         etaBinEdges = fakeu.etaBinEdges()
@@ -296,8 +323,8 @@ def bookHistosPerSource(variables, sources, region=''):
         mtBinEdges = fakeu.mtBinEdges()
         ptBinEdges = fakeu.ptBinEdges()
         etaBinEdges = fakeu.etaBinEdges()
-        if   variable=='mt0'     : h = r.TH1F(hname, ';m_{T}(tag,MET) [GeV]; entries/bin', len(mtBinEdges)-1,  mtBinEdges)
-        elif variable=='mt1'     : h = r.TH1F(hname, ';m_{T}(probe,MET) [GeV]; entries/bin', len(mtBinEdges)-1,  mtBinEdges)
+        if   variable=='mt0'     : h = r.TH1F(hname, ';m_{T}(tag,MET) [GeV]; entries/bin', len(mtBinEdges)-1,   mtBinEdges)
+        elif variable=='mt1'     : h = r.TH1F(hname, ';m_{T}(probe,MET) [GeV]; entries/bin', len(mtBinEdges)-1, mtBinEdges)
         elif variable=='pt0'     : h = r.TH1F(hname, ';p_{T,l0} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='pt1'     : h = r.TH1F(hname, ';p_{T,l1} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='eta1'    : h = r.TH1F(hname, ';#eta_{l1}; entries/bin',        len(etaBinEdges)-1, etaBinEdges)
@@ -359,7 +386,7 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
     groups = histosPerGroup.keys()
     variables = first(histosPerGroup).keys()
     leptonTypes = first(first(histosPerGroup)).keys()
-    colors = SampleUtils.colors
+    colors = getGroupColor()
     mkdirIfNeeded(outputDir)
     histosPerName = dict([(region+'_'+var+'_'+lt, # one canvas for each histo, so key with histoname w/out group
                            dict([(g, histosPerGroup[g][var][lt]) for g in groups]))
@@ -369,9 +396,9 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
         if missingGroups:
             if verbose : print "skip %s, missing histos for %s"%(histoname, str(missingGroups))
             continue
-        bkgHistos = dict([(g, h) for g, h in histosPerGroup.iteritems() if isBkgSample(g)])
-        totBkg = summedHisto(bkgHistos.values())
-        err_band = buildErrBandGraph(totBkg, computeStatErr2(totBkg))
+        bkgHistos = dict([(g, h) for g, h in histosPerGroup.iteritems() if g not in ['data', 'signal']])
+        totBkg = systUtils.buildTotBackgroundHisto(histosSimBkgs=bkgHistos)
+        err_band = None # buildErrBandGraph(totBkg, computeStatErr2(totBkg))
         emptyBkg = totBkg.Integral()==0
         if emptyBkg:
             if verbose : print "empty backgrounds, skip %s"%histoname
@@ -391,7 +418,7 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
             h.SetDirectory(0)
             stack.Add(h)
         stack.Draw('hist same')
-        err_band.Draw('E2 same')
+        # err_band.Draw('E2 same')
         data = histosPerGroup['data']
         if data and data.GetEntries():
             data.SetMarkerStyle(r.kFullDotLarge)
@@ -401,7 +428,8 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
         pm.SetMaximum(1.1*yMax)
         can.Update()
         topRightLabel(can, histoname, xpos=0.125, align=13)
-        drawLegendWithDictKeys(can, dictSum(bkgHistos, {'stat err':err_band}), opt='f')
+        # drawLegendWithDictKeys(can, dictSum(bkgHistos, {'stat err':err_band}), opt='f')
+        drawLegendWithDictKeys(can, bkgHistos, opt='f')
         can.RedrawAxis()
         can._stack = stack
         can._histos = [h for h in stack.GetHists()]+[data]
@@ -423,7 +451,7 @@ def plotStackedHistosSources(histosPerVar={}, outputDir='', region='', verbose=F
                 if verbose : print "skip %s, missing histos for %s"%(var, str(missingSources))
                 continue
             totBkg = summedHisto(histos.values())
-            err_band = buildErrBandGraph(totBkg, computeStatErr2(totBkg))
+            err_band = None # buildErrBandGraph(totBkg, computeStatErr2(totBkg))
             emptyBkg = totBkg.Integral()==0
             if emptyBkg:
                 if verbose : print "empty backgrounds, skip %s"%canvasBasename
@@ -443,13 +471,14 @@ def plotStackedHistosSources(histosPerVar={}, outputDir='', region='', verbose=F
                 h.SetDirectory(0)
                 stack.Add(h)
             stack.Draw('hist same')
-            err_band.Draw('E2 same')
+            # err_band.Draw('E2 same')
             yMin, yMax = getMinMax([h for h in [totBkg, err_band] if h is not None])
             pm.SetMinimum(0.0)
             pm.SetMaximum(1.1*yMax)
             can.Update()
             topRightLabel(can, canvasBasename, xpos=0.125, align=13)
-            drawLegendWithDictKeys(can, dictSum(histos, {'stat err':err_band}), opt='f')
+            # drawLegendWithDictKeys(can, dictSum(histos, {'stat err':err_band}), opt='f')
+            drawLegendWithDictKeys(can, histos, opt='f')
             can.RedrawAxis()
             can._stack = stack
             can._histos = [h for h in stack.GetHists()]
@@ -521,15 +550,16 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
                                       outputDir='./', region='', verbose=False):
     "efficiency scale factor"
     groups = histosPerGroup.keys()
+    bkg_groups = [g for g in groups if g not in ['signal']]
+    print 'subtractRealAndComputeScaleFactor: bkgs ',bkg_groups
     mkdirIfNeeded(outputDir)
     histosPerType = dict([(lt,
                            dict([(g,
                                   histosPerGroup[g][variable][lt])
-                                 for g in groups]))
+                                 for g in bkg_groups]))
                           for lt in leptonTypes])
     for lt in leptonTypes :
-        histosPerType[lt]['totSimBkg'] = summedHisto([histo for group,histo in histosPerType[lt].iteritems() if isBkgSample(group)])
-
+        histosPerType[lt]['totSimBkg'] = summedHisto([histo for group,histo in histosPerType[lt].iteritems()])
     simuTight = histosPerType['fake_tight']['totSimBkg']
     simuLoose = histosPerType['fake_loose']['totSimBkg']
     dataTight = histosPerType['tight'     ]['data'     ]
@@ -603,28 +633,6 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     eff_data = dataTight.Clone(outDataeffhistoname)
     return {outRatiohistoname : ratio, outDataeffhistoname : eff_data}
 
-def computeStatErr2(nominal_histo=None) :
-    "Compute the bin-by-bin err2 (should include also mc syst, but for now it does not)"
-#     print "computeStatErr2 use the one in rootUtils"
-    bins = range(1, 1+nominal_histo.GetNbinsX())
-    bes = [nominal_histo.GetBinError(b)   for b in bins]
-    be2s = np.array([e*e for e in bes])
-    return {'up' : be2s, 'down' : be2s}
-
-def buildErrBandGraph(histo_tot_bkg, err2s) :
-#     print "buildErrBandGraph use the one in rootUtils"
-    h = histo_tot_bkg
-    bins = range(1, 1+h.GetNbinsX())
-    x = np.array([h.GetBinCenter (b) for b in bins])
-    y = np.array([h.GetBinContent(b) for b in bins])
-    ex_lo = ex_hi = np.array([0.5*h.GetBinWidth(b) for b in bins])
-    ey_lo, ey_hi = np.sqrt(err2s['down']), np.sqrt(err2s['up'])
-    gr = r.TGraphAsymmErrors(len(bins), x, y, ex_lo, ex_hi, ey_lo, ey_hi)
-    gr.SetMarkerSize(0)
-    gr.SetFillStyle(3004)
-    gr.SetFillColor(r.kGray+3)
-    gr.SetLineWidth(2)
-    return gr
 
 
 if __name__=='__main__':
