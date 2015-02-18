@@ -1,4 +1,6 @@
-import ROOT as r
+import rootUtils
+r = rootUtils.importRoot()
+np = rootUtils.get_np()
 #___________________________________________________________
 def isTight_std(l):
     "tight with standard isolation"
@@ -77,3 +79,14 @@ def colorsLineSources() :
 
 def markersSources() :
     return dict(zip(leptonSources(), [r.kPlus, r.kCircle, r.kMultiply, r.kOpenSquare, r.kOpenTriangleUp, r.kOpenCross]))
+
+def leptonTypes():
+    return ['tight', 'loose', 'real_tight', 'real_loose', 'fake_tight', 'fake_loose']
+
+def mtBinEdges() : return np.array([0.0, 20.0, 40.0, 60.0, 100.0, 200.0])
+
+def ptBinEdges() : return np.array([10.0, 20.0, 35.0, 100.0])
+
+def etaBinEdges() : return np.array([0.0, 1.37, 2.50])
+
+def mdeltarBinEdges() : return np.array([0.0, 20.0, 40.0, 60.0, 100.0, 200.0])

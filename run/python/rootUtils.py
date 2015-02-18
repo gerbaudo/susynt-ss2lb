@@ -27,6 +27,9 @@ except ImportError:
             return self.array(an_array).Sqr()
     np = HackyNumpy()
 
+def get_np():
+    return np
+
 def importRoot() :
     import ROOT as r
     r.gROOT.SetBatch(True)                     # no windows popping up
