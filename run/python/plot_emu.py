@@ -31,7 +31,9 @@ from rootUtils import (drawAtlasLabel
                        ,referenceLine
                        )
 r = importRoot()
-from utils import (dictSum
+from utils import (commonPrefix
+                   ,commonSuffix
+                   ,dictSum
                    ,first
                    ,getCommandOutput
                    ,mkdirIfNeeded
@@ -200,6 +202,11 @@ def runFill(opts) :
                                                   onthefly_tight_def=onthefly_tight_def,
                                                   tightight=tightight, quicktest=opts.quick_test,
                                                   cached_cut=cut)
+                    out_filename = (systUtils.Group(group.name)
+                                    .setSyst(systematic)
+                                    .setHistosDir(outputDir)
+                                    .setCurrentSelection(cut.GetName())).filenameHisto
+                    writeObjectsToFile(out_filename, h_pre, verbose)
                     counters_pre = dictSum(counters_pre, c_pre)
                     histos_pre = dictSum(histos_pre, h_pre)
                 if uncached_tcuts:
@@ -210,9 +217,13 @@ def runFill(opts) :
                                                                 onthefly_tight_def=onthefly_tight_def,
                                                                 tightight=tightight, quicktest=opts.quick_test,
                                                                 noncached_cuts=uncached_tcuts)
-                out_filename = systUtils.Group(group.name).setSyst(systematic).setHistosDir(outputDir).filenameHisto
-                print 'out_filename: ',out_filename
-                writeObjectsToFile(out_filename, dictSum(histos_pre, histos_npre), verbose)
+                    for sel, histos in histos_npre.iteritems:
+
+                        out_filename = (systUtils.Group(group.name)
+                                        .setSyst(systematic)
+                                        .setHistosDir(outputDir)
+                                        .setCurrentSelection(sel)).filenameHisto
+                        writeObjectsToFile(out_filename, histos, verbose)
                 chain.save_lists()
         # print counters
 
@@ -231,8 +242,12 @@ def runPlot(opts) :
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     # groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
     plot_groups = [systUtils.Group(g.name) for g in groups]
+    sel_not_specified = len(regions_to_plot())==len(selections)
+    if sel_not_specified:
+        selections = guess_available_selections_from_histofiles(inputDir, first(plot_groups), verbose)
     for group in plot_groups :
-        group.setHistosDir(inputDir)
+        group.setCurrentSelection(first(selections))
+        group.setHistosDir(inputDir).setCurrentSelection(first(selections))
         group.exploreAvailableSystematics(verbose)
         group.filterAndDropSystematics(opts.syst, opts.exclude, verbose)
     available_systematics = sorted(list(set([s for g in plot_groups for s in g.systematics])))
@@ -256,7 +271,9 @@ def runPlot(opts) :
         if verbose : print '-- plotting ',sel
         for var in variables :
             if verbose : print '---- plotting ',var
-            for g in plot_groups : g.setSystNominal()
+            for g in plot_groups :
+                g.setSystNominal()
+                g.setCurrentSelection(sel)
             nominalHistoData    = data.getHistogram(variable=var, selection=sel, cacheIt=True)
             nominalHistoSign    = signal.getHistogram(variable=var, selection=sel, cacheIt=True)
             nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
@@ -550,7 +567,8 @@ def regions_to_plot(include='.*', exclude=None, regions=None):
     #  ]
     selected_regions = selection_formulas().keys()
     if regions:
-        selected_regions = [r for r in selected_regions if r in regions.split(',')]
+        regions = regions.split(',') if ',' in regions else regions # if it's a comma-sep string, convert it to list
+        selected_regions = [r for r in selected_regions if r in regions]
     selected_regions = utils.filterWithRegexp(selected_regions, include)
     selected_regions = utils.excludeWithRegexp(selected_regions, exclude) if exclude else selected_regions
     return selected_regions
@@ -708,6 +726,23 @@ def get_list_of_syst_to_fill(opts):
         systematics = [s for s in systematics if s not in filterWithRegexp(systematics, excludedSyst)]
     return systematics
 
+def guess_available_selections_from_histofiles(inputDir, plot_group, verbose):
+    grp = plot_group.name
+    sys = plot_group.syst # default one, usually 'NOM' which is just fine
+    available_root_files = [f for f in os.listdir(inputDir) if sys in f and grp in f]
+    pre = commonPrefix(available_root_files)
+    suf = commonSuffix(available_root_files)
+    if verbose:
+        print "guess_available_selections_from_histofiles: pre '{0}', suf '{1}'".format(pre, suf)
+    available_selections = [r.replace(pre, '').replace(suf, '') for r in available_root_files]
+    selections = regions_to_plot(regions=available_selections)
+    if not selections:
+        raise UserWarning("guess_available_selections_from_histofiles:"
+                          " failed to guess anything from '{0}'"
+                          "\nTry using --region".format(inputDir))
+    return selections
+
+#___________________________________________________________
 
 if __name__=='__main__' :
     main()

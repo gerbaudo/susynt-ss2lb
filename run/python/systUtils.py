@@ -184,6 +184,7 @@ class BaseSampleGroup(object) :
         self.name = name
         self.setSystNominal()
         self.varCounts = collections.defaultdict(dict)
+        self.currentSelection = None # used only for filenameHisto
     @property
     def label(self) : return self.groupname if hasattr(self, 'groupname') else self.name
     @property
@@ -218,6 +219,9 @@ class BaseSampleGroup(object) :
                        identity)
         self.syst = sysNameFunc(sys)
         self.syst = sys
+        return self
+    def setCurrentSelection(self, sel=''):
+        self.currentSelection = sel
         return self
     def logVariation(self, sys='', selection='', counts=0.0) :
         "log this systematic variation and internally store it as [selection][sys]"
@@ -319,9 +323,12 @@ class Group(BaseSampleGroup) :
         self.histosDir = dir if dir else 'out/hft'
         return self
     @property
-    def filenameHisto(self) :
+    def filenameHisto(self):
         "file containig the histograms for the current syst"
         fname = "%(dir)s/%(group)s_%(sys)s.root" % {'group':self.name, 'dir':self.histosDir, 'sys':self.syst}
+        if self.currentSelection:
+            fname = "%(dir)s/%(group)s_%(sys)s_%(sel)s.root" % {'group':self.name, 'dir':self.histosDir,
+                                                                'sys':self.syst, 'sel':self.currentSelection}
         return fname
     def exploreAvailableSystematics(self, verbose=False) :
         systs = ['NOM']
@@ -342,7 +349,7 @@ class Group(BaseSampleGroup) :
         def is_regex(exp) : return exp and '*' in exp
         def is_list(exp) : return exp and ',' in exp
         def is_single_value(exp) : return exp and len(exp)
-        def str_to_list(exp) : return eval("[{0}]".format(exp))
+        def str_to_list(exp) : return eval("['{0}']".format(exp))
         toBeIncluded = ([s for s in self.systematics if s in str_to_list(include)] if is_list(include) else
                         filterWithRegexp(self.systematics, include) if is_regex(include) else
                         str_to_list(include) if is_single_value(include) else
@@ -361,6 +368,7 @@ class Group(BaseSampleGroup) :
         try :
             histo = self._histoCache[self.syst][hname]
         except KeyError :
+            self.setCurrentSelection(selection)
             file = r.TFile.Open(self.filenameHisto)
             if not file : print "missing file %s"%self.filenameHisto
             histo = file.Get(hname)
