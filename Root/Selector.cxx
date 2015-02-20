@@ -101,7 +101,7 @@ Bool_t Selector::Process(Long64_t entry)
             bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
             bool is_e_mu(eventIsEmu(l));
             bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
-            bool is_qflippable = false; //(is_mc && has_some_electron && eventIsOppositeSign(l));
+            bool is_qflippable = (is_mc && has_some_electron && eventIsOppositeSign(l));
             bool is_same_sign(eventIsSameSign(l));
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          (is_data || two_mc_prompt) &&
