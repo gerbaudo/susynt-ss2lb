@@ -148,7 +148,7 @@ def runFill(opts) :
 
     if debug : dataset.Dataset.verbose_parsing = True
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
-    # groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
+    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
     if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
@@ -168,7 +168,8 @@ def runFill(opts) :
             for systematic in systematics:
                 if systUtils.Group(group.name).isNeededForSys(systematic):
                     opts.syst = systematic
-                    submit_batch_fill_job_per_group(group, opts)
+                    for selection in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions):
+                        submit_batch_fill_job_per_group_per_selection(group, selection, opts)
     else:
         for group in groups:
             systematics = [s for s in systematics if systUtils.Group(group.name).isNeededForSys(s)]
@@ -240,7 +241,7 @@ def runPlot(opts) :
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
-    # groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
+    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
     plot_groups = [systUtils.Group(g.name) for g in groups]
     sel_not_specified = len(regions_to_plot())==len(selections)
     if sel_not_specified:
@@ -322,6 +323,41 @@ def submit_batch_fill_job_per_group(group, opts):
                       .replace('%(opt)s', cmd_line_options)
                       .replace('%(logfile)s', log_name)
                       .replace('%(jobname)s', group_name)
+                      .replace('%(queue)s', opts.queue))
+    script_file.close()
+    cmd = "sbatch %s"%script_name
+    if verbose : print cmd
+    out = getCommandOutput(cmd)
+    if verbose : print out['stdout']
+    if out['stderr'] : print  out['stderr']
+
+def submit_batch_fill_job_per_group_per_selection(group, selection, opts):
+    "if we are processing cached selections, we can submit one job per selection"
+    options_dict = vars(opts)
+    group_name = group.name if hasattr(group, 'name') else group
+    systematic = opts.syst if hasattr(opts, 'syst') and opts.syst else None
+    verbose = opts.verbose
+    options_dict['group'] = group_name
+    options_dict['region'] = selection
+    options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
+    # note to self: the line below assumes that the argument-less options have a default=False
+    options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
+    cmd_line_options = ' '.join(["--%s %s"%(k.replace('_','-'), str(v))
+                                 for k,v in options_with_value.iteritems()]
+                                +["--%s"%k for k in options_with_toggle.keys()])
+    template = 'batch/templates/plot_emu.sh'
+    default_log_dir = opts.output_dir.replace('out/', 'log/')
+    if default_log_dir.count('/histos')==1:
+        default_log_dir = default_log_dir.replace('/histos','')
+    log_dir = mkdirIfNeeded(opts.log_dir if opts.log_dir else default_log_dir)
+    script_dir = mkdirIfNeeded('batch/plot_emu')
+    script_name = os.path.join(script_dir, group_name+'_'+selection+("_{0}".format(systematic) if systematic else '')+'.sh')
+    log_name = log_dir+'/'+group_name+'_'+selection+("_{0}".format(systematic) if systematic else '')+'.log'
+    script_file = open(script_name, 'w')
+    script_file.write(open(template).read()
+                      .replace('%(opt)s', cmd_line_options)
+                      .replace('%(logfile)s', log_name)
+                      .replace('%(jobname)s', group_name+'_'+selection)
                       .replace('%(queue)s', opts.queue))
     script_file.close()
     cmd = "sbatch %s"%script_name
