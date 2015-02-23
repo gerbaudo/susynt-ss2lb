@@ -216,10 +216,10 @@ def runFill(opts) :
                                                                 syst=systematic, verbose=verbose,
                                                                 debug=debug, blinded=blinded,
                                                                 onthefly_tight_def=onthefly_tight_def,
-                                                                tightight=tightight, quicktest=opts.quick_test,
+                                                                tightight=tightight,
+                                                                quicktest=opts.quick_test,
                                                                 noncached_cuts=uncached_tcuts)
-                    for sel, histos in histos_npre.iteritems:
-
+                    for sel, histos in histos_npre.iteritems():
                         out_filename = (systUtils.Group(group.name)
                                         .setSyst(systematic)
                                         .setHistosDir(outputDir)
