@@ -124,6 +124,7 @@ Bool_t Selector::Process(Long64_t entry)
                     bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     m_tupleMaker
+                        .setTriggerBits(nt.evt()->trigFlags)
                         .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
                         .setNumFjets(vars.numForwardJets)
                         .setNumBjets(vars.numBtagJets)

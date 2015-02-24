@@ -113,6 +113,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 double weight = m_matrix->getTotalFake(fl0, fl1, iRegion, sys);
                 WeightVariations wv = computeSystematicWeights(fl0, fl1, iRegion);
                 m_tupleMaker
+                    .setTriggerBits(nt.evt()->trigFlags)
                     .setWeightVariations(wv)
                     .setNumFjets(vars.numForwardJets)
                     .setNumBjets(vars.numBtagJets)

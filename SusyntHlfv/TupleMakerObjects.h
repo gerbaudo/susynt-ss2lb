@@ -5,6 +5,7 @@
 #include "SusyNtuple/SusyNt.h"
 
 #include "TVector2.h"
+#include "TBits.h"
 
 #include <iostream>
 #include <vector>
@@ -88,12 +89,14 @@ struct EventParameters {
     unsigned int numTaus;
     unsigned int numFjets; ///< number of forward jets
     unsigned int numBjets; ///< number of b-tagged jets
+    TBits triggerBits;
     EventParameters() : weight(0), qflipWeight(0), eventNumber(0), runNumber(0), numTaus(0), numFjets(0), numBjets(0) {}
 #ifndef __CINT__
     EventParameters& setWeight(const double &w) { weight=w; return *this; }
     EventParameters& setQflipWeight(const double &w) { qflipWeight=w; return *this; }
     EventParameters& setEvent(const unsigned int &e) { eventNumber=e; return *this; }
     EventParameters& setRun(const unsigned int &r) { runNumber=r; return *this; }
+    EventParameters& setTriggerBits(const long long &trigFlags) { triggerBits.Set(MAX_NUM_BITS_FOR_TRIGGER_WORD, &trigFlags); return *this; }
 #endif
 };
 

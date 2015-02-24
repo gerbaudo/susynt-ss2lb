@@ -60,7 +60,9 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
                 unsigned int run(nt.evt()->run), event(nt.evt()->event);
                 const Lepton &l0 = *m_signalLeptons[0];
                 const Lepton &l1 = *m_signalLeptons[1];
-                m_tupleMaker.fill(weight, run, event, l0, l1, *m_met);
+                m_tupleMaker
+                    .setTriggerBits(nt.evt()->trigFlags)
+                    .fill(weight, run, event, l0, l1, *m_met);
             }
         }
     }

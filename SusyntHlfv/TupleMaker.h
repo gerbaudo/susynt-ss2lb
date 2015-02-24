@@ -81,6 +81,7 @@ public:
     TupleMaker& setL1PtConeCorr(float v) { l1_.setPtConeCorr(v); return *this; }
     TupleMaker& setQflipWeight(const double &v) { eventPars_.setQflipWeight(v); return *this; }
     TupleMaker& setWeightVariations(const hlfv::WeightVariations &w) { weightVariations_ = w; return *this; }
+    TupleMaker& setTriggerBits(const long long &trigFlags) { eventPars_.setTriggerBits(trigFlags); return *this; }
 
 private: // rule of three
     TupleMaker(const TupleMaker&);
