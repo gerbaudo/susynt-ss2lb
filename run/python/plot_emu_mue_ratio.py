@@ -35,6 +35,7 @@ def main():
         return
     inputdir = sys.argv[1]
     outputdir = sys.argv[2]
+    selections = regions_to_plot()
     verbose = True
     if not os.path.exists(inputdir):
         print "missing input dir {0}".format(inputdir)
@@ -52,9 +53,9 @@ def main():
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     plot_groups = [systUtils.Group(g.name) for g in groups]
     for group in plot_groups :
-        group.setHistosDir(inputdir)
+        group.setCurrentSelection(first(selections))
+        group.setHistosDir(inputdir).setCurrentSelection(first(selections))
         group.exploreAvailableSystematics(verbose)
-        # group.filterAndDropSystematics(opts.syst, opts.exclude, verbose)
     available_systematics = sorted(list(set([s for g in plot_groups for s in g.systematics])))
     # systematics_to_use = get_list_of_syst_to_fill(opts)
     # systematics = [s for s in systematics_to_use if s in available_systematics]
@@ -82,6 +83,7 @@ def main():
     c = r.TCanvas('c','')
     variables = ['mcoll', 'pt1']
 
+    fpt1_histos = {'data_fake':{}, 'sim_bkg':{}}
     for var in variables:
         print ">>>plotting ",var
         for g in plot_groups : g.setSystNominal()
@@ -93,7 +95,6 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_fake',
                                 label='SR: fake')
-
         h_emu = data.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
         h_mue = data.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
         h_ratio = h_emu.Clone(h_emu.GetName().replace('emu', 'emu_over_mue'))
@@ -111,6 +112,7 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_data_minus_fake',
                                 label='SR: data-fake')
+        fpt1_histos['data_fake']['sr'] = h_ratio
 
         h_emu  = buildTotBkg(histoFakeBkg=None,
                              histosSimBkgs=dict([(g.name,
@@ -125,6 +127,8 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_simbkg',
                                 label='SR: simbkg')
+        fpt1_histos['sim_bkg']['sr'] = h_ratio
+
         # continue # if you don't have vr
         # vr
         h_emu = fake.getHistogram(variable=var, selection='vr_emu_os', cacheIt=True)
@@ -152,6 +156,7 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/vr_'+var+'_emu_over_mue_data_minus_fake',
                                 label='VR: data-fake')
+        fpt1_histos['data_fake']['vr'] = h_ratio
 
         h_emu  = buildTotBkg(histoFakeBkg=None,
                              histosSimBkgs=dict([(g.name,
@@ -166,6 +171,14 @@ def main():
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
                                 filename=outputdir+'/vr_'+var+'_emu_over_mue_simbkg',
                                 label='VR: simbkg')
+        fpt1_histos['sim_bkg']['vr'] = h_ratio
+
+        print "chi2 test p-value between SR and VR:"
+        print "data-fake : ",fpt1_histos['data_fake']['vr'].Chi2Test(fpt1_histos['data_fake']['sr'], 'WW')
+        print "sim-bkg   : ",fpt1_histos['sim_bkg'  ]['vr'].Chi2Test(fpt1_histos['sim_bkg'  ]['sr'], 'WW')
+        print "chi2 test chi2/NDF between SR and VR:"
+        print "data-fake : ",fpt1_histos['data_fake']['vr'].Chi2Test(fpt1_histos['data_fake']['sr'], 'WW CHI2/NDF')
+        print "sim-bkg   : ",fpt1_histos['sim_bkg'  ]['vr'].Chi2Test(fpt1_histos['sim_bkg'  ]['sr'], 'WW CHI2/NDF')
     return
 
 def plot_emu_mue_with_ratio(canvas=None, h_mue=None, h_emu=None, h_ratio=None,
