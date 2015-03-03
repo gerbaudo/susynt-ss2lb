@@ -98,7 +98,7 @@ def enumFromHeader(filename, enumName) :
         for key_name in enum_keyvals.split(','):
             if '=' in key_name:
                 key_name, key_value = key_name.split('=')
-                key_value = int(key_value, 0)
+                key_value = int(str(eval(key_value)), 0) # int(str()) to catch shift << as well
             else:
                 key_value = last_value + 1
             last_value = key_value
