@@ -55,6 +55,7 @@ from CutflowTable import CutflowTable
 
 import systUtils
 
+skip_charge_flip = True # temp skip qflip
 usage="""
 This code is used either (1) to fill the histos, or (2) to make plots
 and tables. The output of (1) is used as input of (2).
@@ -148,7 +149,7 @@ def runFill(opts) :
 
     if debug : dataset.Dataset.verbose_parsing = True
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
-    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
+    if not skip_charge_flip : groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
     if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
@@ -241,7 +242,7 @@ def runPlot(opts) :
 
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
-    groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups)) # not ready yet
+    if not skip_charge_flip : groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     plot_groups = [systUtils.Group(g.name) for g in groups]
     sel_not_specified = len(regions_to_plot())==len(selections)
     if sel_not_specified:
@@ -445,10 +446,13 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         mt0, mt1 = computeMt(l0.p4, met.p4), computeMt(l1.p4, met.p4)
         dphillbeta, mdr = computeRazor(l0.p4, l1.p4, met.p4)
         def jet_pt2(j) : return j.px*j.px+j.py*j.py
-        n_cl_jets = sum(1 for j in event.jets if jet_pt2(j)>30.*30.)
+        cl_jets   = [addTlv(j) for j in event.jets if jet_pt2(j)>30.*30.]
+        n_cl_jets = len(cl_jets)
+        n_b_jets  = event.pars.numBjets
+        n_bf_jets = event.pars.numFjets + event.pars.numBjets
         n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
         # n_jets = event.pars.numFjets + event.pars.numBjets
-        soft_jets = [addTlv(j) for j in event.jets if jet_pt2(j)<30.**2]
+        soft_jets = [addTlv(j) for j in event.jets if jet_pt2(j)<30.**2] # todo: merge with cl_jets loop
         n_soft_jets = len(soft_jets)
         csj0 = first(sorted(soft_jets, key=lambda j : j.p4.DeltaR(l0.p4)))
         csj1 = first(sorted(soft_jets, key=lambda j : j.p4.DeltaR(l1.p4)))
@@ -458,12 +462,15 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         phi_csj1 = csj1.p4.Phi() if csj1 else -5.0
         drl0csj  = csj0.p4.DeltaR(l0.p4) if csj0 else None
         drl1csj  = csj1.p4.DeltaR(l1.p4) if csj1 else None
+        m_jj     = (cl_jets[0].p4 + cl_jets[1].p4).M() if n_cl_jets>1 else None
+        deta_jj  = abs(cl_jets[0].p4.Eta() - cl_jets[1].p4.Eta()) if n_cl_jets>1 else None
         pass_sels = {}
         if tightight and not (l0_is_t and l1_is_t) : continue
+
         for cut in cuts:
             sel = cut.GetName()
             sel_expr = cut.GetTitle()
-            pass_sel = eval(sel_expr)
+            pass_sel = eval(sel_expr)# and (l0_pt>60.0 and dphi_l1_met<0.7)
             pass_sels[sel] = pass_sel
             is_ss_sel = sel.endswith('_ss')
             as_qflip = is_qflippable and (is_opp_sign and is_ss_sel)
@@ -514,16 +521,17 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['l1_etConeCorr'].Fill(l1_etConeCorr, fill_weight)
             h['l0_ptConeCorr'].Fill(l0_ptConeCorr, fill_weight)
             h['l1_ptConeCorr'].Fill(l1_ptConeCorr, fill_weight)
-
             h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt, fill_weight)
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             h['nsj'             ].Fill(n_soft_jets, fill_weight)
-
             if n_soft_jets:
                 h['drl0csj'].Fill(drl0csj, fill_weight)
                 h['drl1csj'].Fill(drl1csj, fill_weight)
+            if n_jets==2 and n_cl_jets==2: # fixme: f jets are not saved, but we need them for vbf
+                h['m_jj'   ].Fill(m_jj,    fill_weight)
+                h['deta_jj'].Fill(deta_jj, fill_weight)
             if is_data and (blinded and 100.0<m_coll and m_coll<150.0) : pass
             else :
                 h['mcoll'].Fill(m_coll, fill_weight)
@@ -612,7 +620,7 @@ def regions_to_plot(include='.*', exclude=None, regions=None):
 def variables_to_plot():
     return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
-            'drl0csj', 'drl1csj',
+            'drl0csj', 'drl1csj', 'deta_jj', 'm_jj',
             'nsj',
             'l0_d0Sig', 'l0_z0Sin', 'l0_etCone', 'l0_ptCone', 'l0_etConeCorr', 'l0_ptConeCorr',
             'l1_d0Sig', 'l1_z0Sin', 'l1_etCone', 'l1_ptCone', 'l1_etConeCorr', 'l1_ptConeCorr',
