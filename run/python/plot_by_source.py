@@ -117,7 +117,7 @@ def variables_to_plot():
     return ['onebin', 'njets', 'nsj', 'pt0', 'pt1', 'eta0', 'eta1',
             ]
 def variables_to_fill():
-    return variables_to_plot()
+    return variables_to_plot() + ['pt_eta'] # note to self: pt_eta is for any lep (use it to determine the compositions)
 
 def runFill(opts):
     lepton    = opts.lepton
@@ -351,6 +351,8 @@ def count_and_fill(chain,  opts, group=dataset.DatasetGroup('foo'),
             histos[sel]['pt1'   ][l1_source].Fill(l1_pt, fill_weight)
             histos[sel]['eta0'  ][l0_source].Fill(l0_eta, fill_weight)
             histos[sel]['eta1'  ][l1_source].Fill(l1_eta, fill_weight)
+            histos[sel]['pt_eta'][l0_source].Fill(l0_pt, l0_eta, fill_weight)
+            histos[sel]['pt_eta'][l1_source].Fill(l1_pt, l1_eta, fill_weight)
         num_processed_entries += 1
     end_time = time.clock()
     delta_time = end_time - start_time
