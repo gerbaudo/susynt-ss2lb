@@ -2,7 +2,7 @@
 
 #SBATCH -p %(queue)s
 #SBATCH --mem-per-cpu=1gb
-#SBATCH --time=04:00:00
+#SBATCH --time=8:00:00
 #SBATCH -o %(logfile)s
 #SBATCH --job-name=%(jobname)s
 
