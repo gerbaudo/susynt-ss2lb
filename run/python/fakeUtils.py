@@ -86,7 +86,6 @@ def leptonTypes():
 def mtBinEdges() : return np.array([0.0, 20.0, 40.0, 60.0, 100.0, 200.0])
 
 def ptBinEdges() : return np.array([10.0, 20.0, 35.0, 100.0])
-
-def etaBinEdges() : return np.array([0.0, 1.37, 2.50])
+def etaBinEdges() : return np.array([0.0, 1.37, 1.80, 2.50])
 
 def mdeltarBinEdges() : return np.array([0.0, 20.0, 40.0, 60.0, 100.0, 200.0])
