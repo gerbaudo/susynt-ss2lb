@@ -30,11 +30,12 @@ from utils import (first
                    )
 
 def main():
-    if len(sys.argv)!=3:
-        print "Usage: {0} inputdir outputdir".format(sys.argv[0])
+    if len(sys.argv) not in [3, 4]:
+        print "Usage: {0} inputdir outputdir [with-jets]".format(sys.argv[0])
         return
     inputdir = sys.argv[1]
     outputdir = sys.argv[2]
+    with_jets = True if len(sys.argv)==4 and sys.argv[2]=='with-jets' else False
     selections = regions_to_plot()
     verbose = True
     if not os.path.exists(inputdir):
@@ -88,8 +89,10 @@ def main():
         print ">>>plotting ",var
         for g in plot_groups : g.setSystNominal()
         # sr
-        h_emu = fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True)
-        h_mue = fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True)
+        sel_emu='sr_emu_os' if wout_jets else 'sr_emu_os_jets'
+        sel_mue='sr_mue_os' if wout_jets else 'sr_mue_os_jets'
+        h_emu = fake.getHistogram(variable=var, selection=sel_emu, cacheIt=True)
+        h_mue = fake.getHistogram(variable=var, selection=sel_mue, cacheIt=True)
         h_ratio = h_emu.Clone(h_emu.GetName().replace('emu', 'emu_over_mue'))
         h_ratio.Divide(h_mue)
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
@@ -103,10 +106,10 @@ def main():
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_data',
                                 label='SR: data')
 
-        h_emu = data.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True).Clone('sr_emu_data_minus_fake')
-        h_mue = data.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True).Clone('sr_mue_data_minus_fake')
-        h_emu.Add(fake.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True), -1.0)
-        h_mue.Add(fake.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True), -1.0)
+        h_emu = data.getHistogram(variable=var, selection=sel_emu, cacheIt=True).Clone('sr_emu_data_minus_fake')
+        h_mue = data.getHistogram(variable=var, selection=sel_mue, cacheIt=True).Clone('sr_mue_data_minus_fake')
+        h_emu.Add(fake.getHistogram(variable=var, selection=sel_emu, cacheIt=True), -1.0)
+        h_mue.Add(fake.getHistogram(variable=var, selection=sel_mue, cacheIt=True), -1.0)
         h_ratio = h_emu.Clone(h_emu.GetName().replace('emu', 'emu_over_mue'))
         h_ratio.Divide(h_mue)
         plot_emu_mue_with_ratio(canvas=c, h_mue=h_mue, h_emu=h_emu, h_ratio=h_ratio,
@@ -116,11 +119,11 @@ def main():
 
         h_emu  = buildTotBkg(histoFakeBkg=None,
                              histosSimBkgs=dict([(g.name,
-                                                  g.getHistogram(variable=var, selection='sr_emu_os', cacheIt=True))
+                                                  g.getHistogram(variable=var, selection=sel_emu, cacheIt=True))
                                                  for g in simBkgs]))
         h_mue  = buildTotBkg(histoFakeBkg=None,
                              histosSimBkgs=dict([(g.name,
-                                                  g.getHistogram(variable=var, selection='sr_mue_os', cacheIt=True))
+                                                  g.getHistogram(variable=var, selection=sel_mue, cacheIt=True))
                                                  for g in simBkgs]))
         h_ratio = h_emu.Clone(h_emu.GetName().replace('emu', 'emu_over_mue'))
         h_ratio.Divide(h_mue)
@@ -128,8 +131,9 @@ def main():
                                 filename=outputdir+'/sr_'+var+'_emu_over_mue_simbkg',
                                 label='SR: simbkg')
         fpt1_histos['sim_bkg']['sr'] = h_ratio
-
-        # continue # if you don't have vr
+        # currently don't have vr for jet selection
+        if wout_jets:
+            continue
         # vr
         h_emu = fake.getHistogram(variable=var, selection='vr_emu_os', cacheIt=True)
         h_mue = fake.getHistogram(variable=var, selection='vr_mue_os', cacheIt=True)
