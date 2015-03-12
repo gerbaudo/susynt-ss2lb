@@ -158,5 +158,14 @@ def selection_formulas():
     # dbg low pt
     formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
     formulas['sr_mue_os_hi_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt>15.0')
+    formulas['sr_emu_os_jets'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['sr_mue_os_jets'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['sr_emu_ss_jets'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['sr_mue_ss_jets'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+
+    formulas['sr_emu_os_vbf'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
+    formulas['sr_mue_os_vbf'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
+    formulas['sr_emu_ss_vbf'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
+    formulas['sr_mue_ss_vbf'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     return formulas
 #___________________________________________________________
