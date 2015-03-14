@@ -91,7 +91,7 @@ Bool_t Selector::Process(Long64_t entry)
         const JetVector&  jets= m_signalJets2Lep;
         const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
 #warning todo re-enable qflippable
-        if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
+        if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
             const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
@@ -137,7 +137,7 @@ Bool_t Selector::Process(Long64_t entry)
                         .fill(weight, run, event, l0, l1, *m_met, cljets);
                 } // m_writeTuple
             } // is_event_to_be_saved
-        } // eventHasTwoLeptons
+        } // l.size()==2
     } // passAllEventCriteria
     // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
     return kTRUE;
@@ -411,11 +411,6 @@ double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::
     else if(lep.isMu()  && sys==hlfv::Systematic::MEFFDOWN) delta = (-lep.errEffSF);
     effFactor = (sf + delta);
     return effFactor;
-}
-//-----------------------------------------
-bool Selector::eventHasTwoLeptons(const LeptonVector &leptons)
-{
-    return leptons.size()==2;
 }
 //-----------------------------------------
 bool Selector::eventIsEmu(const LeptonVector &leptons)

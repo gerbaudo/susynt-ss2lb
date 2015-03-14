@@ -49,7 +49,7 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
         const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
-        if(eventHasTwoLeptons(l) && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
+        if(l.size()==2 && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
             const JetVector cljets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);

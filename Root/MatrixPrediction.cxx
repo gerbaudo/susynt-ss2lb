@@ -82,7 +82,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
         const LeptonVector& l = m_baseLeptons;
         const Met*          m = m_met;
-        if(eventHasTwoLeptons(l)) { // several vars cannot be computed if we don't have 2 lep
+        if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
             const JetVector cljets(Selector::filterJets(jets, m_jvfTool, Systematic::CENTRAL, m_anaType));
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             double gev=1.0;
@@ -127,7 +127,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
                 // const JetVector clJets(SusySelection::filterClJets(m_signalJets2Lep));
                 // m_tupleMaker.fill(weight, run, event, *l0, *l1, *m, lowPtLep, m_signalJets2Lep);
             } // is_event_to_be_saved
-        } // eventHasTwoLeptons
+        } // l.size()==2
     } // if(emu)
     return true;
 }
