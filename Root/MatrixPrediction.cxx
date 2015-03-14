@@ -96,6 +96,8 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
             bool is_event_to_be_saved = (vars.numTaus==0 &&
                                          eventFlags.mllMin &&
                                          vars.hasFiredTrig &&
+                                         abs(vars.eta0)<2.4 &&
+                                         abs(vars.eta1)<2.4 &&
                                          vars.hasTrigMatch &&
                                          (is_e_mu || is_same_sign));
             if(is_event_to_be_saved){
