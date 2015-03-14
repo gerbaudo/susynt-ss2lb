@@ -308,9 +308,11 @@ def submit_batch_fill_job_per_group(group, opts):
     options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
     # note to self: the line below assumes that the argument-less options have a default=False
     options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
-    cmd_line_options = ' '.join(["--%s %s"%(k.replace('_','-'), str(v))
+    def escape_regex(v) : return v if v!='.*' else "'.*'"
+    def back_to_dash(v) : return v.replace('_','-')
+    cmd_line_options = ' '.join(["--%s %s"%(back_to_dash(k), escape_regex(str(v)))
                                  for k,v in options_with_value.iteritems()]
-                                +["--%s"%k for k in options_with_toggle.keys()])
+                                +["--%s"%back_to_dash(k) for k in options_with_toggle.keys()])
     template = 'batch/templates/plot_emu.sh'
     default_log_dir = opts.output_dir.replace('out/', 'log/')
     if default_log_dir.count('/histos')==1:
