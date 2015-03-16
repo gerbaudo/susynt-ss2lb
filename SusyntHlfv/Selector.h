@@ -141,8 +141,6 @@ public:
     static JetVector filterBtagJets(const JetVector &jets);
     /// lepton efficiency data/simulation scale factor
     static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
-    /// exactly two leptons
-    static bool eventHasTwoLeptons(const LeptonVector &leptons);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
     /// two opposite-sign leptons
