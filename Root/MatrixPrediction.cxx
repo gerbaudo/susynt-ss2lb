@@ -71,6 +71,7 @@ Bool_t MatrixPrediction::Process(Long64_t entry)
     m_counter.increment(weightComponents.product(), "input");
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    removeForwardMuons();
     EventFlags eventFlags = computeEventFlags();
     eventFlags.eq2slep = true; // for fakes we only need baseline leptons
     // incrementEventCounters(eventFlags, weightComponents);

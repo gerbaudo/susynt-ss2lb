@@ -171,6 +171,18 @@ protected:
        proof. We're not using proof, so who cares.
      */
     bool initEventList(TTree *tree);
+    /// remove from m_baseLeptons and m_signalLeptons the muons with |eta|>2.4
+    /**
+       These muons cannot be triggered, so in a dilepton event they
+       will not be considered because they will fail the trigger
+       match.  However, in a trilepton event they can cause the
+       nlep==2 requirement to fail. This inconsistency is due to the
+       fact that the third lepton veto (nlep==2) is applied before the
+       trigger match. In fact, I think that this criterion should be
+       applied within SusyNt::selectObjects; here it's a bit of a
+       hack, but that's what we have for now. DG 2015-03-13
+     */
+    void removeForwardMuons();
     chargeFlip*         m_qflipper;     ///< charge flip tool
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization

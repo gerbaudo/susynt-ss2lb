@@ -19,6 +19,7 @@
 #include "TSystem.h"
 #include "TVector2.h"
 
+#include <algorithm> // remove_if
 #include <cassert>
 #include <cmath> // isnan
 #include <cfloat> // FLT_MAX, FLT_MIN
@@ -82,6 +83,7 @@ Bool_t Selector::Process(Long64_t entry)
     m_counter.increment(weightComponents.product(), "input");
     bool removeLepsFromIso(false);
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    removeForwardMuons(); // do this before computing the event flags (can affect the 2l test)
     EventFlags eventFlags = computeEventFlags();
     if(m_saveBaselineNonPrompt)
         eventFlags.eq2slep = eventFlags.eq2blep;
@@ -207,6 +209,17 @@ bool Selector::initEventList(TTree *tree)
        success = true;
    }
    return success;
+}
+//-----------------------------------------
+bool is_forward_muon(const Lepton *l)
+{
+    const float max_mu_eta_trigger = 2.4;
+    return (l && l->isMu() && abs(l->Eta()) > max_mu_eta_trigger);
+}
+void Selector::removeForwardMuons()
+{
+    std::remove_if(m_baseLeptons.begin(),   m_baseLeptons.end(),   is_forward_muon);
+    std::remove_if(m_signalLeptons.begin(), m_signalLeptons.end(), is_forward_muon);
 }
 //-----------------------------------------
 void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
