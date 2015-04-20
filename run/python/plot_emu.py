@@ -187,7 +187,8 @@ def runFill(opts) :
                     print "{0} : {1} entries from {2} samples".format(group.name,
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
-                chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
+                chain.cache_directory = os.path.abspath('./cache_aielet_nojet/'+group.name+'/')
+                # chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
                 tcuts = [r.TCut(reg, selection_formulas()[reg])
                          for reg in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)]
                 chain.retrieve_entrylists(tcuts)
@@ -397,6 +398,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
     weight_expr = sysGroup.weightLeafname
     qflip_expr = 'event.pars.qflipWeight'
     print 'weight_expr: ',weight_expr
+    print 'selections: ','\n'.join(["%d) %s : %s"%(i, cut.GetName(), cut.GetTitle()) for i, cut in enumerate(cuts)])
     start_time = time.clock()
     num_total_entries = chain.GetEntries()
     num_processed_entries = 0
@@ -453,8 +455,9 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         cl_jets   = [addTlv(j) for j in event.jets if jet_pt2(j)>30.*30.]
         n_cl_jets = len(cl_jets)
         n_b_jets  = event.pars.numBjets
-        n_bf_jets = event.pars.numFjets + event.pars.numBjets
-        n_jets = n_cl_jets + event.pars.numFjets + event.pars.numBjets
+        n_f_jets  = event.pars.numFjets
+        n_bf_jets = n_b_jets + n_f_jets
+        n_jets = n_cl_jets + n_b_jets + n_f_jets
         # n_jets = event.pars.numFjets + event.pars.numBjets
         soft_jets = [addTlv(j) for j in event.jets if jet_pt2(j)<30.**2] # todo: merge with cl_jets loop
         n_soft_jets = len(soft_jets)
@@ -525,11 +528,12 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['l1_etConeCorr'].Fill(l1_etConeCorr, fill_weight)
             h['l0_ptConeCorr'].Fill(l0_ptConeCorr, fill_weight)
             h['l1_ptConeCorr'].Fill(l1_ptConeCorr, fill_weight)
-            h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt, fill_weight)
+            h['nsj'          ].Fill(n_soft_jets,   fill_weight)
+            h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt,       fill_weight)
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
-            h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
-            h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
-            h['nsj'             ].Fill(n_soft_jets, fill_weight)
+            h['dphil0l1_vs_pt1' ].Fill(l1_pt, dphi_l0_l1,  fill_weight)
+            h['dphil0met_vs_pt1'].Fill(l1_pt, dphi_l0_met, fill_weight)
+            h['dphil1met_vs_pt1'].Fill(l1_pt, dphi_l1_met, fill_weight)
             if n_soft_jets:
                 h['drl0csj'].Fill(drl0csj, fill_weight)
                 h['drl1csj'].Fill(drl1csj, fill_weight)
@@ -631,7 +635,8 @@ def variables_to_plot():
             ]
 def variables_to_fill():
     "do not plot 2d variables, but still fill the corresponding histograms"
-    return variables_to_plot() + ['mcoll_vs_pt1', 'pt0_vs_pt1', 'met_vs_pt1', 'dphil0met_vs_pt1']
+    return variables_to_plot() + ['mcoll_vs_pt1', 'pt0_vs_pt1', 'met_vs_pt1',
+                                  'dphil0met_vs_pt1', 'dphil1met_vs_pt1', 'dphil0l1_vs_pt1']
 
 def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                statErrBand=None, systErrBand=None, # these are TGraphAsymmErrors
