@@ -112,8 +112,7 @@ def selection_formulas():
                      ' and n_jets==0'+
                      ' and dphi_l1_met<0.7'+
                      ' and dphi_l0_l1>2.3 '+
-                     ' and dphi_l0_met>2.5'+
-                     ' and (l0_pt-l1_pt)>7.0')
+                     ' and dphi_l0_met>2.5')
     common_req_vr = (pt_req+
                      ' and n_jets==0'+
                      ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5 or (l0_pt-l1_pt)<7.0)')
@@ -149,7 +148,14 @@ def selection_formulas():
     formulas['vr_emu_razor_ss'] = '(is_emu or is_mue) and mdr>20.0 and '+ss_expr
     formulas['vr_ee_razor_ss'] = 'is_ee and mdr>20.0 and '+ss_expr
     formulas['vr_mumu_razor_ss'] = 'is_mumu and mdr>20.0 and '+ss_expr
+    # real extraction formulas; trig_match is already applied when making the ntuples
+    formulas['ext_mumu_zpeak_probe_mu'] = ('is_mumu and is_opp_sign and abs(m_ll-91.2)<10.0'
+                                           ' and tag_is_mu and tag_is_tight and probe_is_mu')
+    formulas['ext_ee_zpeak_probe_el'] = ('is_ee and is_opp_sign and abs(m_ll-91.2)<10.0'
+                                         ' and tag_is_el and tag_is_tight and probe_is_el')
     # fake extraction formulas; trig_match is already applied when making the ntuples
+    formulas['ext_mumu_ss_probe_mu'] = 'is_mumu and is_same_sign and tag_is_mu and tag_is_tight and probe_is_mu'
+    formulas['ext_emu_mue_ss_probe_el'] = '(is_emu or is_mue) and is_same_sign and tag_is_mu and tag_is_tight and probe_is_el'
     formulas['ext_mumu_ss'] = 'is_mumu and is_same_sign'
     formulas['ext_emu_mue_ss'] = '(is_emu or is_mue) and is_same_sign'
     formulas['ext_emu_pt0_40_ss']= 'is_emu and is_same_sign and l0_pt>40.0'
@@ -167,5 +173,49 @@ def selection_formulas():
     formulas['sr_mue_os_vbf'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     formulas['sr_emu_ss_vbf'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     formulas['sr_mue_ss_vbf'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
+    # formulas for Aielet
+    formulas['sr_emu_os'] = formulas['sr_emu_os']
+    formulas['sr_mue_os'] = formulas['sr_emu_os'].replace('l0_is_el and l1_is_mu', 'l0_is_mu and l1_is_el')
+
+    formulas['cr_emu_os'] = formulas['vr_emu_os']
+    formulas['cr_mue_os'] = formulas['cr_emu_os'].replace('l0_is_el and l1_is_mu', 'l0_is_mu and l1_is_el')
+    formulas['sr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_sr)
+    formulas['sr_ttbar_mue_os'] = formulas['sr_ttbar_emu_os'].replace('l0_is_el and l1_is_mu',
+                                                                      'l0_is_mu and l1_is_el')
+    formulas['cr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_vr
+                                   ).replace('n_jets==0',
+                                             'n_b_jets>=1 and n_f_jets==0')
+    formulas['cr_ttbar_mue_os'] = formulas['cr_ttbar_emu_os'].replace('l0_is_el and l1_is_mu',
+                                                                      'l0_is_mu and l1_is_el')
+
+    common_req_vr2 = ('is_opp_sign'
+                      ' and '+pt_req+
+                      ' and n_jets==0'+
+                      ' and dphi_l1_met<0.7'
+                      ' and dphi_l0_l1<2.3'
+                      ' and dphi_l0_met>2.5')
+    formulas['cr2_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_vr2)
+    formulas['cr2_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_vr2)
+
+    common_cr34 = ('is_opp_sign and '+pt_req+' and n_jets==0')
+    common_cr3_os = (common_cr34+' and     dphi_l1_met<0.4 and (dphi_l0_l1<2.3 or dphi_l0_met<2.5)')
+    common_cr4_os = (common_cr34+' and 0.4<dphi_l1_met<0.7 and (dphi_l0_l1<2.3 or dphi_l0_met<2.5)')
+
+    formulas['cr3_emu_os'] = ('l0_is_el and l1_is_mu and '+common_cr3_os)
+    formulas['cr3_mue_os'] = ('l0_is_mu and l1_is_el and '+common_cr3_os)
+    formulas['cr4_emu_os'] = ('l0_is_el and l1_is_mu and '+common_cr4_os)
+    formulas['cr4_mue_os'] = ('l0_is_mu and l1_is_el and '+common_cr4_os)
+
+
+    formulas['sr_40_emu_os']       = formulas['sr_emu_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['sr_40_mue_os']       = formulas['sr_mue_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['sr_40_ttbar_emu_os'] = formulas['sr_ttbar_emu_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['sr_40_ttbar_mue_os'] = formulas['sr_ttbar_mue_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['cr_40_emu_os']       = formulas['cr_emu_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['cr_40_mue_os']       = formulas['cr_mue_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['sr_40_ttbar_emu_os'] = formulas['sr_ttbar_emu_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['sr_40_ttbar_mue_os'] = formulas['sr_ttbar_mue_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['cr_40_ttbar_emu_os'] = formulas['cr_ttbar_emu_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+    formulas['cr_40_ttbar_mue_os'] = formulas['cr_ttbar_mue_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
     return formulas
 #___________________________________________________________
