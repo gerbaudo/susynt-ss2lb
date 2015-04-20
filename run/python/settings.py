@@ -45,13 +45,17 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         }
     attrs_2d = {
         'mcoll_vs_pt1'     :{'title':'; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':400.0},
-        'pt0_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; p_{T,l0} [GeV] [GeV]',      'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':48, 'ymin':0.0, 'ymax':240.0},
+        'pt0_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; p_{T,l0} [GeV]',            'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':48, 'ymin':0.0, 'ymax':240.0},
         'met_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; MET [GeV]',                 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':24, 'ymin':0.0, 'ymax':240.0},
-        'dphil0met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':10, 'ymin':0.0, 'ymax':twopi},
+        'dphil0l1_vs_pt1'  :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, l1) [rad]',  'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
+        'dphil0met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
+        'dphil1met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l1, met) [rad]', 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
         'pt_eta' : {'title':';p_{T} [GeV]; #eta',
                     'nx':len(fakeu.ptBinEdges())-1,  'binsx':fakeu.ptBinEdges(),
                     'ny':len(fakeu.etaBinEdges())-1, 'binsy':fakeu.etaBinEdges(),}
         }
+
+
     if variable in attrs_1d:
         attrs = attrs_1d[variable]
         title = title if title else attrs['title']
