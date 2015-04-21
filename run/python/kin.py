@@ -179,7 +179,10 @@ def selection_formulas():
 
     formulas['cr_emu_os'] = formulas['vr_emu_os']
     formulas['cr_mue_os'] = formulas['cr_emu_os'].replace('l0_is_el and l1_is_mu', 'l0_is_mu and l1_is_el')
-    formulas['sr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_sr)
+
+    formulas['sr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_sr
+                                   ).replace('n_jets==0',
+                                             'n_b_jets>=1 and n_f_jets==0')
     formulas['sr_ttbar_mue_os'] = formulas['sr_ttbar_emu_os'].replace('l0_is_el and l1_is_mu',
                                                                       'l0_is_mu and l1_is_el')
     formulas['cr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_vr
