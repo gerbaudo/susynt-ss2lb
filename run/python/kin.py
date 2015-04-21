@@ -209,6 +209,16 @@ def selection_formulas():
     formulas['cr4_emu_os'] = ('l0_is_el and l1_is_mu and '+common_cr4_os)
     formulas['cr4_mue_os'] = ('l0_is_mu and l1_is_el and '+common_cr4_os)
 
+    formulas['base_emu_os'] = ('l0_is_el and l1_is_mu and is_opp_sign and '+pt_req+' and n_jets==0')
+    formulas['base_mue_os'] = ('l0_is_mu and l1_is_el and is_opp_sign and '+pt_req+' and n_jets==0')
+
+    common_req_cr = ('is_opp_sign'+
+                     ' and '+pt_req+
+                     ' and n_jets==0'+
+                     ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5)')
+
+    formulas['cr_old_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_cr)
+    formulas['cr_old_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_cr)
 
     formulas['sr_40_emu_os']       = formulas['sr_emu_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
     formulas['sr_40_mue_os']       = formulas['sr_mue_os'      ].replace('l0_pt>45.0', 'l0_pt>40.0')
