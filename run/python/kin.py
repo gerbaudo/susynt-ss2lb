@@ -174,8 +174,19 @@ def selection_formulas():
     formulas['sr_emu_ss_vbf'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     formulas['sr_mue_ss_vbf'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     # formulas for Aielet
-    formulas['sr_emu_os'] = formulas['sr_emu_os']
-    formulas['sr_mue_os'] = formulas['sr_emu_os'].replace('l0_is_el and l1_is_mu', 'l0_is_mu and l1_is_el')
+    common_req_cr = ('is_opp_sign and'
+                     ' l0_pt>45.0 and l1_pt>12.0 and'
+                     ' dphi_l1_met < 0.7 ||'  # <-- is this and ? or?
+                     ' (dphi_l0_l1 < 2.3 || dphi_l0_met < 2.5 ) and'
+                     ' n_jets==0')
+    common_req_cr40 = common_req_cr.replace('l0_pt>45.0', 'l0_pt>40.0')
+    common_req_crttbar = ('is_opp_sign and'
+                          ' l0_pt>45.0 and l1_pt>12.0 and'
+                          ' dphi_l1_met < 0.7 ||'  # <-- is this and ? or?
+                          ' (dphi_l0_l1 < 2.3 || dphi_l0_met < 2.5 ) and'
+                          ' n_cl_jets==0 and'
+                          ' n_b_jets>=0 and' # <-- this should be >=1?
+                          ' n_f_jets==0')
 
     formulas['cr_emu_os'] = formulas['vr_emu_os']
     formulas['cr_mue_os'] = formulas['cr_emu_os'].replace('l0_is_el and l1_is_mu', 'l0_is_mu and l1_is_el')
