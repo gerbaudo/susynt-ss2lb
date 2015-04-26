@@ -187,8 +187,7 @@ def runFill(opts) :
                     print "{0} : {1} entries from {2} samples".format(group.name,
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
-                chain.cache_directory = os.path.abspath('./cache_aielet_nojet/'+group.name+'/')
-                # chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
+                chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
                 tcuts = [r.TCut(reg, selection_formulas()[reg])
                          for reg in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)]
                 chain.retrieve_entrylists(tcuts)
