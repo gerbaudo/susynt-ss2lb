@@ -112,7 +112,8 @@ def selection_formulas():
                      ' and n_jets==0'+
                      ' and dphi_l1_met<0.7'+
                      ' and dphi_l0_l1>2.3 '+
-                     ' and dphi_l0_met>2.5')
+                     ' and dphi_l0_met>2.5'+
+                     ' and (l0_pt-l1_pt)>7.0')
     common_req_vr = (pt_req+
                      ' and n_jets==0'+
                      ' and (dphi_l1_met>0.7 or dphi_l0_l1<2.3 or dphi_l0_met<2.5 or (l0_pt-l1_pt)<7.0)')
@@ -189,7 +190,7 @@ def selection_formulas():
                           ' n_f_jets==0')
 
     formulas['cr_emu_os'      ] = ('l0_is_el and l1_is_mu and '+common_req_cr)
-    formulas['cr_emu_os'      ] = ('l0_is_mu and l1_is_el and '+common_req_cr)
+    formulas['cr_mue_os'      ] = ('l0_is_mu and l1_is_el and '+common_req_cr)
     formulas['cr_40_emu_os'   ] = ('l0_is_el and l1_is_mu and '+common_req_cr40)
     formulas['cr_40_mue_os'   ] = ('l0_is_mu and l1_is_el and '+common_req_cr40)
     formulas['cr_ttbar_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_crttbar)
