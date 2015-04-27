@@ -1,8 +1,15 @@
 #datasetID finalState XS BF filterEff relUncertainty
-# I think here there might be a conversion mistake-- DG 2014-07-07
-169670	0	0.1897	1.000000	1.000000 1.00
-169671	0	0.1897	1.000000	1.000000 1.00
-169672  0   0.01568 1.000000    1.000000 1.00
-169673  0   0.01568 1.000000    1.000000 1.00
-
-
+# The values correspong to 1% of the ones for m_H=125 GeV at
+# https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt8TeV
+# ggH (taumu, tue)
+189894    0      0.1927    1.00        1.00        0.08
+189890    0      0.1927    1.00        1.00        0.08
+# WH (taumu, tue)
+189892  0        0.007046  1.00        1.00        0.01
+189896  0        0.007046  1.00        1.00        0.01
+# ZH (taumu, tue)
+189891   0       0.004153  1.00        1.00        0.03
+189895   0       0.004153  1.00        1.00        0.03
+# VBF (taumu, tue)
+189889   0       0.01578   1.00        1.00        0.02
+189893   0       0.01578   1.00        1.00        0.02
