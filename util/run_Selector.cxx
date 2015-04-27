@@ -86,7 +86,10 @@ int main(int argc, char** argv) {
         cout<<"The following arguments are not expected; they will be discarded:"<<endl;
         while (optind < argc) cout<<argv[optind++]<<endl;
     }
-    if(verbose)
+    if(verbose){
+        cout<<"Being called as : "<<endl;
+        for(int i=0; i<argc; ++i) cout<<" "<<argv[i];
+        cout<<endl<<"Parsed:"<<endl;
         cout<<"verbose    '"<<verbose    <<"'"<<endl
             <<"savefake   '"<<savefake   <<"'"<<endl
             <<"debug      '"<<debug      <<"'"<<endl
@@ -95,7 +98,7 @@ int main(int argc, char** argv) {
             <<"sample     '"<<sample     <<"'"<<endl
             <<"tuple-out  '"<<tuple_out  <<"'"<<endl
             <<"eventlist  '"<<eventlist  <<"'"<<endl;
-
+    }
     TChain* chain = new TChain("susyNt");
     ChainHelper::addInput(chain, input, verbose);
     Long64_t tot_num_events = chain->GetEntries();
