@@ -39,8 +39,6 @@ def main():
 
     fake = systUtils.Group('fake')
     fake.setHistosDir(inputdir)
-    fake.exploreAvailableSystematics(verbose)
-    fakeSystematics = [s for s in fake.systematics if s!='NOM']
 
     fake.setSyst() # reset to nominal (state is undetermined after 'explore')
     c = r.TCanvas('c','')
@@ -57,6 +55,9 @@ def main():
         for sel in regions_to_plot():
             print ">>>plotting ",sel
             fake.setSystNominal()
+            fake.setCurrentSelection(sel)
+            fake.exploreAvailableSystematics(verbose)
+            fakeSystematics = [s for s in fake.systematics if s!='NOM']
             nominalHistoData    = None
             nominalHistoFakeBkg = fake.getHistogram(variable=var, selection=sel, cacheIt=True)
             nominalHistosBkg    = {'fake', nominalHistoFakeBkg}
