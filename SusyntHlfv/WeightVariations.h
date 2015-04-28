@@ -35,6 +35,8 @@ namespace hlfv
       fakeElFakeUp = fakeElFakeDo = 1.0;
       fakeMuRealUp = fakeMuRealDo = 1.0;
       fakeMuFakeUp = fakeMuFakeDo = 1.0;
+      fakeElFracUp = fakeElFracDo = 1.0;
+      fakeMuFracUp = fakeMuFracDo = 1.0;
       return *this;
     }
     double qflipUp, qflipDo;
@@ -51,6 +53,8 @@ namespace hlfv
     double fakeElFakeUp, fakeElFakeDo;
     double fakeMuRealUp, fakeMuRealDo;
     double fakeMuFakeUp, fakeMuFakeDo;
+    double fakeElFracUp, fakeElFracDo;
+    double fakeMuFracUp, fakeMuFracDo;
   };
 
 } // hlfv

@@ -252,6 +252,10 @@ hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lept
         wv.fakeMuRealDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_RE_DOWN ) * in;
         wv.fakeMuFakeUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_UP   ) * in;
         wv.fakeMuFakeDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_DOWN ) * in;
+        wv.fakeElFracUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FRAC_UP ) * in;
+        wv.fakeElFracDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FRAC_DO ) * in;
+        wv.fakeMuFracUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FRAC_UP ) * in;
+        wv.fakeMuFracDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FRAC_DO ) * in;
     }
     return wv;
 }
