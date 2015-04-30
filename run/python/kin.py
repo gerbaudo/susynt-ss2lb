@@ -21,9 +21,9 @@ except KeyError :
 fabs, cos, sin, pi, sqrt = math.fabs, math.cos, math.sin, math.pi, math.sqrt
 
 def phi_mpi_pi(phi) :
-    pi = math.pi
-    while phi < -pi : phi += pi
-    while phi > +pi : phi -= pi
+    twopi = 2.0*math.pi
+    while phi < -pi : phi += twopi
+    while phi > +pi : phi -= twopi
     return phi
 
 tlv = r.TLorentzVector
