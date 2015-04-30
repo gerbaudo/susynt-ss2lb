@@ -19,7 +19,7 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         'eta1'           :{'title':';#eta_{l1}; entries/bin',                  'nx':26, 'xmin': -2.6, 'xmax': +2.6},
         'phi0'           :{'title':';#phi_{l0} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
         'phi1'           :{'title':';#phi_{l1} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
-        'mcoll'          :{'title':';m_{coll,l0,l1} [GeV]; entries/bin',       'nx':40, 'xmin':  0.0, 'xmax':400.0},
+        'mcoll'          :{'title':';m_{coll,l0,l1} [GeV]; entries/bin',       'nx':80, 'xmin':  0.0, 'xmax':400.0},
         'mll'            :{'title':';m_{l0,l1} [GeV]; entries/bin',            'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'ptll'           :{'title':';p_{T,l0+l1} [GeV]; entries/bin',          'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'met'            :{'title':';MET [GeV]; entries/bin',                  'nx':24, 'xmin':  0.0, 'xmax':240.0},
@@ -44,7 +44,7 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         'm_jj'           :{'title':';m_{jj} [GeV]; entries/bin',               'nx':50, 'xmin':  0.0, 'xmax':+1000},
         }
     attrs_2d = {
-        'mcoll_vs_pt1'     :{'title':'; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':400.0},
+        'mcoll_vs_pt1'     :{'title':'; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':80, 'ymin':0.0, 'ymax':400.0},
         'pt0_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; p_{T,l0} [GeV]',            'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':48, 'ymin':0.0, 'ymax':240.0},
         'met_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; MET [GeV]',                 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':24, 'ymin':0.0, 'ymax':240.0},
         'dphil0l1_vs_pt1'  :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, l1) [rad]',  'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
