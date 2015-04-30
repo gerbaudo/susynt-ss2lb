@@ -194,7 +194,7 @@ class BaseSampleGroup(object) :
     @property
     def isMc(self) : return not (self.isFake or self.isData)
     @property
-    def isSignal(self) : return self.label=='signal'
+    def isSignal(self) : return 'signal' in self.label
     @property
     def isMcBkg(self) : return self.isMc and not self.isSignal
     def isNeededForSys(self, sys) :
