@@ -372,7 +372,7 @@ class Group(BaseSampleGroup) :
             file = r.TFile.Open(self.filenameHisto)
             if not file : print "missing file %s"%self.filenameHisto
             histo = file.Get(hname)
-            if not histo : print "%s : cannot get histo %s"%(self.name, hname)
+            if not histo : print "%s : cannot get histo %s from %s"%(self.name, hname, self.filenameHisto)
             elif cacheIt :
                 histo.SetDirectory(0)
                 self._histoCache[self.syst][hname] = histo
