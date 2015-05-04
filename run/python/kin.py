@@ -133,7 +133,8 @@ def selection_formulas():
         # 'pre_emu_mue' : '(is_emu or is_mue) and '+pt_req,
         }
     os_expr = '(is_opp_sign)'
-    ss_expr = '(is_same_sign or is_qflippable)'
+    # ss_expr = '(is_same_sign or is_qflippable)'
+    ss_expr = '(is_same_sign)'
     formulas = dict([(k+'_'+ssos, v+' and '+ssos_expr)
                      for k, v in formulas.iteritems()
                      for ssos, ssos_expr in [('ss', ss_expr), ('os', os_expr)]])
