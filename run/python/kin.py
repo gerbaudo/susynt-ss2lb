@@ -166,8 +166,7 @@ def selection_formulas():
     # dbg low pt
     formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
     formulas['sr_mue_os_hi_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt>15.0')
-    formulas['sr_emu_os_jets'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
-    formulas['sr_mue_os_jets'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+
     formulas['sr_emu_ss_jets'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
     formulas['sr_mue_ss_jets'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
 
@@ -196,6 +195,13 @@ def selection_formulas():
     formulas['cr_40_mue_os'   ] = ('l0_is_mu and l1_is_el and '+common_req_cr40)
     formulas['cr_ttbar_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_crttbar)
     formulas['cr_ttbar_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_crttbar)
+
+    formulas['sr_emu_os_jets'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['sr_mue_os_jets'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['cr_mue_os_jets'] = (formulas['cr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['cr_emu_os_jets'] = (formulas['cr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['vr_mue_os_jets'] = (formulas['vr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    formulas['vr_emu_os_jets'] = (formulas['vr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
 
     formulas['sr_ttbar_emu_os'] = ('is_opp_sign and l0_is_el and l1_is_mu and '+common_req_sr
                                    ).replace('n_jets==0',
@@ -239,5 +245,14 @@ def selection_formulas():
     formulas['sr_40_ttbar_mue_os'] = formulas['sr_ttbar_mue_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
     formulas['cr_40_ttbar_emu_os'] = formulas['cr_ttbar_emu_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
     formulas['cr_40_ttbar_mue_os'] = formulas['cr_ttbar_mue_os'].replace('l0_pt>45.0', 'l0_pt>40.0')
+
+    common_req_cr5_os = ('is_opp_sign and'
+                         ' l0_pt>45.0 and l1_pt>12.0 and'
+                         ' dphi_l1_met < 0.7 and '
+                         ' (dphi_l0_l1 < 2.3 or dphi_l0_met < 2.5 or (l0_pt-l1_pt)<7.0) and'
+                         ' n_jets==0')
+    formulas['cr5_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_cr5_os)
+    formulas['cr5_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_cr5_os)
+
     return formulas
 #___________________________________________________________
