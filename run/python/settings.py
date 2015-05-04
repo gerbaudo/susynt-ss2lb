@@ -20,6 +20,7 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         'phi0'           :{'title':';#phi_{l0} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
         'phi1'           :{'title':';#phi_{l1} [rad]; entries/bin',            'nx':20, 'xmin':  mpi, 'xmax':  ppi},
         'mcoll'          :{'title':';m_{coll,l0,l1} [GeV]; entries/bin',       'nx':80, 'xmin':  0.0, 'xmax':400.0},
+        'mcollcoarse'    :{'title':';m_{coll,l0,l1} [GeV]; entries/bin',       'nx':40, 'xmin':  0.0, 'xmax':400.0},
         'mll'            :{'title':';m_{l0,l1} [GeV]; entries/bin',            'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'ptll'           :{'title':';p_{T,l0+l1} [GeV]; entries/bin',          'nx':24, 'xmin':  0.0, 'xmax':240.0},
         'met'            :{'title':';MET [GeV]; entries/bin',                  'nx':24, 'xmin':  0.0, 'xmax':240.0},
