@@ -163,14 +163,16 @@ def runFill(opts) :
     onthefly_tight_def = eval(opts.tight_def) if opts.tight_def else None
     mkdirIfNeeded(outputDir)
     systematics = get_list_of_syst_to_fill(opts)
+    regions = regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)
     if verbose : print "about to loop over these systematics:\n %s"%str(systematics)
+    if verbose : print "about to loop over these regions:\n %s"%str(regions)
     if batchMode:
         for group in groups:
             for systematic in systematics:
                 if systUtils.Group(group.name).isNeededForSys(systematic):
                     opts.syst = systematic
-                    for selection in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions):
-                        submit_batch_fill_job_per_group_per_selection(group, selection, opts)
+                    for selection in regions:
+                        submit_batch_fill_job_per_group_per_selection(group=group, selection=selection, opts=opts)
     else:
         for group in groups:
             systematics = [s for s in systematics if systUtils.Group(group.name).isNeededForSys(s)]
@@ -188,8 +190,7 @@ def runFill(opts) :
                                                                       chain.GetEntries(),
                                                                       len(group.datasets))
                 chain.cache_directory = os.path.abspath('./selection_cache/'+group.name+'/')
-                tcuts = [r.TCut(reg, selection_formulas()[reg])
-                         for reg in regions_to_plot(opts.include_regions, opts.exclude_regions, opts.regions)]
+                tcuts = [r.TCut(reg, selection_formulas()[reg]) for reg in regions]
                 chain.retrieve_entrylists(tcuts)
                 counters_pre, histos_pre = dict(), dict()
                 counters_npre, histos_npre = dict(), dict()
@@ -266,9 +267,9 @@ def runPlot(opts) :
     simBkgs = [g for g in plot_groups if g.isMcBkg]
     data = findByName(plot_groups, 'data')
     fake = findByName(plot_groups, 'fake')
-    signal = findByName(plot_groups, 'signal')
+    signal = findByName(plot_groups, 'signaltaumu')
     print 'names_stacked_groups to be improved'
-    names_stacked_groups = [g.name for g in groups if g.name not in ['data', 'signal']]
+    names_stacked_groups = [g.name for g in simBkgs+[fake]]
     for sel in selections :
         if verbose : print '-- plotting ',sel
         for var in variables :
@@ -289,13 +290,14 @@ def runPlot(opts) :
             systErrBand = buildSyst(fake=fake, simBkgs=simBkgs, variable=var, selection=sel,
                                     fakeVariations=fakeSystematics, mcVariations=mcSystematics,
                                     verbose=verbose)
-
-            plotHistos(histoData=nominalHistoData,# histoSignal=nominalHistoSign,
+            print_summary_yield = var is 'onebin'
+            plotHistos(histoData=nominalHistoData, histoSignal=nominalHistoSign,
                        histoTotBkg=nominalHistoTotBkg, histosBkg=nominalHistosBkg,
                        statErrBand=statErrBand, systErrBand=systErrBand,
                        stack_order=names_stacked_groups,
                        topLabel=sel,
-                       canvasName=(sel+'_'+var), outdir=outputDir, verbose=verbose)
+                       canvasName=(sel+'_'+var), outdir=outputDir, verbose=verbose,
+                       printYieldSummary=print_summary_yield)
     for group in plot_groups :
         group.printVariationsSummary()
 
@@ -334,7 +336,7 @@ def submit_batch_fill_job_per_group(group, opts):
     if verbose : print out['stdout']
     if out['stderr'] : print  out['stderr']
 
-def submit_batch_fill_job_per_group_per_selection(group, selection, opts):
+def submit_batch_fill_job_per_group_per_selection(group=None, selection='', opts=None):
     "if we are processing cached selections, we can submit one job per selection"
     options_dict = vars(opts)
     group_name = group.name if hasattr(group, 'name') else group
@@ -342,6 +344,7 @@ def submit_batch_fill_job_per_group_per_selection(group, selection, opts):
     verbose = opts.verbose
     options_dict['group'] = group_name
     options_dict['region'] = selection
+    options_dict['regions'] = None
     options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
     # note to self: the line below assumes that the argument-less options have a default=False
     options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
@@ -542,6 +545,7 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             if is_data and (blinded and 100.0<m_coll and m_coll<150.0) : pass
             else :
                 h['mcoll'].Fill(m_coll, fill_weight)
+                h['mcollcoarse'].Fill(m_coll, fill_weight)
                 h['mcoll_vs_pt1'].Fill(l1_pt, m_coll, fill_weight)
             counters[sel] += (fill_weight)
         # print ('e' if l0_is_el else 'm'),('e' if l1_is_el else 'm'),' : ',
@@ -599,12 +603,14 @@ def countTotalBkg(counters={'sample' : {'sel':0.0}}) :
 def getGroupColor(g=None) :
     oldColors = [('data', r.kBlack), ('diboson',r.kSpring+2), ('higgs',r.kAzure-4),
                  ('signal',r.kMagenta), ('top', r.kRed+1), ('zjets', r.kOrange-2),
-                 ('fake',r.kGray), ('qflip', r.kYellow-9)]
+                 ('fake',r.kGray), ('qflip', r.kYellow-9),
+                 ('signaltaumu',r.kMagenta), ('signaltaue',r.kGreen)]
     newColors = [] #[('signal',r.kMagenta), ('WW',r.kAzure-9), ('Higgs',r.kYellow-9)]
     colors = dict((g,c) for g,c in  oldColors + newColors)
     return colors[g] if g else colors
 
-def regions_to_plot(include='.*', exclude=None, regions=None):
+def regions_to_plot(include='.*', exclude=None, regions=''):
+    "include and exclude are regexp; regions is a string with either one region or a comma-separated list of regions"
     # return ['vr_emu_mue_ss'] # test to debug fake
     # return ['vr_emu_ss_razor']
     # return [k for k in selection_formulas().keys() if ('vr' in k and 'ss' in k)] # test to debug fake
@@ -618,14 +624,14 @@ def regions_to_plot(include='.*', exclude=None, regions=None):
     #  ]
     selected_regions = selection_formulas().keys()
     if regions:
-        regions = regions.split(',') if ',' in regions else regions # if it's a comma-sep string, convert it to list
+        regions = regions.split(',') if ',' in regions else [regions] # if it's a comma-sep string, convert it to list
         selected_regions = [r for r in selected_regions if r in regions]
     selected_regions = utils.filterWithRegexp(selected_regions, include)
     selected_regions = utils.excludeWithRegexp(selected_regions, exclude) if exclude else selected_regions
     return selected_regions
 
 def variables_to_plot():
-    return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll',
+    return ['onebin', 'njets', 'pt0', 'pt1', 'd_pt0_pt1', 'eta0', 'eta1', 'phi0', 'phi1', 'mcoll', 'mcollcoarse',
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
             'drl0csj', 'drl1csj', 'deta_jj', 'm_jj',
             'nsj',
@@ -643,7 +649,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
                stack_order=[],
                topLabel='',
                drawStatErr=False, drawSystErr=False,
-               drawYieldAndError=False) :
+               drawYieldAndError=False, printYieldSummary=False) :
     "Note: blinding can be required for only a subrange of the histo, so it is taken care of when filling"
     setAtlasStyle()
     padMaster = histoData
@@ -683,10 +689,16 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     dataGraph = graphWithPoissonError(histoData)
     dataGraph.Draw('same p')
     if histoSignal :
+        histoSignal.SetFillStyle(0)
+        histoSignal.SetFillColor(0)
         histoSignal.SetLineColor(getGroupColor('signal'))
         histoSignal.SetLineWidth(2)
         histoSignal.Draw('histo same')
-        leg.AddEntry(histoSignal, '(m_{C1},m_{N1})=(130, 0)GeV', 'l')
+        label = ('H#rightarrow#tau#mu' if 'signaltaumu' in histoSignal.GetName() else
+                 'H#rightarrow#taue'   if 'signaltaue' in histoSignal.GetName() else
+                 'signal')
+        label = "{}, BR=1%, {:.2f}".format(label, integralWou(histoSignal))
+        leg.AddEntry(histoSignal, label, 'l')
     if statErrBand and drawStatErr :
         statErrBand.SetFillStyle(3006)
         statErrBand.Draw('E2 same')
@@ -700,6 +712,12 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
         totErrBand.Draw('E2 same')
         totErrBand.SetFillStyle(3005)
         leg.AddEntry(totErrBand, 'stat+syst', 'f')
+        if printYieldSummary:
+            print ("{}:".format(topLabel if topLabel else dataGraph.GetName())+
+                   " expected {:.2f}^{{+{:.2f}}}_{{{:.2f}}}".format(totErrBand.GetY()[0],
+                                                                    totErrBand.GetErrorYhigh(0),
+                                                                    totErrBand.GetErrorYlow(0))+
+                   " obs {:.2f}".format(dataGraph.GetY()[0]))
     leg.Draw('same')
     topPad.Update()
     tex = r.TLatex()
