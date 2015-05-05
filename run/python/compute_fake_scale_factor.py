@@ -60,6 +60,7 @@ def main():
     parser.add_option('--samples-dir', default='samples/', help='directory with the list of samples; default ./samples/')
     parser.add_option('-T', '--tight-def', help='on-the-fly tight def, one of defs in fakeUtils.py: fakeu.lepIsTight_std, etc.')
     parser.add_option('-f', '--fill-histos', action='store_true', default=False, help='force fill (default only if needed)')
+    parser.add_option('--keep-real', action='store_true', default=False, help='do not subtract real (to get real lep efficiency)')
     parser.add_option('--debug', action='store_true')
     parser.add_option('--verbose', action='store_true')
     parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
@@ -68,6 +69,7 @@ def main():
     outputDir = options.output_dir
     lepton    = options.lepton
     region    = options.region
+    keepreal  = options.keep_real
     debug     = options.debug
     verbose   = options.verbose
     if lepton not in ['el', 'mu'] : parser.error("invalid lepton '%s'"%lepton)
@@ -88,7 +90,7 @@ def main():
     doFillHistograms = options.fill_histos or not os.path.exists(cacheFileName)
     onthefly_tight_def = eval(options.tight_def) if options.tight_def else None # eval will take care of aborting on typos
     if verbose : utils.print_running_conditions(parser, options)
-    vars = ['mt0', 'mt1', 'pt0', 'pt1', 'eta1']
+    vars = ['mt0', 'mt1', 'pt0', 'pt1', 'eta1', 'pt1_eta1']
     #fill histos
     if doFillHistograms :
         start_time = time.clock()
@@ -129,18 +131,22 @@ def main():
                 chain.preselect(cut)
                 num_processed_entries += fillHistos(chain, histosThisGroup, histosPerSource,
                                                     histosThisGroupPerSource,
-                                                    lepton, group, region,
-                                                    onthefly_tight_def=onthefly_tight_def, verbose=verbose)
+                                                    lepton, group,
+                                                    cut, cut_is_cached=True,
+                                                    onthefly_tight_def=onthefly_tight_def,
+                                                    verbose=verbose)
             if verbose : print 'filling uncached cuts: ',' '.join([c.GetName() for c in uncached_tcuts])
             if uncached_tcuts:
+                assert len(uncached_tcuts)==1, "expecting only one cut, got {}".format(len(uncached_tcuts))
+                cut = uncached_tcuts[0]
                 chain.preselect(None)
                 num_processed_entries += fillHistos(chain, histosThisGroup, histosPerSource,
                                                     histosThisGroupPerSource,
-                                                    lepton, group, region,
+                                                    lepton, group,
+                                                    cut, cut_is_cached=False,
                                                     onthefly_tight_def=onthefly_tight_def,
                                                     verbose=verbose)
-                # currently not filling the lists correctly...todo
-                # chain.save_lists()
+                chain.save_lists()
 
         writeHistos(cacheFileName, histosPerGroup, histosPerSource, histosPerGroupPerSource, verbose)
         end_time = time.clock()
@@ -167,9 +173,14 @@ def main():
     hn_sf_pt  = histoname_sf_vs_pt            (lepton)
     hn_da_eta = histoname_data_fake_eff_vs_eta(lepton)
     hn_da_pt  = histoname_data_fake_eff_vs_pt (lepton)
-    objs_eta = subtractRealAndComputeScaleFactor(histosPerGroup, 'eta1', hn_sf_eta, hn_da_eta, outputDir, region, verbose)
-    objs_pt  = subtractRealAndComputeScaleFactor(histosPerGroup, 'pt1',  hn_sf_pt,  hn_da_pt,  outputDir, region, verbose)
-    rootUtils.writeObjectsToFile(outputFileName, dictSum(objs_eta, objs_pt), verbose)
+    subtractReal = not keepreal
+    objs_eta = subtractRealAndComputeScaleFactor(histosPerGroup, 'eta1', hn_sf_eta, hn_da_eta, outputDir, region, subtractReal, verbose)
+    objs_pt  = subtractRealAndComputeScaleFactor(histosPerGroup, 'pt1',  hn_sf_pt,  hn_da_pt,  outputDir, region, subtractReal, verbose)
+    objs_pt_eta  = subtractRealAndComputeScaleFactor(histosPerGroup, 'pt1_eta1',
+                                                     histoname_sf_vs_pt_eta(lepton),
+                                                     histoname_data_fake_eff_vs_pt_eta(lepton),
+                                                     outputDir, region, subtractReal, verbose)
+    rootUtils.writeObjectsToFile(outputFileName, dictSum(dictSum(objs_eta, objs_pt), objs_pt_eta), verbose)
     if verbose : print "saved scale factors to %s" % outputFileName
 
 #___________________________________________________
@@ -184,17 +195,22 @@ enum2source = fakeu.enum2source
 
 def histoname_sf_vs_eta(l) : return 'sf_'+l+'_vs_eta'
 def histoname_sf_vs_pt (l) : return 'sf_'+l+'_vs_pt'
+def histoname_sf_vs_pt_eta(l) : return 'sf_'+l+'_vs_pt_vs_eta'
 def histoname_data_fake_eff_vs_eta(l) : return l+'_fake_rate_data_vs_eta'
 def histoname_data_fake_eff_vs_pt (l) : return l+'_fake_rate_data_vs_pt'
+def histoname_data_fake_eff_vs_pt_eta(l) : return l+'_fake_rate_data_vs_pt_vs_eta'
 
 def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource,
-               lepton, group, region, onthefly_tight_def=None, verbose=False):
+               lepton, group, cut, cut_is_cached, onthefly_tight_def=None, verbose=False):
     nLoose, nTight = 0, 0
     totWeightLoose, totWeightTight = 0.0, 0.0
     normFactor = 1.0 if group=='heavyflavor' else 1.0 # bb/cc hand-waving normalization factor, see notes 2014-04-17
     addTlv, computeMt = kin.addTlv, kin.computeMt
+    region = cut.GetName()
+    sel = cut.GetName()
+    sel_expr = cut.GetTitle()
     print group
-    isData = group
+    isData = group.name=='data'
     isHflf = region=='hflf'
     print 'TODO: check isHflf'
     print 'TODO: check hasTrigmatch (already in ntuple creation?)'
@@ -211,10 +227,15 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
         hasTrigmatch = True # pars.has2ltrigmatch==1
         weight = weight*normFactor
         tag, probe, met = addTlv(event.l0), addTlv(event.l1), addTlv(event.met)
+        if not (tag.isMu and probe.isMu) : continue
         isSameSign = tag.charge*probe.charge > 0.
         isRightProbe = probe.isEl if lepton=='el' else probe.isMu if lepton=='mu' else False
-        isTight = onthefly_tight_def(probe) if onthefly_tight_def else probe.isTight
-        # print 'isTight : ',isTight
+        if not isRightProbe and lepton=='el':
+            tag, probe = probe, tag # if we are  picking emu instead of mue
+            isRightProbe = probe.isEl if lepton=='el' else False
+
+        tagIsTight = onthefly_tight_def(tag) if onthefly_tight_def else tag.isTight
+        isTight = onthefly_tight_def(probe) if onthefly_tight_def else probe.isTight # todo: rename to probeIsTight
         probeSource = probe.source
         isReal = probeSource==sourceReal and not isData
         isFake = not isReal and not isData
@@ -236,53 +257,67 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
         mt1 = computeMt(probe4m, met4m)
         pt0 = tag4m.Pt()
         pt1 = probe4m.Pt()
-        isLowMt = mt1 < 40.0 if region=='hflf' else True # used to reduce the contamination from real (mostly W+jets)
-        isMuMu = tag.isMu and probe.isMu
         passTrigBias =  True
-        # probeIsFromPv = fakeu.lepIsFromPv(probe)
         if   isHflf       : passTrigBias = pt0>20.0 and pt1>20.0
         elif isConversion : passTrigBias = pt1>20.0
-        if tag.isMu and isRightProbe and isSameSign : # test 1 : no jet req
-        # if tag.isMu and isRightProbe and isSameSign and tag4m.Pt()>40.0 : # test 1a : harder tag
-        # if tag.isMu and isRightProbe and isSameSign and not hasBjets: # test 2 : veto b-jets
-        # if tag.isMu and isRightProbe and isSameSign and not hasJets: # test 3 : require no jets (cl30, bj, fj)
-        # if tag.isMu and isRightProbe and isSameSign and not hasJ30jets: # test 4 : require no jets (cl30, bj, fj)
-        # if tag.isMu and isRightProbe and isSameSign and not hasJets and tag4m.Pt()>40.0: # test 4 : require no jets (cl30, bj, fj)
-        # --last test-- if tag.isMu and isRightProbe and isSameSign and hasTrigmatch: # test 5 : no jet req, trig match
-        # if tag.isMu and (isSameSign or isConversion) and isRightProbe and isLowMt and passTrigBias:
-        # if tag.isMu and isRightProbe and isSameSign and hasTrigmatch and tag4m.Pt()>40.0: # test 6 : try again pt>40
-        # if tag.isMu and isRightProbe and isSameSign and hasTrigmatch and tag4m.Pt()>40.0 and abs(tag4m.DeltaPhi(probe4m))>2.3: # test 7 pt and deltaPhi
-        # if tag.isMu and isRightProbe and isSameSign and hasTrigmatch and probeIsFromPv: # test 8 loose only drops iso
-        # if isMuMu and isRightProbe and isLowMt and passTrigBias: # test emu mumu
-        # if (isSameSign or isConversion) and isRightProbe and isLowMt: # test sf conversion (not very important for now, 2014-04)
-            def fillHistosBySource(probe):
-                leptonSource = enum2source(probe)
-                def fill(tightOrLoose):
-                    histosPerSource         ['mt1' ][leptonSource][tightOrLoose].Fill(mt1, weight)
-                    histosPerSource         ['pt1' ][leptonSource][tightOrLoose].Fill(pt,  weight)
-                    histosPerSource         ['eta1'][leptonSource][tightOrLoose].Fill(eta, weight)
-                    histosThisGroupPerSource['mt1' ][leptonSource][tightOrLoose].Fill(mt1, weight)
-                    histosThisGroupPerSource['pt1' ][leptonSource][tightOrLoose].Fill(pt,  weight)
-                    histosThisGroupPerSource['eta1'][leptonSource][tightOrLoose].Fill(eta, weight)
-                fill('loose')
-                if isTight : fill('tight')
-            sourceIsKnown = not isData
-            if sourceIsKnown : fillHistosBySource(probe)
-            nLoose, totWeightLoose = nLoose+1, totWeightLoose+weight
-            if isTight:
-                nTight, totWeightTight = nTight+1, totWeightTight+weight
-            histosThisGroup['mt0']['loose'].Fill(mt0, weight)
-            histosThisGroup['pt0']['loose'].Fill(pt0, weight)
-            histosThisGroup['mt1']['loose'].Fill(mt1, weight)
-            def fill(lepType=''):
-                histosThisGroup['pt1' ][lepType].Fill(pt, weight)
-                histosThisGroup['eta1'][lepType].Fill(eta, weight)
-            fill('loose')
-            if isTight : fill('tight')
-            if isReal : fill('real_loose')
-            if isFake : fill('fake_loose')
-            if isReal and isTight : fill('real_tight')
-            if isFake and isTight : fill('fake_tight')
+
+        is_mumu = tag.isMu and probe.isMu
+        is_same_sign = isSameSign
+        is_opp_sign = not is_same_sign
+        tag_is_mu = tag.isMu
+        tag_is_tight = tagIsTight
+        probe_is_tight = isTight
+        probe_is_mu = probe.isMu
+        probe_is_el = probe.isEl
+        l0_is_el, l0_is_mu = event.l0.isEl, event.l0.isMu
+        l1_is_el, l1_is_mu = event.l1.isEl, event.l1.isMu
+        is_ee   = l0_is_el and l1_is_el
+        is_emu  = l0_is_el and l1_is_mu
+        is_mue  = l0_is_mu and l1_is_el
+        is_mumu = l0_is_mu and l1_is_mu
+        m_ll = (tag4m+probe4m).M()
+        pass_sel = eval(sel_expr)
+        if pass_sel and not cut_is_cached : chain.add_entry_to_list(cut, iEvent)
+        # if tag.isMu and isRightProbe and isSameSign : # test 1 : no jet req
+        # if tag.isMu and tag.isTight and isRightProbe and isSameSign : # test 2 : reproduce counts from hlfv
+        def fillHistosBySource(probe):
+            leptonSource = enum2source(probe)
+            # if leptonSource=='Unknown':
+            #     print 'unknown lep from ',group.name,' pt ',pt,' eta ',eta,' file ',chain.GetCurrentFile().GetName()
+            def fillPerSource(tightOrLoose):
+                histosPerSource         ['mt1' ][leptonSource][tightOrLoose].Fill(mt1, weight)
+                histosPerSource         ['pt1' ][leptonSource][tightOrLoose].Fill(pt,  weight)
+                histosPerSource         ['eta1'][leptonSource][tightOrLoose].Fill(eta, weight)
+                histosThisGroupPerSource['mt1' ][leptonSource][tightOrLoose].Fill(mt1, weight)
+                histosThisGroupPerSource['pt1' ][leptonSource][tightOrLoose].Fill(pt,  weight)
+                histosThisGroupPerSource['eta1'][leptonSource][tightOrLoose].Fill(eta, weight)
+                histosThisGroupPerSource['pt1_eta1'][leptonSource][tightOrLoose].Fill(pt, eta, weight)
+            fillPerSource('loose')
+            if isTight :
+                fillPerSource('tight')
+        def fill(lepType=''):
+            histosThisGroup['mt0' ][lepType].Fill(mt0, weight)
+            histosThisGroup['pt0' ][lepType].Fill(pt0, weight)
+            histosThisGroup['mt1' ][lepType].Fill(mt1, weight)
+            histosThisGroup['pt1' ][lepType].Fill(pt, weight)
+            histosThisGroup['eta1'][lepType].Fill(eta, weight)
+            histosThisGroup['pt1_eta1'][lepType].Fill(pt, eta, weight)
+
+        sourceIsKnown = not isData
+        nLoose         += 1
+        totWeightLoose += weight
+        if isTight:
+            nTight         += 1
+            totWeightTight += weight
+
+        fill(lepType='loose')
+        if sourceIsKnown:
+            fillHistosBySource(probe)
+        if isTight            : fill(lepType='tight')
+        if isReal             : fill(lepType='real_loose')
+        if isFake             : fill(lepType='fake_loose')
+        if isReal and isTight : fill(lepType='real_tight')
+        if isFake and isTight : fill(lepType='fake_tight')
     if verbose:
         counterNames = ['nLoose', 'nTight', 'totWeightLoose', 'totWeightTight']
         print ', '.join(["%s : %.1f"%(c, eval(c)) for c in counterNames])
@@ -305,6 +340,9 @@ def bookHistos(variables, samples, leptonTypes=leptonTypes, region='') :
         elif v=='pt0'     : h = r.TH1F(hname, ';p_{T,l0} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif v=='pt1'     : h = r.TH1F(hname, ';p_{T,l1} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif v=='eta1'    : h = r.TH1F(hname, ';#eta_{l1}; entries/bin',        len(etaBinEdges)-1, etaBinEdges)
+        elif v=='pt1_eta1': h = r.TH2F(hname, ';p_{T} [GeV]; #eta',
+                                       len(ptBinEdges)-1,  ptBinEdges,
+                                       len(etaBinEdges)-1, etaBinEdges)
         else : print "unknown variable %s"%v
         h.SetDirectory(0)
         h.Sumw2()
@@ -328,6 +366,9 @@ def bookHistosPerSource(variables, sources, region=''):
         elif variable=='pt0'     : h = r.TH1F(hname, ';p_{T,l0} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='pt1'     : h = r.TH1F(hname, ';p_{T,l1} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='eta1'    : h = r.TH1F(hname, ';#eta_{l1}; entries/bin',        len(etaBinEdges)-1, etaBinEdges)
+        elif v=='pt1_eta1': h = r.TH2F(hname, ';p_{T} [GeV]; #eta',
+                                       len(ptBinEdges)-1,  ptBinEdges,
+                                       len(etaBinEdges)-1, etaBinEdges)
         else : print "unknown variable %s"%v
         h.SetDirectory(0)
         h.Sumw2()
@@ -352,6 +393,9 @@ def bookHistosPerSamplePerSource(variables, samples, sources, region=''):
         elif variable=='pt0'     : h = r.TH1F(hname, ';p_{T,l0} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='pt1'     : h = r.TH1F(hname, ';p_{T,l1} [GeV]; entries/bin',   len(ptBinEdges)-1,  ptBinEdges)
         elif variable=='eta1'    : h = r.TH1F(hname, ';#eta_{l1}; entries/bin',        len(etaBinEdges)-1, etaBinEdges)
+        elif v=='pt1_eta1': h = r.TH2F(hname, ';p_{T} [GeV]; #eta',
+                                       len(ptBinEdges)-1,  ptBinEdges,
+                                       len(etaBinEdges)-1, etaBinEdges)
         else : print "unknown variable %s"%v
         h.SetDirectory(0)
         h.Sumw2()
@@ -397,7 +441,7 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
             if verbose : print "skip %s, missing histos for %s"%(histoname, str(missingGroups))
             continue
         bkgHistos = dict([(g, h) for g, h in histosPerGroup.iteritems() if g not in ['data', 'signal']])
-        totBkg = systUtils.buildTotBackgroundHisto(histosSimBkgs=bkgHistos)
+        totBkg = summedHisto(bkgHistos.values())
         err_band = None # buildErrBandGraph(totBkg, computeStatErr2(totBkg))
         emptyBkg = totBkg.Integral()==0
         if emptyBkg:
@@ -423,7 +467,8 @@ def plotStackedHistos(histosPerGroup={}, outputDir='', region='', verbose=False)
         if data and data.GetEntries():
             data.SetMarkerStyle(r.kFullDotLarge)
             data.Draw('p same')
-        yMin, yMax = getMinMax([h for h in [totBkg, data, err_band] if h])
+        # yMin, yMax = getMinMax([h for h in [totBkg, data, err_band] if h]) # fixme with err_band
+        yMin, yMax = 0.0, data.GetMaximum()
         pm.SetMinimum(0.0)
         pm.SetMaximum(1.1*yMax)
         can.Update()
@@ -547,19 +592,19 @@ def plotPerSourceEff(histosPerVar={}, outputDir='', lepton='', region='', sample
         can.SaveAs(outFname)
 
 def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohistoname='',outDataeffhistoname='',
-                                      outputDir='./', region='', verbose=False):
+                                      outputDir='./', region='', subtractReal=True, verbose=False):
     "efficiency scale factor"
     groups = histosPerGroup.keys()
-    bkg_groups = [g for g in groups if g not in ['signal']]
-    print 'subtractRealAndComputeScaleFactor: bkgs ',bkg_groups
     mkdirIfNeeded(outputDir)
     histosPerType = dict([(lt,
                            dict([(g,
                                   histosPerGroup[g][variable][lt])
-                                 for g in bkg_groups]))
+                                 for g in groups]))
                           for lt in leptonTypes])
     for lt in leptonTypes :
-        histosPerType[lt]['totSimBkg'] = summedHisto([histo for group,histo in histosPerType[lt].iteritems()])
+        histosPerType[lt]['totSimBkg'] = summedHisto([histo for group,histo in histosPerType[lt].iteritems()
+                                                      if group not in ['data', 'signal']])
+
     simuTight = histosPerType['fake_tight']['totSimBkg']
     simuLoose = histosPerType['fake_loose']['totSimBkg']
     dataTight = histosPerType['tight'     ]['data'     ]
@@ -569,17 +614,25 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     # the past also used iterative corr, which might be more
     # appropriate in cases like here, where the normalization is
     # so-so.  Todo: investigate the normalization.
-    dataTight.Add(histosPerType['real_tight']['totSimBkg'], -1.0)
-    dataLoose.Add(histosPerType['real_loose']['totSimBkg'], -1.0)
-    dataTight.Divide(dataLoose)
-    simuTight.Divide(simuLoose)
+    dataSubTight = dataTight.Clone(dataTight.GetName().replace('data_tight','data_minus_prompt_tight'))
+    dataSubLoose = dataLoose.Clone(dataLoose.GetName().replace('data_loose','data_minus_prompt_loose'))
+    dataSubTight.SetDirectory(0)
+    dataSubLoose.SetDirectory(0)
+    dataSubTight.Add(histosPerType['real_tight']['totSimBkg'], -1.0 if subtractReal else 0.0)
+    dataSubLoose.Add(histosPerType['real_loose']['totSimBkg'], -1.0 if subtractReal else 0.0)
+    effData = dataSubTight.Clone(outDataeffhistoname)
+    effData.SetDirectory(0)
+    effData.Divide(dataSubLoose)
+    effSimu = simuTight.Clone(simuTight.GetName().replace('fake_tight','fake_eff'))
+    effSimu.SetDirectory(0)
+    effSimu.Divide(simuLoose)
     print "eff(T|L) vs. ",variable
     def formatFloat(floats): return ["%.4f"%f for f in floats]
-    print "efficiency data : ",formatFloat(getBinContents(dataTight))
-    print "efficiency simu : ",formatFloat(getBinContents(simuTight))
-    ratio = dataTight.Clone(outRatiohistoname)
+    print "efficiency data : ",formatFloat(getBinContents(effData))
+    print "efficiency simu : ",formatFloat(getBinContents(effSimu))
+    ratio = effData.Clone(outRatiohistoname)
     ratio.SetDirectory(0)
-    ratio.Divide(simuTight)
+    ratio.Divide(effSimu)
     print "sf    data/simu : ",formatFloat(getBinContents(ratio))
     print "            +/- : ",formatFloat(getBinErrors(ratio))
     can = r.TCanvas('c_'+outRatiohistoname, outRatiohistoname, 800, 600)
@@ -587,7 +640,7 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     can.cd()
     topPad.Draw()
     topPad.cd()
-    pm = dataTight
+    pm = effData
     pm.SetStats(0)
     pm.Draw('axis')
     xAx, yAx = pm.GetXaxis(), pm.GetYaxis()
@@ -599,12 +652,12 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     yAx.SetTitleSize(textScaleUp*0.04)
     yAx.SetTitle('#epsilon(T|L)')
     yAx.SetTitleOffset(yAx.GetTitleOffset()/textScaleUp)
-    simuTight.SetLineColor(r.kRed)
-    simuTight.SetMarkerStyle(r.kOpenCross)
-    simuTight.SetMarkerColor(simuTight.GetLineColor())
-    dataTight.Draw('same')
-    simuTight.Draw('same')
-    leg = drawLegendWithDictKeys(topPad, {'data':dataTight, 'simulation':simuTight}, legWidth=0.4)
+    effSimu.SetLineColor(r.kRed)
+    effSimu.SetMarkerStyle(r.kOpenCross)
+    effSimu.SetMarkerColor(effSimu.GetLineColor())
+    effData.Draw('same')
+    effSimu.Draw('same')
+    leg = drawLegendWithDictKeys(topPad, {'data':effData, 'simulation':simuTight}, legWidth=0.4)
     leg.SetHeader('scale factor '+region+' '+('electron' if '_el_'in outRatiohistoname else
                                               'muon' if '_mu_' in outRatiohistoname else ''))
     can.cd()
@@ -615,7 +668,7 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     textScaleUp = 1.0/botPad.GetHNDC()
     xAx, yAx = ratio.GetXaxis(), ratio.GetYaxis()
     yAx.SetRangeUser(0.0, 2.0)
-    xAx.SetTitle({'pt1':'p_{T}', 'eta1':'|#eta|'}[variable])
+    xAx.SetTitle({'pt1':'p_{T}', 'eta1':'|#eta|', 'pt1_eta1':'p_{T}'}[variable])
     yAx.SetNdivisions(-202)
     yAx.SetTitle('Data/Sim')
     yAx.CenterTitle()
@@ -630,10 +683,11 @@ def subtractRealAndComputeScaleFactor(histosPerGroup={}, variable='', outRatiohi
     for ext in ['.eps','.png']:
         utils.rmIfExists(outFname+ext)
         can.SaveAs(outFname+ext)
-    eff_data = dataTight.Clone(outDataeffhistoname)
-    return {outRatiohistoname : ratio, outDataeffhistoname : eff_data}
-
-
+    return {outRatiohistoname : ratio,
+            outDataeffhistoname : effData,
+            outDataeffhistoname.replace('_fake_rate_data_', '_tight_data_minus_prompt') : dataSubTight,
+            outDataeffhistoname.replace('_fake_rate_data_', '_loose_data_minus_prompt') : dataSubLoose
+            }
 
 if __name__=='__main__':
     main()

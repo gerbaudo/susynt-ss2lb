@@ -53,7 +53,13 @@ Example usage:
  --output-dir ./out/fakerate/el_sf_${TAG}
  >& log/fakerate/el_sf_${TAG}.log
 
- TODO
+In this script we rely almost completely on the selection string.
+
+The only additional criteria being applied are that the leading lepton
+is tight. The subleading lepton is loose, unless the --tight-tight
+option is specified.
+
+
 """
 
 
@@ -63,24 +69,25 @@ def main():
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-g', '--group', help='group to be processed (used only in fill mode)')
     parser.add_option('-i', '--input-dir', default='./out/fakerate')
-    parser.add_option('-o', '--output-dir', default='./out/tight_variables_plots', help='dir for plots')
     parser.add_option('-l', '--lepton', default='el', help='either el or mu')
+    parser.add_option('-o', '--output-dir', default='./out/plot_by_source', help='dir for plots')
     parser.add_option('--log-dir', help='directory where the batch logs will be (default log/...)')
     parser.add_option('--samples-dir', default='samples/', help='directory with the list of samples; default ./samples/')
     parser.add_option('-f', '--fill-histos', action='store_true', default=False, help='force fill (default only if needed)')
     parser.add_option('-q', '--queue', default='atlas_all', help="batch queue, default atlas_all")
     parser.add_option('--regions', default=None, help='comma-separated list of regions to consider')
-    parser.add_option('--include-regions', default='.*', help='regexp to filter regions')
+    parser.add_option('--include-regions', default='.*', help='regexp to filter regions (protect with quotes if necessary)')
     parser.add_option('--exclude-regions', default=None, help='regext to exclude regions')
     # reminder: submit_batch_fill_job_per_group expects argument-less opt to default to False
     parser.add_option('--debug', action='store_true')
     parser.add_option('--verbose', action='store_true')
     parser.add_option('-b', '--batch',  action='store_true', help='submit to batch (used in fill mode)')
     parser.add_option('--list-all-regions', action='store_true', help='list all possible regions')
-    parser.add_option('--require-tight-tight', action='store_true', help='fill histos only when both leps are tight')
+    parser.add_option('--tight-tight', action='store_true', help='fill histos only when both leps are tight')
     parser.add_option('--quick-test', action='store_true', help='run a quick test and fill only 1% of the events')
     parser.add_option('--disable-cache', action='store_true', help='disable the entry cache')
     parser.add_option('--skip-fill', action='store_true', help='do not fill histograms (use existing ones)')
+    parser.add_option('--just-fill', action='store_true', help='do not plot')
 
     (opts, args) = parser.parse_args()
     inputDir  = opts.input_dir
@@ -212,6 +219,7 @@ def runPlot(opts):
             for s in leptonSources:
                 histos[s] = summedHisto(histos=[all_histos[g][v][s] for g in groups_to_stack],
                                         label='')
+            histos['data'] = all_histos['data'][v]['Unknown']
             plotStackedHistos(histos=histos, datakey='data', stackkeys=leptonSources,
                               outputDir=outputDir+'/'+region, region=region,
                               colors=fakeu.colorsFillSources(), verbose=verbose)
@@ -258,9 +266,12 @@ def submit_batch_fill_job_per_group(group, opts):
     options_with_value = dict((k,v) for k,v in options_dict.iteritems() if v and v is not True)
     # note to self: the line below assumes that the argument-less options have a default=False
     options_with_toggle = dict((k,v) for k,v in options_dict.iteritems() if v and v is True and k!="batch")
-    cmd_line_options = ' '.join(["--%s %s"%(k.replace('_','-'), str(v))
+    def escape_regex(v) : return v if v!='.*' else "'.*'"
+    def back_to_dash(v) : return v.replace('_','-')
+    cmd_line_options = ' '.join(["--%s %s"%(back_to_dash(k), escape_regex(str(v)))
                                  for k,v in options_with_value.iteritems()]
-                                +["--%s"%k for k in options_with_toggle.keys()])
+                                +["--%s"%back_to_dash(k) for k in options_with_toggle.keys()]
+                                +['--just-fill'])
     template = 'batch/templates/plot_by_source.sh'
     default_log_dir = opts.output_dir.replace('out/', 'log/')
     if default_log_dir.count('/histos')==1:
@@ -297,6 +308,7 @@ def count_and_fill(chain,  opts, group=dataset.DatasetGroup('foo'),
     selections = [c.GetName() for c in cuts]
     counters = dict((sel, 0) for sel in selections)
     quicktest = opts.quick_test
+    tightight = opts.tight_tight
     verbose = opts.verbose
 
     histos = book_histograms(sample_name=group.name, variables=variables_to_fill(),
@@ -305,9 +317,10 @@ def count_and_fill(chain,  opts, group=dataset.DatasetGroup('foo'),
     start_time = time.clock()
     num_total_entries = chain.GetEntries()
     num_processed_entries = 0
-    print 'todo: select right lepton'
     for iEntry, event in enumerate(chain):
         if quicktest and 100*iEntry > num_total_entries: break
+        if not event.l0.isTight: continue # in the sel string
+        if tightight and not event.l1.isTight: continue
         run_num = event.pars.runNumber
         evt_num = event.pars.eventNumber
         l0 = addTlv(event.l0)
@@ -401,10 +414,13 @@ def plotStackedHistos(histos={}, datakey=None, stackkeys=[], outputDir='', regio
     if data and data.GetEntries():
         data.SetMarkerStyle(r.kFullDotLarge)
         data.Draw('p same')
+        if verbose:
+            print "data : nEntries {:.1f} totWeight {:.1f} ".format(data.GetEntries(), data.Integral())
     yMin, yMax = getMinMax([h for h in [tot_bkg, data, err_band] if h])
-    pm.SetMinimum(0.0)
+    # pm.SetMinimum(0.5)
     pm.SetMaximum(1.1*yMax)
     can.Update()
+    # can.SetLogy()
     topRightLabel(can, "#splitline{%s}{%s}"%(histoname, region), xpos=0.125, align=13)
     drawLegendWithDictKeys(can, dictSum(bkg_histos, {'stat err':err_band}), opt='f')
     can.RedrawAxis()
