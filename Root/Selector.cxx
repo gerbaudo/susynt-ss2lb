@@ -44,7 +44,7 @@ Selector::Selector() :
   m_outTupleFile(""),
   m_saveBaselineNonPrompt(false)
 {
-  setAnaType(Ana_2Lep);
+  setAnaType(Ana_2LepWH);
   setSelectTaus(true);
 }
 //-----------------------------------------

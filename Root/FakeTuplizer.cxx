@@ -16,7 +16,7 @@ using hlfv::DileptonVariables;
 FakeTuplizer::FakeTuplizer() :
     m_tupleMakerEmu("", "")
 {
-  setAnaType(Ana_2Lep);
+  setAnaType(Ana_2LepWH);
   setSelectTaus(true);
 }
 //-----------------------------------------
