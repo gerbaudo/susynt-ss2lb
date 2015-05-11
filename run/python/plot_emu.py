@@ -83,6 +83,7 @@ Example usage ('plot' mode):
 def main() :
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-g', '--group', help='group to be processed (used only in fill mode)')
+    parser.add_option('--exclude-group', help='exclude group from processing (used only in fill mode)')
     parser.add_option('-f', '--input-fake', help='location of fake trees')
     parser.add_option('-O', '--input-other', help='location other trees')
     parser.add_option('-i', '--input-dir')
@@ -152,6 +153,7 @@ def runFill(opts) :
     if not skip_charge_flip : groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
     if opts.group : groups = [g for g in groups if g.name==opts.group]
+    if opts.exclude_group : groups = [g for g in groups if g.name!=opts.group]
     if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
     if debug :
         print '\n'.join("group {0} : {1} samples: {2}".format(g.name,
