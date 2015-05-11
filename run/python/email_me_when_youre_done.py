@@ -18,6 +18,7 @@ def main() :
     parser.add_option('--polleverysec', default=60*5, type='int')
     parser.add_option('--subject',      default='jobs done from `pwd`')
     parser.add_option('--user',         default=os.environ['USER'])
+    parser.add_option('--exec-cmd', help='on completion, execute this command')
     (opts, args) = parser.parse_args() 
     receiver  = opts.to_address
     username  = opts.user
@@ -41,6 +42,11 @@ def main() :
                % {'dest' : receiver, 'msg' : message, 'sbj':subject})
     print mailCmd
     getCommandOutput(mailCmd)
+    if opts.exec_cmd:
+        print "now executing {}".format(opts.exec_cmd)
+        out = getCommandOutput(opts.exec_cmd)
+        print out['stdout']
+        print out['stderr']
 
 if __name__=='__main__' :
     main()
