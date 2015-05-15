@@ -129,6 +129,7 @@ def getMinMax(histosOrGraphs=[]) :
     ms, Ms = verticalSlice([mM(o) for o in histosOrGraphs if o])
     return min(ms), max(Ms)
 def buildRatioHistogram(num, den, name='', divide_opt='B') :
+    "Given two histograms, provide one that is the bin-by-bin ratio"
     ratio = num.Clone(name if name else num.GetName()+'_over_'+den.GetName())
     ratio.SetDirectory(0) # we usually don't care about the ownership of these temporary objects
     ratio.Reset()

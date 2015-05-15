@@ -748,19 +748,21 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     can.cd()
     botPad.Draw()
     botPad.cd()
-    ratio = buildRatioHistogram(histoData, histoTotBkg)
+    ratio = systUtils.buildAsymmRatioGraph(dataGraph, totErrBand)
+    ratioPadMaster = padMaster.Clone(padMaster.GetName()+'_ratio')
+    ratioPadMaster.Clear()
     yMin, yMax = 0.0, 2.0
-    ratio.SetMinimum(yMin)
-    ratio.SetMaximum(yMax)
-    ratio.SetStats(0)
-    ratio.Draw('axis')
-    x_lo, x_hi = getXrange(ratio)
+    ratioPadMaster.SetMinimum(yMin)
+    ratioPadMaster.SetMaximum(yMax)
+    ratioPadMaster.SetStats(0)
+    ratioPadMaster.Draw('axis')
+    x_lo, x_hi = getXrange(ratioPadMaster)
     refLines = [referenceLine(x_lo, x_hi, y, y) for y in [0.5, 1.0, 1.5]]
     for l in refLines : l.Draw()
     err_band_r = systUtils.buildErrBandRatioGraph(totErrBand)
     err_band_r.Draw('E2 same')
-    ratio.Draw('ep same')
-    xA, yA = ratio.GetXaxis(), ratio.GetYaxis()
+    ratio.Draw('ep')
+    xA, yA = ratioPadMaster.GetXaxis(), ratioPadMaster.GetYaxis()
     textScaleUp = 0.75*1.0/botPad.GetHNDC()
     # if xaxis_title : xA.SetTitle(xaxis_title)
     yA.SetNdivisions(-104)
@@ -772,7 +774,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     for a in [xA, yA] :
         a.SetLabelSize(a.GetLabelSize()*textScaleUp)
         a.SetTitleSize(a.GetTitleSize()*textScaleUp)
-    botPad._graphical_objects = [ratio, err_band_r] + refLines # avoid garbage collection
+    botPad._graphical_objects = [ratio, ratioPadMaster, err_band_r] + refLines # avoid garbage collection
     botPad.Update()
     can.Update()
     for ext in ['png','eps'] : can.SaveAs(outdir+'/'+can.GetName()+'.'+ext)

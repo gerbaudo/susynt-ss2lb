@@ -158,6 +158,53 @@ def buildErrBandRatioGraph(errband_graph) :
         gr.SetPointEYlow (p, ey_lo)
         gr.SetPointEYhigh(p, ey_hi)
     return gr
+
+def buildAsymmRatioGraph(num_data, den_reference, name='') :
+    """
+    Given two TGraphAsymmErrors, provide one that is the bin-by-bin ratio.
+
+    This function is meant to be used when the errors on the input
+    histograms are asymmetric (e.g. poisson errors from
+    graphWithPoissonError). The main case is for the data points in
+    the bottom pad showing the ratio observed/expected.
+
+    For symmetric errors, prefer rootUtils.buildRatioHistogram().
+
+    Note to self: I assume that the denominator is the 'reference'
+    (i.e. expected total background) that will be represented as an
+    error band centered around 1. Therefore, this function takes into
+    account only the error on the numerator.
+    """
+    num, den = num_data, den_reference
+    valid_p_num   = [i for i in range(num.GetN())]
+    nonzero_p_den = [i for i in range(den.GetN()) if den.GetX()[i]]
+    valid_x_num   = [num.GetX()[i] for i in valid_p_num]
+    nonzero_x_den = [den.GetX()[i] for i in nonzero_p_den]
+    common_x = sorted(list(set(valid_x_num).intersection(nonzero_x_den)))
+    points_num = [i for i,x in zip(valid_p_num, valid_x_num) if x in common_x]
+    points_den = [i for i,x in zip(nonzero_p_den, nonzero_x_den) if x in common_x]
+    assert len(points_num)==len(points_den),("num and den: unmatched number of points: num[{}]!=den[{}], {}{}"
+                                             .format(len(points_num), len(points_den), num.GetName(), den.GetName()))
+    gr = num.Clone()
+    gr.SetName("{}_over_{}".format(num.GetName(), den.GetName()))
+    [gr.RemovePoint(i) for i in range(gr.GetN())] # keep the formatting, then add only the points we want
+    xs     = np.array([num.GetX()[i] for i in points_num])
+    ys     = np.array([num.GetY()[i] for i in points_num])
+    ys_ref = np.array([den.GetY()[i] for i in points_den])
+    eys_lo = np.array([abs(num.GetErrorYlow (i)) for i in points_num])
+    eys_hi = np.array([abs(num.GetErrorYhigh(i)) for i in points_num])
+    ys_lo  = ys - eys_lo
+    ys_hi  = ys + eys_hi
+    for x, y, y_lo, y_hi, y_ref in zip(xs, ys, ys_lo, ys_hi, ys_ref):
+        p = gr.GetN()
+        central = y/y_ref
+        ey_lo = abs(y_lo/y_ref - central)
+        ey_hi = abs(y_hi/y_ref - central)
+        gr.SetPoint      (p, x, central) # TGraph does not have a SetPointY, so we need to set both x and y
+        gr.SetPointEYlow (p, ey_lo)
+        gr.SetPointEYhigh(p, ey_hi)
+    return gr
+
 def setHistErrFromErrBand(h, errband_graph):
     "given an histogram and a graph, set the error of the hist to the error from the graph"
     assert h.GetNbinsX()==errband_graph.GetN()
