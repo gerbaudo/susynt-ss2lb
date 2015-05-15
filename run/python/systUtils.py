@@ -37,10 +37,10 @@ def fakeSystWeightLeaves() :
             'EL_FR_DOWN': branch+'fakeMuRealDo',
             'MU_FR_UP'  : branch+'fakeMuFakeUp',
             'MU_FR_DOWN': branch+'fakeMuFakeDo',
-            # 'EL_FRAC_DO': '',
-            # 'EL_FRAC_UP': '',
-            # 'MU_FRAC_DO': '',
-            # 'MU_FRAC_UP': ''
+            'EL_FRAC_DO': branch+'fakeElFracDo',
+            'EL_FRAC_UP': branch+'fakeElFracUp',
+            'MU_FRAC_DO': branch+'fakeMuFracDo',
+            'MU_FRAC_UP': branch+'fakeMuFracUp'
             }
 def fakeSystVariations() :
     return fakeSystWeightLeaves().keys()
