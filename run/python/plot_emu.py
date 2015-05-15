@@ -439,12 +439,6 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
         d_pt0_pt1 = l0_pt - l1_pt
         l0_eta, l1_eta = l0.p4.Eta(), l1.p4.Eta()
         l0_phi, l1_phi = l0.p4.Phi(), l1.p4.Phi()
-        l0_d0Sig, l1_d0Sig = l0.d0Signif, l1.d0Signif
-        l0_z0Sin, l1_z0Sin = l0.z0SinTheta, l1.z0SinTheta
-        l0_etCone, l1_etCone = l0.etCone, l1.etCone
-        l0_ptCone, l1_ptCone = l0.ptCone, l1.ptCone
-        l0_etConeCorr, l1_etConeCorr = l0.etConeCorr, l1.etConeCorr
-        l0_ptConeCorr, l1_ptConeCorr = l0.ptConeCorr, l1.ptConeCorr
         met_pt = met.p4.Pt()
         m_ll = (l0.p4 + l1.p4).M()
         pt_ll = (l0.p4 + l1.p4).Pt()
@@ -520,18 +514,6 @@ def count_and_fill(chain, sample='', syst='', verbose=False, debug=False, blinde
             h['met'      ].Fill(met_pt, fill_weight)
             h['dphil0met'].Fill(dphi_l0_met, fill_weight)
             h['dphil1met'].Fill(dphi_l1_met, fill_weight)
-            h['l0_d0Sig'     ].Fill(l0_d0Sig,      fill_weight)
-            h['l1_d0Sig'     ].Fill(l1_d0Sig,      fill_weight)
-            h['l0_z0Sin'     ].Fill(l0_z0Sin,      fill_weight)
-            h['l1_z0Sin'     ].Fill(l1_z0Sin,      fill_weight)
-            h['l0_etCone'    ].Fill(l0_etCone,     fill_weight)
-            h['l1_etCone'    ].Fill(l1_etCone,     fill_weight)
-            h['l0_ptCone'    ].Fill(l0_ptCone,     fill_weight)
-            h['l1_ptCone'    ].Fill(l1_ptCone,     fill_weight)
-            h['l0_etConeCorr'].Fill(l0_etConeCorr, fill_weight)
-            h['l1_etConeCorr'].Fill(l1_etConeCorr, fill_weight)
-            h['l0_ptConeCorr'].Fill(l0_ptConeCorr, fill_weight)
-            h['l1_ptConeCorr'].Fill(l1_ptConeCorr, fill_weight)
             h['nsj'          ].Fill(n_soft_jets,   fill_weight)
             h['pt0_vs_pt1'      ].Fill(l1_pt, l0_pt,       fill_weight)
             h['met_vs_pt1'      ].Fill(l1_pt, met.p4.Pt(), fill_weight)
@@ -637,8 +619,6 @@ def variables_to_plot():
             'mll', 'ptll', 'met', 'dphil0met', 'dphil1met',
             'drl0csj', 'drl1csj', 'deta_jj', 'm_jj',
             'nsj',
-            'l0_d0Sig', 'l0_z0Sin', 'l0_etCone', 'l0_ptCone', 'l0_etConeCorr', 'l0_ptConeCorr',
-            'l1_d0Sig', 'l1_z0Sin', 'l1_etCone', 'l1_ptCone', 'l1_etConeCorr', 'l1_ptConeCorr',
             ]
 def variables_to_fill():
     "do not plot 2d variables, but still fill the corresponding histograms"
