@@ -730,6 +730,7 @@ def plotHistos(histoData=None, histoSignal=None, histoTotBkg=None, histosBkg={},
     botPad.cd()
     ratio = systUtils.buildAsymmRatioGraph(dataGraph, totErrBand)
     ratioPadMaster = padMaster.Clone(padMaster.GetName()+'_ratio')
+    ratioPadMaster.SetDirectory(0)
     ratioPadMaster.Clear()
     yMin, yMax = 0.0, 2.0
     ratioPadMaster.SetMinimum(yMin)
