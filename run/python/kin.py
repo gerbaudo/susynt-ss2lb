@@ -166,10 +166,6 @@ def selection_formulas():
     # dbg low pt
     formulas['sr_mue_os_low_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt<15.0')
     formulas['sr_mue_os_hi_pt1_15'] = (formulas['sr_mue_os']+' and l1_pt>15.0')
-
-    formulas['sr_emu_ss_jets'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
-    formulas['sr_mue_ss_jets'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
-
     formulas['sr_emu_os_vbf'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     formulas['sr_mue_os_vbf'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     formulas['sr_emu_ss_vbf'] = (formulas['sr_emu_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
@@ -196,8 +192,18 @@ def selection_formulas():
     formulas['cr_ttbar_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_crttbar)
     formulas['cr_ttbar_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_crttbar)
 
-    formulas['sr_emu_os_jets'] = (formulas['sr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
-    formulas['sr_mue_os_jets'] = (formulas['sr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
+    common_req_sr_jets = ('is_opp_sign'+
+                          ' and l0_pt>35.0 and l1_pt>12.0'+
+                          ' and n_jets>0 and n_bf_jets==0'+
+                          ' and dphi_l1_met<0.5'+
+                          ' and dphi_l0_l1>1.0 '+
+                          ' and dphi_l0_met>1.0'+
+                          ' and (l0_pt-l1_pt)>1.0')
+    formulas['sr_emu_os_jets'] = ('is_emu and '+common_req_sr_jets)
+    formulas['sr_mue_os_jets'] = ('is_mue and '+common_req_sr_jets) # todo: update also cr*jets, vr*jets
+    formulas['sr_emu_ss_jets'] = formulas['sr_emu_os_jets'].replace('is_opp_sign', 'is_same_sign')
+    formulas['sr_mue_ss_jets'] = formulas['sr_mue_os_jets'].replace('is_opp_sign', 'is_same_sign')
+
     formulas['cr_mue_os_jets'] = (formulas['cr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
     formulas['cr_emu_os_jets'] = (formulas['cr_emu_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
     formulas['vr_mue_os_jets'] = (formulas['vr_mue_os'].replace('n_jets==0', 'n_jets>0')+' and n_bf_jets==0')
