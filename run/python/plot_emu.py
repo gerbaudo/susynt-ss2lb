@@ -186,7 +186,7 @@ def runFill(opts) :
                 chain = IndexedChain(tree_name)
                 input_dir = opts.input_fake if group.name=='fake' else opts.input_other
                 for ds in group.datasets:
-                    chain.Add(os.path.join(input_dir, ds.name+'.root'))
+                    chain.Add(os.path.join(input_dir, systUtils.Sample(ds.name, group.name).setSyst(systematic).filename))
                 if opts.verbose:
                     print "{0} : {1} entries from {2} samples".format(group.name,
                                                                       chain.GetEntries(),

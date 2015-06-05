@@ -47,18 +47,19 @@ def fakeSystVariations() :
 
 def mcObjectVariations() :
     "See definitions in SusyDefs.h:SusyNtSystNames, and active list in SusyPlotter::toggleStdSystematics()"
-    return ['EES_Z_UP', 'EES_Z_DN',
-            'EES_MAT_UP','EES_MAT_DN',
-            'EES_PS_UP', 'EES_PS_DN',
-            'EES_LOW_UP', 'EES_LOW_DN',
-            'EER_UP', 'EER_DN',
-            'MS_UP', 'MS_DN',
-            'ID_UP', 'ID_DN',
-            'JES_UP', 'JES_DN',
+    return ['EERDOWN', 'EERUP',
+            'EESLOWDOWN', 'EESLOWUP',
+            'EESMATDOWN', 'EESMATUP',
+            'EESPSDOWN', 'EESPSUP',
+            'EESZDOWN', 'EESZUP',
             'JER',
-            'SCALEST_UP', 'SCALEST_DN',
+            'JESDOWN', 'JESUP',
+            'MESDOWN', 'MESUP',
+            'MIDDOWN', 'MIDUP',
             'RESOST',
+            'SCALESTDOWN', 'SCALESTUP',
             ]
+
 def mcWeightLeaves() :
     """
     Leaves where the relative weight variations for weight systematics
@@ -329,6 +330,11 @@ class Sample(BaseSampleGroup) :
         super(Sample, self).__init__(name) # this is either the name (for data and fake) or the dsid (for mc)
         self.groupname = groupname
         self.setHftInputDir()
+    @property
+    def filename(self):
+        "filename for the ntuple holding the current syst (without directory)"
+        return (self.name+'.root' if not self.isObjSys else
+                self.name+'_'+self.syst+'.root')
     def setHftInputDir(self, dir='') :
         useDefaults = not dir
         defaultDir = 'out/fakepred' if self.isFake else 'out/susyplot'
