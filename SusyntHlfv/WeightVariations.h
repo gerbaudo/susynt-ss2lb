@@ -20,6 +20,7 @@ namespace hlfv
 
   struct WeightVariations {
     WeightVariations() { reset(); }
+    /// set everything to 1
     WeightVariations& reset() {
       qflipUp = qflipDo = 1.0;
       elTrigUp = elTrigDo = 1.0;
@@ -31,6 +32,7 @@ namespace hlfv
       lTagUp = lTagDo = 1.0;
       xsecUp = xsecDo = 1.0;
       mcgenUp = mcgenDo = 1.0;
+      pileupUp = pileupDo = 1.0;
       fakeElRealUp = fakeElRealDo = 1.0;
       fakeElFakeUp = fakeElFakeDo = 1.0;
       fakeMuRealUp = fakeMuRealDo = 1.0;
@@ -39,6 +41,29 @@ namespace hlfv
       fakeMuFracUp = fakeMuFracDo = 1.0;
       return *this;
     }
+    /// HistFitter wants 'up' above 1, 'do' below 1
+    WeightVariations& swapUpDoIfNecessary() {
+      struct SwapFunc{ double tmp_; void operator()(double &a, double &b) {tmp_=a; a=b; b=tmp_;} } swap;
+      if(qflipUp      < qflipDo     ) swap(qflipUp      , qflipDo     );
+      if(elTrigUp     < elTrigDo    ) swap(elTrigUp     , elTrigDo    );
+      if(muTrigUp     < muTrigDo    ) swap(muTrigUp     , muTrigDo    );
+      if(elEffUp      < elEffDo     ) swap(elEffUp      , elEffDo     );
+      if(muEffUp      < muEffDo     ) swap(muEffUp      , muEffDo     );
+      if(bTagUp       < bTagDo      ) swap(bTagUp       , bTagDo      );
+      if(cTagUp       < cTagDo      ) swap(cTagUp       , cTagDo      );
+      if(lTagUp       < lTagDo      ) swap(lTagUp       , lTagDo      );
+      if(xsecUp       < xsecDo      ) swap(xsecUp       , xsecDo      );
+      if(mcgenUp      < mcgenDo     ) swap(mcgenUp      , mcgenDo     );
+      if(pileupUp     < pileupDo    ) swap(pileupUp     , pileupDo    );
+      if(fakeElRealUp < fakeElRealDo) swap(fakeElRealUp , fakeElRealDo);
+      if(fakeElFakeUp < fakeElFakeDo) swap(fakeElFakeUp , fakeElFakeDo);
+      if(fakeMuRealUp < fakeMuRealDo) swap(fakeMuRealUp , fakeMuRealDo);
+      if(fakeMuFakeUp < fakeMuFakeDo) swap(fakeMuFakeUp , fakeMuFakeDo);
+      if(fakeElFracUp < fakeElFracDo) swap(fakeElFracUp , fakeElFracDo);
+      if(fakeMuFracUp < fakeMuFracDo) swap(fakeMuFracUp , fakeMuFracDo);
+      return *this;
+    }
+
     double qflipUp, qflipDo;
     double elTrigUp, elTrigDo;
     double muTrigUp, muTrigDo;
@@ -49,6 +74,7 @@ namespace hlfv
     double lTagUp, lTagDo;
     double xsecUp, xsecDo;
     double mcgenUp, mcgenDo;
+    double pileupUp, pileupDo;
     double fakeElRealUp, fakeElRealDo;
     double fakeElFakeUp, fakeElFakeDo;
     double fakeMuRealUp, fakeMuRealDo;
