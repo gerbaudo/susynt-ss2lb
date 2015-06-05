@@ -4,6 +4,7 @@
 #include "SusyntHlfv/DileptonVariables.h"
 #include "SusyntHlfv/LeptonTruthType.h"
 #include "SusyntHlfv/NtUtils.h"
+#include "SusyntHlfv/utils.h"
 
 // #include "SusyntHlfv/EventFlags.h"
 // #include "SusyntHlfv/criteria.h"
@@ -16,6 +17,7 @@
 
 #include "ChargeFlip/chargeFlip.h"
 
+#include "TString.h"
 #include "TSystem.h"
 #include "TVector2.h"
 
@@ -24,6 +26,7 @@
 #include <cmath> // isnan
 #include <cfloat> // FLT_MAX, FLT_MIN
 #include <iomanip> // setw, setprecision
+#include <iterator> // distance
 #include <sstream>      // std::ostringstream
 
 using namespace std;
@@ -55,15 +58,8 @@ void Selector::Begin(TTree* /*tree*/)
   SusyNtAna::Begin(0);
   initChargeFlipTool();
   initDilTrigLogic();
-  if(m_writeTuple) {
-      if(susy::utils::endswith(m_outTupleFile, ".root") &&
-         m_tupleMaker.init(m_outTupleFile, "hlfv_tuple"))
-          cout<<"initialized ntuple file "<<m_outTupleFile<<endl;
-      else {
-          cout<<"cannot initialize ntuple file '"<<m_outTupleFile<<"'"<<endl;
-          m_writeTuple = false;
-      }
-  }
+  initSystematicsList();
+  if(m_writeTuple) initTupleWriters();
 }
 //-----------------------------------------
 void Selector::Init(TTree* tree)
@@ -87,65 +83,72 @@ Bool_t Selector::Process(Long64_t entry)
     selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     removeForwardMuons(); // do this before computing the event flags (can affect the 2l test)
     EventFlags eventFlags = computeEventFlags();
-    if(m_saveBaselineNonPrompt)
-        eventFlags.eq2slep = eventFlags.eq2blep;
+    if(m_saveBaselineNonPrompt) eventFlags.eq2slep = eventFlags.eq2blep;
     if(incrementEventCounters(eventFlags, weightComponents)){
-        const Systematic::Value sys = Systematic::CENTRAL; // syst loop will go here
-        const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
-        const JetVector&  jets= m_signalJets2Lep;
-        const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
+        for(size_t iSys=0; iSys<m_systematicsToProcess.size(); ++iSys){
+            const Systematic::Value sys = m_systematicsToProcess[iSys];
+            bool isNominal = sys==Systematic::CENTRAL;
+            selectObjects(hlfv::sys2ntsys(sys), removeLepsFromIso, TauID_medium);
+            const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
+            const JetVector&  jets= m_signalJets2Lep;
+            const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
 #warning todo re-enable qflippable
-        if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
-            DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
-            assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
-            incrementObjectCounters(vars, weightComponents, m_counter);
-            incrementObjectSplitCounters(vars, weightComponents);
-            bool is_data(!nt.evt()->isMC), is_mc(!is_data);
-            bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
-            bool is_e_mu(eventIsEmu(l));
-            bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
-            bool is_qflippable = (is_mc && has_some_electron && eventIsOppositeSign(l));
-            bool is_same_sign(eventIsSameSign(l));
-            bool is_event_to_be_saved = (vars.numTaus==0 &&
-                                         (is_data || two_mc_prompt) &&
-                                         eventFlags.mllMin &&
-                                         vars.hasFiredTrig &&
-                                         vars.hasTrigMatch &&
-                                         abs(vars.eta0)<2.4 &&
-                                         abs(vars.eta1)<2.4 &&
-                                         (is_e_mu || is_same_sign || is_qflippable));
-            if(is_event_to_be_saved){
-                if(usingEventList() && !m_useExistingList) m_eventList.addEvent(entry);
-                if(m_writeTuple) {
-                    double weight(weightComponents.product());
-                    unsigned int run(nt.evt()->run), event(nt.evt()->event), nVtx(nt.evt()->nVtx);
-                    bool isMc = nt.evt()->isMC;
-                    const Lepton &l0 = *l[0];
-                    const Lepton &l1 = *l[1];
-                    LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
-                    LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
-                    bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
-                    bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
-                    WeightVariations wv = (m_computeSystematics ?
-                                           computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
-                                           WeightVariations());
-                    m_tupleMaker
-                        .setTriggerBits(nt.evt()->trigFlags)
-                        .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
-                        .setWeightVariations(wv)
-                        .setNumFjets(vars.numForwardJets)
-                        .setNumBjets(vars.numBtagJets)
-                        .setL0IsTight(l0IsTight).setL0Source(l0Source)
-                        .setL1IsTight(l1IsTight).setL1Source(l1Source)
-                        .setL0EtConeCorr(computeCorrectedEtCone(&l0))
-                        .setL0PtConeCorr(computeCorrectedPtCone(&l0))
-                        .setL1EtConeCorr(computeCorrectedEtCone(&l1))
-                        .setL1PtConeCorr(computeCorrectedPtCone(&l1))
-                        .fill(weight, run, event, l0, l1, *m_met, cljets);
-                } // m_writeTuple
-            } // is_event_to_be_saved
-        } // l.size()==2
+            if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
+                const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
+                DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
+                assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
+                if(isNominal){
+                    incrementObjectCounters(vars, weightComponents, m_counter);
+                    incrementObjectSplitCounters(vars, weightComponents);
+                }
+                bool is_data(!nt.evt()->isMC), is_mc(!is_data);
+                bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
+                bool is_e_mu(eventIsEmu(l));
+                bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
+                bool is_qflippable = (is_mc && has_some_electron && eventIsOppositeSign(l));
+                bool is_same_sign(eventIsSameSign(l));
+                bool is_event_to_be_saved = (vars.numTaus==0 &&
+                                             (is_data || two_mc_prompt) &&
+                                             eventFlags.mllMin &&
+                                             vars.hasFiredTrig &&
+                                             vars.hasTrigMatch &&
+                                             abs(vars.eta0)<2.4 &&
+                                             abs(vars.eta1)<2.4 &&
+                                             (is_e_mu || is_same_sign || is_qflippable));
+                if(is_event_to_be_saved){
+                    if(usingEventList() && isNominal && !m_useExistingList) m_eventList.addEvent(entry);
+                    if(m_writeTuple) {
+                        TupleMaker &tupleMaker = getTupleMaker(sys);
+                        double weight(weightComponents.product());
+                        unsigned int run(nt.evt()->run), event(nt.evt()->event), nVtx(nt.evt()->nVtx);
+                        bool isMc = nt.evt()->isMC;
+                        const Lepton &l0 = *l[0];
+                        const Lepton &l1 = *l[1];
+                        LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
+                        LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
+                        bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                        bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                        bool computeWeightVariations = (m_computeSystematics && sys==Systematic::CENTRAL);
+                        WeightVariations wv = (computeWeightVariations ?
+                                               computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
+                                               WeightVariations());
+                        tupleMaker
+                            .setTriggerBits(nt.evt()->trigFlags)
+                            .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
+                            .setWeightVariations(wv)
+                            .setNumFjets(vars.numForwardJets)
+                            .setNumBjets(vars.numBtagJets)
+                            .setL0IsTight(l0IsTight).setL0Source(l0Source)
+                            .setL1IsTight(l1IsTight).setL1Source(l1Source)
+                            .setL0EtConeCorr(computeCorrectedEtCone(&l0))
+                            .setL0PtConeCorr(computeCorrectedPtCone(&l0))
+                            .setL1EtConeCorr(computeCorrectedEtCone(&l1))
+                            .setL1PtConeCorr(computeCorrectedPtCone(&l1))
+                            .fill(weight, run, event, l0, l1, *m_met, cljets);
+                    } // m_writeTuple
+                } // is_event_to_be_saved
+            } // l.size()==2
+        } // for(iSys)
     } // passAllEventCriteria
     // m_debugThisEvent = susy::isEventInList(nt.evt()->event);
     return kTRUE;
@@ -153,7 +156,7 @@ Bool_t Selector::Process(Long64_t entry)
 //-----------------------------------------
 void Selector::Terminate()
 {
-    if(m_writeTuple) m_tupleMaker.close();
+    if(m_writeTuple) closeTupleWriters();
     SusyNtAna::Terminate();
     m_counter.printTableRaw     (cout);
     m_counter.printTableWeighted(cout);
@@ -217,6 +220,34 @@ bool Selector::initEventList(TTree *tree)
    return success;
 }
 //-----------------------------------------
+size_t Selector::initSystematicsList()
+{
+    m_systematicsToProcess.push_back(Systematic::CENTRAL);
+    if(m_computeSystematics){
+        m_systematicsToProcess.push_back(Systematic::EERUP      );
+        m_systematicsToProcess.push_back(Systematic::EERDOWN    );
+        m_systematicsToProcess.push_back(Systematic::EESZUP     );
+        m_systematicsToProcess.push_back(Systematic::EESZDOWN   );
+        m_systematicsToProcess.push_back(Systematic::EESLOWUP   );
+        m_systematicsToProcess.push_back(Systematic::EESLOWDOWN );
+        m_systematicsToProcess.push_back(Systematic::EESMATUP   );
+        m_systematicsToProcess.push_back(Systematic::EESMATDOWN );
+        m_systematicsToProcess.push_back(Systematic::EESPSUP    );
+        m_systematicsToProcess.push_back(Systematic::EESPSDOWN  );
+        m_systematicsToProcess.push_back(Systematic::MIDUP      );
+        m_systematicsToProcess.push_back(Systematic::MIDDOWN    );
+        m_systematicsToProcess.push_back(Systematic::JESUP      );
+        m_systematicsToProcess.push_back(Systematic::JESDOWN    );
+        m_systematicsToProcess.push_back(Systematic::JER        );
+        m_systematicsToProcess.push_back(Systematic::RESOST     );
+        m_systematicsToProcess.push_back(Systematic::MESUP      );
+        m_systematicsToProcess.push_back(Systematic::MESDOWN    );
+        m_systematicsToProcess.push_back(Systematic::SCALESTUP  );
+        m_systematicsToProcess.push_back(Systematic::SCALESTDOWN);
+    }
+    return m_systematicsToProcess.size();
+}
+//-----------------------------------------
 bool is_forward_muon(const Lepton *l)
 {
     const float max_mu_eta_trigger = 2.4;
@@ -251,36 +282,21 @@ bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
                                                hlfv::WeightComponents &weightcomponents)
 {
     bool success=false;
-    bool is_trigger_sys = (sys==Systematic::ETRIGREWUP   || sys==Systematic::ETRIGREWDOWN ||
-                           sys==Systematic::MTRIGREWUP   || sys==Systematic::MTRIGREWDOWN );
-    bool is_btag_sys =    (sys==Systematic::BJETUP       || sys==Systematic::BJETDOWN     ||
-                           sys==Systematic::CJETUP       || sys==Systematic::CJETDOWN     ||
-                           sys==Systematic::BMISTAGUP    || sys==Systematic::BMISTAGDOWN  );
-    bool is_lepton_eff_sys = (sys==Systematic::ESFUP     || sys==Systematic::ESFDOWN      ||
-                              sys==Systematic::MEFFUP    || sys==Systematic::MEFFDOWN     );
-    bool sys_is_nonstatic = (is_trigger_sys || is_btag_sys || is_lepton_eff_sys);
-    if(sys==Systematic::CENTRAL || sys_is_nonstatic) {
-        WeightComponents &wc = weightcomponents;
-        if(leptons.size()>1) {
-            vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
-            vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
-            const Lepton &l0 = *(leptons[0]);
-            const Lepton &l1 = *(leptons[1]);
-            if(nt.evt()->isMC) {
-                wc.lepSf   = computeDileptonEfficiencySf(l0, l1, sys);
-                wc.trigger = computeDileptonTriggerWeight(leptons, sys);
-                wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
-            }
-            success = true;
-        } else {
-            cout<<"Selector::assignNonStaticWeightComponents: warning"<<endl
-                <<" without at least two leptons several of these variables are not well defined."
-                <<endl;
+    WeightComponents &wc = weightcomponents;
+    if(leptons.size()>1) {
+        vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
+        vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
+        const Lepton &l0 = *(leptons[0]);
+        const Lepton &l1 = *(leptons[1]);
+        if(nt.evt()->isMC) {
+            wc.lepSf   = computeDileptonEfficiencySf(l0, l1, sys);
+            wc.trigger = computeDileptonTriggerWeight(leptons, sys);
+            wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
         }
+        success = true;
     } else {
         cout<<"Selector::assignNonStaticWeightComponents: warning"<<endl
-            <<" You are calling this function with the systematic "<<syst2str(sys)<<":"
-            <<" this does not look like a weight systematic that depends on the selected objects."
+            <<" without at least two leptons several of these variables are not well defined."
             <<endl;
     }
     return success;
@@ -559,7 +575,6 @@ WeightVariations Selector::computeSystematicWeightVariations(const Susy::Event &
     const JetVector    &j = jets;
     const Lepton      &l0 = *l[0];
     const Lepton      &l1 = *l[1];
-    hlfv::DileptonVariables &dv = dummyVars;
     hlfv::WeightComponents &dwc = dummyWeightComps;
     const hlfv::WeightComponents &nwc = nominalWeightComponents;
     dwc.trigger = computeDileptonTriggerWeight(l, Systematic::ETRIGREWUP  ); wv.elTrigUp = nwc.relativeTrig (dwc);
@@ -580,5 +595,64 @@ WeightVariations Selector::computeSystematicWeightVariations(const Susy::Event &
     wv.pileupDo = event.wPileup ? (event.wPileup_dn / event.wPileup) : 1.0;
     wv.swapUpDoIfNecessary();
     return wv;
+}
+//----------------------------------------------------------
+hlfv::TupleMaker& Selector::getTupleMaker(const Systematic::Value s)
+{
+    if(s==Systematic::CENTRAL) return m_tupleMaker;
+    else{
+        vector<Systematic::Value>::iterator it = std::find(m_systematicsToProcess.begin(), m_systematicsToProcess.end(), s);
+        if(it==m_systematicsToProcess.end()){
+            cout<<"We do not have a tuple maker for "<<syst2str(s)<<endl
+                <<"Stopping here"<<endl;
+            assert(false);
+        }
+        size_t nominalOffset = 1;
+        size_t systIndex = std::distance(m_systematicsToProcess.begin(), it)-nominalOffset;
+        return *(m_systTupleMakers[systIndex]);
+    }
+}
+//----------------------------------------------------------
+bool Selector::initTupleWriters()
+{
+    bool success = false;
+    if(!susy::utils::endswith(m_outTupleFile, ".root")){
+        cout<<"You must provide a root output file for the ntuple"<<endl;
+    } else {
+        string filenameNom = m_outTupleFile;
+        string treename = "hlfv_tuple";
+        success = m_tupleMaker.init(filenameNom, treename);
+        if(success) cout<<"initialized ntuple file "<<m_tupleMaker.filename()<<endl;
+        size_t nominalOffset=1;
+        for(size_t iSys=nominalOffset; iSys<m_systematicsToProcess.size(); ++iSys) {
+            const Systematic::Value sys = m_systematicsToProcess[iSys];
+            string filename(filenameNom);
+            // hlfv::replace(filename, string(".root"), string("_"+syst2str(sys)+".root")); // why doesn't it work?? todo
+            filename = TString(filenameNom.c_str()).ReplaceAll(TString(".root"),
+                                                               TString("_"+syst2str(sys)+".root")).Data();
+            TupleMaker *tm = new TupleMaker("", "");
+            m_systTupleMakers.push_back(tm);
+            success &= tm->init(filename, treename);
+            if(success) cout<<"initialized ntuple file "<<tm->filename()<<endl;
+        }
+    }
+    if(!success){
+        cout<<"failed to initialize some of the ntuples; disabling m_writeTuple"<<endl;
+        m_writeTuple = false;
+    }
+    return success;
+}
+//----------------------------------------------------------
+bool Selector::closeTupleWriters()
+{
+    cout<<m_tupleMaker.summary()<<endl;
+    m_tupleMaker.close();
+    for(size_t iTm=0; iTm<m_systTupleMakers.size(); ++iTm){
+        cout<<m_systTupleMakers[iTm]->summary()<<endl;
+        m_systTupleMakers[iTm]->close();
+        delete m_systTupleMakers[iTm];
+    }
+    m_systTupleMakers.clear();
+    return true; // find a criterion to decide whether we've closed everything properly
 }
 //----------------------------------------------------------

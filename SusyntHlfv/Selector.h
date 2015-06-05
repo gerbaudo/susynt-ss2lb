@@ -141,6 +141,10 @@ protected:
     float computeCorrectedEtCone(const Lepton *l);
     /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
     float computeCorrectedPtCone(const Lepton *l);
+    /// tuplemaker for a given systematic
+    hlfv::TupleMaker& getTupleMaker(const Systematic::Value s);
+    /// fill m_systematicsToProcess
+    size_t initSystematicsList();
 public:
     /// select the jets we are interested in (central, high-pt)
     static JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
@@ -184,6 +188,10 @@ protected:
        proof. We're not using proof, so who cares.
      */
     bool initEventList(TTree *tree);
+    /// initialize output trees
+    bool initTupleWriters();
+    /// close output trees
+    bool closeTupleWriters();
     /// remove from m_baseLeptons and m_signalLeptons the muons with |eta|>2.4
     /**
        These muons cannot be triggered, so in a dilepton event they
@@ -208,6 +216,8 @@ protected:
     Susy::EventlistHandler m_eventList; ///< the actual event list
     bool m_computeSystematics; ///< whether the syst (weights for now) should be filled
     hlfv::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
+    std::vector<hlfv::TupleMaker*> m_systTupleMakers; ///< same as m_tupleMaker, but one for each object syst
+    std::vector<hlfv::Systematic::Value> m_systematicsToProcess; ///< object systematics requiring a call to selectObjects()
     bool m_writeTuple; ///< whether we want to write the output ntuple
     std::string m_outTupleFile; ///< name of the file where the nutple will be written
     bool m_saveBaselineNonPrompt; ///< consider baseline and nonprompt in addition to signal leptons
