@@ -31,6 +31,7 @@ void print_usage(const char *exeName) {
         <<"\t -i [--input]   <file.txt>     : input root file (or filelist or dir) \n"
         <<"\t -n [--num-events] <int>       : number of events to be processed \n"
         <<"\t -s [--sample]  <samplename>   : sample name \n"
+        <<"\t -S [--systematics]            : store also syst variations"<<endl
         <<"\t -t [--tuple-out] fname.root (out ntuple file)\n"
         <<"\t -e [--event-list] <file.root> : file where the eventlist is cached \n"
         <<"Example: \n"
@@ -48,6 +49,7 @@ int main(int argc, char** argv) {
     bool savefake=false;
     bool verbose=false;
     bool debug=false;
+    bool systematics=false;
     string sample;
     string input;
     string output;
@@ -61,6 +63,7 @@ int main(int argc, char** argv) {
         {"save-fake"   ,no_argument,      0, 'f'},
         {"verbose",    no_argument,       0, 'v'},
         {"debug",      no_argument,       0, 'd'},
+        {"systematics",no_argument,       0, 'S'},
         {"input",      required_argument, 0, 'i'},
         {"num-events", required_argument, 0, 'n'},
         {"sample",     required_argument, 0, 's'},
@@ -74,6 +77,7 @@ int main(int argc, char** argv) {
         case 'f' : savefake=true; break;
         case 'v' : verbose=true; break;
         case 'd' : debug=true; break;
+        case 'S' : systematics=true; break;
         case 'i' : input = optarg; break;
         case 'n' : num_events = atoi(optarg); break;
         case 's' : sample = optarg; break;
@@ -90,14 +94,15 @@ int main(int argc, char** argv) {
         cout<<"Being called as : "<<endl;
         for(int i=0; i<argc; ++i) cout<<" "<<argv[i];
         cout<<endl<<"Parsed:"<<endl;
-        cout<<"verbose    '"<<verbose    <<"'"<<endl
-            <<"savefake   '"<<savefake   <<"'"<<endl
-            <<"debug      '"<<debug      <<"'"<<endl
-            <<"input      '"<<input      <<"'"<<endl
-            <<"num-events '"<<num_events <<"'"<<endl
-            <<"sample     '"<<sample     <<"'"<<endl
-            <<"tuple-out  '"<<tuple_out  <<"'"<<endl
-            <<"eventlist  '"<<eventlist  <<"'"<<endl;
+        cout<<"verbose     '"<<verbose    <<"'"<<endl
+            <<"savefake    '"<<savefake   <<"'"<<endl
+            <<"debug       '"<<debug      <<"'"<<endl
+            <<"systematics '"<<systematics<<"'"<<endl
+            <<"input       '"<<input      <<"'"<<endl
+            <<"num-events  '"<<num_events <<"'"<<endl
+            <<"sample      '"<<sample     <<"'"<<endl
+            <<"tuple-out   '"<<tuple_out  <<"'"<<endl
+            <<"eventlist   '"<<eventlist  <<"'"<<endl;
     }
     TChain* chain = new TChain("susyNt");
     ChainHelper::addInput(chain, input, verbose);
@@ -106,7 +111,8 @@ int main(int argc, char** argv) {
     if(debug) chain->ls();
 
     hlfv::Selector selector;
-    if(debug) selector.setDebug(1);
+    selector.setDebug(debug);
+    selector.useComputeSystematics(systematics);
     if(savefake) selector.selectBaselineNonPromptLeptons();
     selector.setSampleName(sample);
     cout<<"eventlist : "<<eventlist<<endl;

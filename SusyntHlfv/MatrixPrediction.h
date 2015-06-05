@@ -72,7 +72,6 @@ static std::string FAKESYSNames[nFakeSys] =
                       susy::fake::Systematic::Value);
     MatrixPrediction& setMatrixFilename(const std::string filename); ///< to be called before Begin
     MatrixPrediction& use2dParametrization() { m_use2dparametrization = true; return *this; }
-    MatrixPrediction& useComputeSystematics(bool v) { m_computeSystematics = v; return *this; }
     static std::string dilepDetails(const Susy::Event &event, const DiLepEvtType &ll,
                                     const LeptonVector &ls);
     std::string eventDetails(bool passSrSs, const Susy::Event &event, const DiLepEvtType &ll,
@@ -86,7 +85,6 @@ static std::string FAKESYSNames[nFakeSys] =
     std::string m_matrixFilename;
     bool m_use2dparametrization;
     bool m_allconfigured;
-    bool m_computeSystematics;
     bool initMatrixTool();
     /// compute all the weight variations for the fake systematics
     hlfv::WeightVariations computeSystematicWeights(const susy::fake::Lepton &l0, const susy::fake::Lepton &l1, size_t regionIndex);

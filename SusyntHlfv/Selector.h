@@ -46,6 +46,7 @@ public:
     virtual void    Terminate();             ///< called after looping is finished
     virtual Bool_t  Process(Long64_t entry); ///< called at each event
     Selector& setEventListFilename(const std::string filename);
+    Selector& useComputeSystematics(bool v) { m_computeSystematics = v; return *this; }
     virtual void setDebug(int dbg); ///< overload SusyNtAna::setDebug
     /// toggle ouput ntuple option
     Selector& setWriteNtuple(bool val) { m_writeTuple = val; return *this; }
@@ -193,6 +194,7 @@ protected:
     std::string m_eventListFilename; ///< name of the file with the eventlist (empty string means don't use this feature)
     bool m_useExistingList;        ///< to keep track of whether there is already an event list
     Susy::EventlistHandler m_eventList; ///< the actual event list
+    bool m_computeSystematics; ///< whether the syst (weights for now) should be filled
     hlfv::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
     bool m_writeTuple; ///< whether we want to write the output ntuple
     std::string m_outTupleFile; ///< name of the file where the nutple will be written

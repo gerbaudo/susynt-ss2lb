@@ -39,6 +39,7 @@ Selector::Selector() :
   m_trigObj(NULL),
   m_mcWeighter(NULL),
   m_useExistingList(false),
+  m_computeSystematics(false),
   m_tupleMaker("",""),
   m_writeTuple(false),
   m_outTupleFile(""),

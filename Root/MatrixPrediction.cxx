@@ -30,8 +30,7 @@ MatrixPrediction::MatrixPrediction() :
    m_dbg(false),
    m_matrix(0),
    m_use2dparametrization(false),
-   m_allconfigured(false),
-   m_computeSystematics(false)
+   m_allconfigured(false)
 {
 }
 //----------------------------------------------------------
