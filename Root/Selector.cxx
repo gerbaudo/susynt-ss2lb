@@ -29,6 +29,7 @@
 using namespace std;
 using hlfv::Selector;
 using hlfv::WeightComponents;
+using hlfv::WeightVariations;
 using hlfv::EventFlags;
 using hlfv::Systematic;
 using hlfv::DileptonVariables;
@@ -126,9 +127,13 @@ Bool_t Selector::Process(Long64_t entry)
                     LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
                     bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
                     bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                    WeightVariations wv = (m_computeSystematics ?
+                                           computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
+                                           WeightVariations());
                     m_tupleMaker
                         .setTriggerBits(nt.evt()->trigFlags)
                         .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
+                        .setWeightVariations(wv)
                         .setNumFjets(vars.numForwardJets)
                         .setNumBjets(vars.numBtagJets)
                         .setL0IsTight(l0IsTight).setL0Source(l0Source)
@@ -239,7 +244,6 @@ void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
     }
 }
 //-----------------------------------------
-
 bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
                                                const JetVector& jets,
                                                const hlfv::Systematic::Value sys,
@@ -247,19 +251,37 @@ bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
                                                hlfv::WeightComponents &weightcomponents)
 {
     bool success=false;
-    WeightComponents &wc = weightcomponents;
-    if(leptons.size()>1) {
-        vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
-        vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
-        const Lepton &l0 = *(leptons[0]);
-        const Lepton &l1 = *(leptons[1]);
-        if(nt.evt()->isMC) {
-            wc.lepSf   = (computeLeptonEfficiencySf(l0, sys)*
-                          computeLeptonEfficiencySf(l1, sys));
-            wc.trigger = computeDileptonTriggerWeight(leptons, sys);
-            wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
+    bool is_trigger_sys = (sys==Systematic::ETRIGREWUP   || sys==Systematic::ETRIGREWDOWN ||
+                           sys==Systematic::MTRIGREWUP   || sys==Systematic::MTRIGREWDOWN );
+    bool is_btag_sys =    (sys==Systematic::BJETUP       || sys==Systematic::BJETDOWN     ||
+                           sys==Systematic::CJETUP       || sys==Systematic::CJETDOWN     ||
+                           sys==Systematic::BMISTAGUP    || sys==Systematic::BMISTAGDOWN  );
+    bool is_lepton_eff_sys = (sys==Systematic::ESFUP     || sys==Systematic::ESFDOWN      ||
+                              sys==Systematic::MEFFUP    || sys==Systematic::MEFFDOWN     );
+    bool sys_is_nonstatic = (is_trigger_sys || is_btag_sys || is_lepton_eff_sys);
+    if(sys==Systematic::CENTRAL || sys_is_nonstatic) {
+        WeightComponents &wc = weightcomponents;
+        if(leptons.size()>1) {
+            vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
+            vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
+            const Lepton &l0 = *(leptons[0]);
+            const Lepton &l1 = *(leptons[1]);
+            if(nt.evt()->isMC) {
+                wc.lepSf   = computeDileptonEfficiencySf(l0, l1, sys);
+                wc.trigger = computeDileptonTriggerWeight(leptons, sys);
+                wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
+            }
+            success = true;
+        } else {
+            cout<<"Selector::assignNonStaticWeightComponents: warning"<<endl
+                <<" without at least two leptons several of these variables are not well defined."
+                <<endl;
         }
-        success = true;
+    } else {
+        cout<<"Selector::assignNonStaticWeightComponents: warning"<<endl
+            <<" You are calling this function with the systematic "<<syst2str(sys)<<":"
+            <<" this does not look like a weight systematic that depends on the selected objects."
+            <<endl;
     }
     return success;
 }
@@ -370,16 +392,18 @@ double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const
 {
     double trigW = 1.0;
     if(leptons.size()==2){
-
+        hlfv::Systematic::Value adjustedSys = hlfv::isTriggerSyst(sys) ? sys : Systematic::CENTRAL;
         trigW = m_trigObj->getTriggerWeight(leptons, nt.evt()->isMC, m_met->Et,
                                             m_signalJets2Lep.size(),
-                                            nt.evt()->nVtx, hlfv::sys2ntsys(sys));
+                                            nt.evt()->nVtx, hlfv::sys2ntsys(adjustedSys));
         bool twIsInvalid(isnan(trigW) || trigW<0.0);
         if(twIsInvalid){
             if(m_dbg) cout<<"SusySelection::getTriggerWeight: invalid weight "<<trigW<<", using 0.0"<<endl;
             trigW = (twIsInvalid ? 0.0 : trigW);
         }
         assert(!twIsInvalid); // is this still necessary? DG-2014-06-24
+    } else {
+        cout<<"computeDileptonTriggerWeight: warning, not a dilepton, leptons.size() : "<<leptons.size()<<endl;
     }
     return trigW;
 }
@@ -425,6 +449,12 @@ double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::
     else if(lep.isMu()  && sys==hlfv::Systematic::MEFFDOWN) delta = (-lep.errEffSF);
     effFactor = (sf + delta);
     return effFactor;
+}
+//-----------------------------------------
+double Selector::computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const hlfv::Systematic::Value sys)
+{
+    return (computeLeptonEfficiencySf(l0, sys)*
+            computeLeptonEfficiencySf(l1, sys));
 }
 //-----------------------------------------
 bool Selector::eventIsEmu(const LeptonVector &leptons)
@@ -513,5 +543,42 @@ float Selector::computeCorrectedPtCone(const Lepton *l)
         }
     }
     return correctedPtCone;
+}
+//----------------------------------------------------------
+WeightVariations Selector::computeSystematicWeightVariations(const Susy::Event &event,
+                                                             const LeptonVector& leptons,
+                                                             const JetVector& jets,
+                                                             const hlfv::Systematic::Value sys,
+                                                             const hlfv::WeightComponents &nominalWeightComponents)
+{
+    WeightVariations wv;
+    hlfv::DileptonVariables dummyVars; // just used to retrieve the output from assignNonStaticWeightComponents (lepSf, trig, btag)
+    hlfv::WeightComponents dummyWeightComps; // same as above
+    // just shorter names
+    const LeptonVector &l = leptons;
+    const JetVector    &j = jets;
+    const Lepton      &l0 = *l[0];
+    const Lepton      &l1 = *l[1];
+    hlfv::DileptonVariables &dv = dummyVars;
+    hlfv::WeightComponents &dwc = dummyWeightComps;
+    const hlfv::WeightComponents &nwc = nominalWeightComponents;
+    dwc.trigger = computeDileptonTriggerWeight(l, Systematic::ETRIGREWUP  ); wv.elTrigUp = nwc.relativeTrig (dwc);
+    dwc.trigger = computeDileptonTriggerWeight(l, Systematic::ETRIGREWDOWN); wv.elTrigDo = nwc.relativeTrig (dwc);
+    dwc.trigger = computeDileptonTriggerWeight(l, Systematic::MTRIGREWUP  ); wv.muTrigUp = nwc.relativeTrig (dwc);
+    dwc.trigger = computeDileptonTriggerWeight(l, Systematic::MTRIGREWDOWN); wv.muTrigDo = nwc.relativeTrig (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::BJETUP      ); wv.bTagUp   = nwc.relativeBtag (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::BJETDOWN    ); wv.bTagDo   = nwc.relativeBtag (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::CJETUP      ); wv.cTagUp   = nwc.relativeBtag (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::CJETDOWN    ); wv.cTagDo   = nwc.relativeBtag (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::BMISTAGUP   ); wv.lTagUp   = nwc.relativeBtag (dwc);
+    dwc.btag    = computeBtagWeight   (j, &event, Systematic::BMISTAGDOWN ); wv.lTagDo   = nwc.relativeBtag (dwc);
+    dwc.lepSf   = computeDileptonEfficiencySf(l0, l1, Systematic::ESFUP   ); wv.elEffUp  = nwc.relativeLepSf(dwc);
+    dwc.lepSf   = computeDileptonEfficiencySf(l0, l1, Systematic::ESFDOWN ); wv.elEffDo  = nwc.relativeLepSf(dwc);
+    dwc.lepSf   = computeDileptonEfficiencySf(l0, l1, Systematic::MEFFUP  ); wv.muEffUp  = nwc.relativeLepSf(dwc);
+    dwc.lepSf   = computeDileptonEfficiencySf(l0, l1, Systematic::MEFFDOWN); wv.muEffDo  = nwc.relativeLepSf(dwc);
+    wv.pileupUp = event.wPileup ? (event.wPileup_up / event.wPileup) : 1.0;
+    wv.pileupDo = event.wPileup ? (event.wPileup_dn / event.wPileup) : 1.0;
+    wv.swapUpDoIfNecessary();
+    return wv;
 }
 //----------------------------------------------------------

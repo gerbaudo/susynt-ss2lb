@@ -6,6 +6,7 @@
 #include "SusyntHlfv/CutFlowCounter.h"
 #include "SusyntHlfv/Systematic.h"
 #include "SusyntHlfv/TupleMaker.h"
+#include "SusyntHlfv/WeightVariations.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -90,6 +91,15 @@ protected:
                                          const hlfv::Systematic::Value sys,
                                          hlfv::DileptonVariables &vars,
                                          hlfv::WeightComponents &weightcomponents);
+    /// compute both static and non-static weight systematic variations
+   /**
+      Mostly calls several times assignNonStaticWeightComponents
+    */
+    hlfv::WeightVariations computeSystematicWeightVariations(const Susy::Event &event,
+                                                             const LeptonVector& leptons,
+                                                             const JetVector& jets,
+                                                             const hlfv::Systematic::Value sys,
+                                                             const hlfv::WeightComponents &nominalWeightComponents);
     /// compute the event-level flags
     /**
        Note that some of these quantities actually depend on the
@@ -142,6 +152,8 @@ public:
     static JetVector filterBtagJets(const JetVector &jets);
     /// lepton efficiency data/simulation scale factor
     static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
+    /// same as computeLeptonEfficiencySf, but for two leptons
+    static double computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const hlfv::Systematic::Value sys);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
     /// two opposite-sign leptons
