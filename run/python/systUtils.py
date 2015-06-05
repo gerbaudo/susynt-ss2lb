@@ -59,21 +59,30 @@ def mcObjectVariations() :
             'SCALEST_UP', 'SCALEST_DN',
             'RESOST',
             ]
-def mcWeightVariations() :
-    "See list at HftFiller::assignWeightVars()"
-    return ['BKGMETHODUP' ,'BKGMETHODDOWN'
-            ,'ETRIGREWUP' ,'ETRIGREWDOWN'
-            ,'MTRIGREWUP' ,'MTRIGREWDOWN'
-            ,'ESFUP'      ,'ESFDOWN'
-            ,'MEFFUP'     ,'MEFFDOWN'
-            ,'BJETUP'     ,'BJETDOWN'
-            ,'CJETUP'     ,'CJETDOWN'
-            ,'BMISTAGUP'  ,'BMISTAGDOWN'
-            ,'XSUP'       ,'XSDOWN'
-            ]
+def mcWeightLeaves() :
+    """
+    Leaves where the relative weight variations for weight systematics
+    are stored. See WeightVariations.h
+    """
+    branch = 'relWeights.'
+    return {'ETRIGREWUP'  : branch+'elTrigUp',
+            'ETRIGREWDOWN': branch+'elTrigDo',
+            'MTRIGREWUP'  : branch+'muTrigUp',
+            'MTRIGREWDOWN': branch+'muTrigDo',
+            'BJETUP'      : branch+'bTagUp',
+            'BJETDOWN'    : branch+'bTagDo',
+            'CJETUP'      : branch+'cTagUp',
+            'CJETDOWN'    : branch+'cTagDo',
+            'BMISTAGUP'   : branch+'lTagUp',
+            'BMISTAGDOWN' : branch+'lTagDo',
+            'ESFUP'       : branch+'elEffUp',
+            'ESFDOWN'     : branch+'elEffDo',
+            'MEFFUP'      : branch+'muEffUp',
+            'MEFFDOWN'    : branch+'muEffDo',
+            }
 
-def mcWeightBranchname(mcWeightVariation='') : return 'syst_'+mcWeightVariation
-def mcWeightBranches() : return [mcWeightBranchname(v) for v in mcWeightVariations()]
+def mcWeightVariations() :
+    return mcWeightLeaves().keys()
 
 def getAllVariations() :
     return ['NOM'] + fakeSystVariations() + mcObjectVariations() + mcWeightVariations()
@@ -303,6 +312,7 @@ class BaseSampleGroup(object) :
         if  self.isWeightSys:
             rel_weight = ""
             if self.isFakeSys: rel_weight = "event.{0}".format(fakeSystWeightLeaves()[self.syst])
+            elif self.isWeightSys: rel_weight = "event.{0}".format(mcWeightLeaves()[self.syst])
             else: print "not implemented yet"
             leafname += " * {0}".format(rel_weight)
         return leafname
