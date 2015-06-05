@@ -5,6 +5,16 @@
 using hlfv::Systematic;
 
 //-----------------------------------------
+bool hlfv::isTriggerSyst(const Systematic::Value &s)
+{
+    return (s==Systematic::ETRIGREWUP   ||
+            s==Systematic::ETRIGREWDOWN ||
+            s==Systematic::MTRIGREWUP   ||
+            s==Systematic::MTRIGREWDOWN ||
+            s==Systematic::TTRIGSFUP    ||
+            s==Systematic::TTRIGSFDOWN  );
+}
+//-----------------------------------------
 Systematic::Value hlfv::ntsys2sys(const SusyNtSys &s)
 {
     Systematic::Value r = Systematic::CENTRAL;
@@ -30,10 +40,10 @@ Systematic::Value hlfv::ntsys2sys(const SusyNtSys &s)
     case NtSys_SCALEST_UP      :  r =  Systematic::SCALESTUP    ; break;
     case NtSys_SCALEST_DN      :  r =  Systematic::SCALESTDOWN  ; break;
     case NtSys_RESOST          :  r =  Systematic::RESOST       ; break;
-    case NtSys_TRIGSF_EL_UP    :  r =  Systematic::TTRIGSFUP    ; break;
-    case NtSys_TRIGSF_EL_DN    :  r =  Systematic::TTRIGSFDOWN  ; break;
-//     case NtSys_TRIGSF_MU_UP    :   undefined ??    ; break;
-//     case NtSys_TRIGSF_MU_DN    :   undefined ??    ; break;
+    case NtSys_TRIGSF_EL_UP    :  r =  Systematic::ETRIGREWUP   ; break;
+    case NtSys_TRIGSF_EL_DN    :  r =  Systematic::ETRIGREWDOWN ; break;
+    case NtSys_TRIGSF_MU_UP    :  r =  Systematic::MTRIGREWUP   ; break;
+    case NtSys_TRIGSF_MU_DN    :  r =  Systematic::MTRIGREWDOWN ; break;
     case NtSys_TES_UP          :  r =  Systematic::TESUP        ; break;
     case NtSys_TES_DN          :  r =  Systematic::TESDOWN      ; break;
     case NtSys_JVF_UP          :  r =  Systematic::JVFUP        ; break;

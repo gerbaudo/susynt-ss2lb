@@ -159,6 +159,11 @@ const std::string SystematicNames[] = {
 inline bool isValid(const Systematic::Value &s) { return s>=Systematic::CENTRAL && s<=Systematic::FakeTauBGSyst; }
 /// whether s is a valid enum value
 inline bool isValid(const SusyNtSys &s)  { return s>=NtSys_NOM  && s< NtSys_N; }
+/// whether it's a trigger-related systs
+/**
+   Used to decide whether one needs to call the trigger tool
+*/
+bool isTriggerSyst(const Systematic::Value &s);
 /// string representation
 inline std::string syst2str(const Systematic::Value &s) { return isValid(s) ? SystematicNames[s] : "unknown"; }
 /// string representation
@@ -169,6 +174,5 @@ SusyNtSys sys2ntsys(const Systematic::Value &s);
 Systematic::Value ntsys2sys(const SusyNtSys &s);
 /// convert Systematic to SusyDef::BTagSys; return nominal if not a btag-related sys
 BTagSys sys2ntbsys(const Systematic::Value &s);
-
 } // hlfv
 #endif
