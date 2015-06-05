@@ -134,7 +134,7 @@ def get_batch_script(dset, options):
     batch_script = batchdir+'/'+dsname+'.sh'
     out_rootfile = outdir+'/'+dsname+'.root'
     out_logfile  = logdir+'/'+dsname+'.log'
-    exe_options = ''
+    exe_options = options.other_opt
     exe_options += " --event-list %s"%(cachedir+'/'+dsname+'.root') if options.use_cache else ''
 
     if options.do_not_overwrite and os.path.exists(batch_script):
