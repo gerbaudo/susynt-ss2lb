@@ -10,6 +10,7 @@
 #include <functional> // unary_function
 #include <iostream>
 #include <iterator> // back_inserter
+#include <sstream>
 
 using hlfv::TupleMaker;
 using hlfv::FourMom;
@@ -159,9 +160,17 @@ bool TupleMaker::close()
         file_->Delete();
         file_ = 0;
         closed = true;
-    } else {
-        cout<<"TupleMaker::close : file not there"<<endl;
     }
     return closed;
+}
+//----------------------------------------------------------
+std::string TupleMaker::filename() const { return file_->GetName(); }
+std::string TupleMaker::treename() const { return tree_->GetName(); }
+//----------------------------------------------------------
+std::string TupleMaker::summary() const
+{
+    std::ostringstream oss;
+    oss<<file_->GetName()<<": "<<tree_->GetEntries()<<" entries";
+    return oss.str();
 }
 //----------------------------------------------------------

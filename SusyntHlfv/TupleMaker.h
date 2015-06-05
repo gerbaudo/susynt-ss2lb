@@ -82,7 +82,9 @@ public:
     TupleMaker& setQflipWeight(const double &v) { eventPars_.setQflipWeight(v); return *this; }
     TupleMaker& setWeightVariations(const hlfv::WeightVariations &w) { weightVariations_ = w; return *this; }
     TupleMaker& setTriggerBits(const long long &trigFlags) { eventPars_.setTriggerBits(trigFlags); return *this; }
-
+    std::string filename() const;
+    std::string treename() const;
+    std::string summary() const;
 private: // rule of three
     TupleMaker(const TupleMaker&);
     TupleMaker& operator=(const TupleMaker&);
