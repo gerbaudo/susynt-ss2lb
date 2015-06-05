@@ -31,6 +31,7 @@ stdbuf --output=1M --error=1M \
 echo "${PWD} contentents:"
 ls -ltrh
 cp -p ${SCRATCH}/%(local_outfilename)s ${SLURM_SUBMIT_DIR}/%(outfilename)s
+cp -p ${SCRATCH}/%(local_other_rootfiles)s ${SLURM_SUBMIT_DIR}/%(out_dir)s
 echo "Done, `date`"
 echo "Cleaning up ${SCRATCH}"
 rm -rf $SCRATCH || exit $?
