@@ -29,18 +29,18 @@ def fakeSystWeightLeaves() :
     susy::fake::Systematic.
     """
     branch = 'relWeights.'
-    return {'EL_RE_UP'  : branch+'fakeElRealUp',
-            'EL_RE_DOWN': branch+'fakeElRealDo',
-            'MU_RE_UP'  : branch+'fakeElFakeUp',
-            'MU_RE_DOWN': branch+'fakeElFakeDo',
-            'EL_FR_UP'  : branch+'fakeMuRealUp',
-            'EL_FR_DOWN': branch+'fakeMuRealDo',
-            'MU_FR_UP'  : branch+'fakeMuFakeUp',
-            'MU_FR_DOWN': branch+'fakeMuFakeDo',
-            'EL_FRAC_DO': branch+'fakeElFracDo',
-            'EL_FRAC_UP': branch+'fakeElFracUp',
-            'MU_FRAC_DO': branch+'fakeMuFracDo',
-            'MU_FRAC_UP': branch+'fakeMuFracUp'
+    return {'EL_RE_UP'    : branch+'fakeElRealUp',
+            'EL_RE_DOWN'  : branch+'fakeElRealDo',
+            'MU_RE_UP'    : branch+'fakeElFakeUp',
+            'MU_RE_DOWN'  : branch+'fakeElFakeDo',
+            'EL_FR_UP'    : branch+'fakeMuRealUp',
+            'EL_FR_DOWN'  : branch+'fakeMuRealDo',
+            'MU_FR_UP'    : branch+'fakeMuFakeUp',
+            'MU_FR_DOWN'  : branch+'fakeMuFakeDo',
+            'EL_FRAC_DOWN': branch+'fakeElFracDo',
+            'EL_FRAC_UP'  : branch+'fakeElFracUp',
+            'MU_FRAC_DOWN': branch+'fakeMuFracDo',
+            'MU_FRAC_UP'  : branch+'fakeMuFracUp'
             }
 def fakeSystVariations() :
     return fakeSystWeightLeaves().keys()
