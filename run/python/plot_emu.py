@@ -250,13 +250,13 @@ def runPlot(opts) :
     sel_not_specified = len(regions_to_plot())==len(selections)
     if sel_not_specified:
         selections = guess_available_selections_from_histofiles(inputDir, first(plot_groups), verbose)
+    systematics_to_use = get_list_of_syst_to_fill(opts)
     for group in plot_groups :
         group.setCurrentSelection(first(selections))
         group.setHistosDir(inputDir).setCurrentSelection(first(selections))
         group.exploreAvailableSystematics(verbose)
-        group.filterAndDropSystematics(opts.syst, opts.exclude, verbose)
+        group.filterAndDropSystematics(systematics_to_use, opts.exclude, verbose)
     available_systematics = sorted(list(set([s for g in plot_groups for s in g.systematics])))
-    systematics_to_use = get_list_of_syst_to_fill(opts)
     systematics = [s for s in systematics_to_use if s in available_systematics]
     if verbose :
         print "using the following systematics : {0}".format(systematics)

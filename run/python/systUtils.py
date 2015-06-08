@@ -410,15 +410,20 @@ class Group(BaseSampleGroup) :
         "include and exclude can be either a regex, a single value, or a list"
         nBefore = len(self.systematics)
         def is_regex(exp) : return exp and '*' in exp
-        def is_list(exp) : return exp and ',' in exp
+        def is_list(exp) : return type(exp)==list
+        def is_literal_list(exp) : return (exp and ',' in exp)
         def is_single_value(exp) : return exp and len(exp)
         def str_to_list(exp) : return eval("['{0}']".format(exp))
-        toBeIncluded = ([s for s in self.systematics if s in str_to_list(include)] if is_list(include) else
+        print 'type include ',type(include),' type()==list: ',(type(include)==list)
+        toBeIncluded = ([s for s in self.systematics if s in include] if is_list(include) else
+                        [s for s in self.systematics if s in str_to_list(include)] if is_literal_list(include) else
                         filterWithRegexp(self.systematics, include) if is_regex(include) else
                         str_to_list(include) if is_single_value(include) else
                         self.systematics)
-        toBeExcluded = ([s for s in self.systematics if s in str_to_list(include)] if is_list(include) else
+        toBeExcluded = ([s for s in self.systematics if s in exclude] if is_list(exclude) else
+                        [s for s in self.systematics if s in str_to_list(exclude)] if is_literal_list(exclude) else
                         filterWithRegexp(self,systematics, exclude) if is_regex(exclude) else
+                        str_to_list(exclude) if is_single_value(exclude) else
                         [])
         self.systematics = remove_duplicates([s for s in toBeIncluded if s not in toBeExcluded])
         nAfter = len(self.systematics)
