@@ -47,17 +47,17 @@ def fakeSystVariations() :
 
 def mcObjectVariations() :
     "See definitions in SusyDefs.h:SusyNtSystNames, and active list in SusyPlotter::toggleStdSystematics()"
-    return ['EERDOWN', 'EERUP',
-            'EESLOWDOWN', 'EESLOWUP',
-            'EESMATDOWN', 'EESMATUP',
-            'EESPSDOWN', 'EESPSUP',
-            'EESZDOWN', 'EESZUP',
+    return ['EER_DOWN', 'EER_UP',
+            'EESLOW_DOWN', 'EESLOW_UP',
+            'EESMAT_DOWN', 'EESMAT_UP',
+            'EESPS_DOWN', 'EESPS_UP',
+            'EESZ_DOWN', 'EESZ_UP',
             'JER',
-            'JESDOWN', 'JESUP',
-            'MESDOWN', 'MESUP',
-            'MIDDOWN', 'MIDUP',
+            'JES_DOWN', 'JES_UP',
+            'MES_DOWN', 'MES_UP',
+            'MID_DOWN', 'MID_UP',
             'RESOST',
-            'SCALESTDOWN', 'SCALESTUP',
+            'SCALEST_DOWN', 'SCALEST_UP',
             ]
 
 def mcWeightLeaves() :
@@ -66,20 +66,20 @@ def mcWeightLeaves() :
     are stored. See WeightVariations.h
     """
     branch = 'relWeights.'
-    return {'ETRIGREWUP'  : branch+'elTrigUp',
-            'ETRIGREWDOWN': branch+'elTrigDo',
-            'MTRIGREWUP'  : branch+'muTrigUp',
-            'MTRIGREWDOWN': branch+'muTrigDo',
-            'BJETUP'      : branch+'bTagUp',
-            'BJETDOWN'    : branch+'bTagDo',
-            'CJETUP'      : branch+'cTagUp',
-            'CJETDOWN'    : branch+'cTagDo',
-            'BMISTAGUP'   : branch+'lTagUp',
-            'BMISTAGDOWN' : branch+'lTagDo',
-            'ESFUP'       : branch+'elEffUp',
-            'ESFDOWN'     : branch+'elEffDo',
-            'MEFFUP'      : branch+'muEffUp',
-            'MEFFDOWN'    : branch+'muEffDo',
+    return {'ETRIGREW_UP'  : branch+'elTrigUp',
+            'ETRIGREW_DOWN': branch+'elTrigDo',
+            'MTRIGREW_UP'  : branch+'muTrigUp',
+            'MTRIGREW_DOWN': branch+'muTrigDo',
+            'BJET_UP'      : branch+'bTagUp',
+            'BJET_DOWN'    : branch+'bTagDo',
+            'CJET_UP'      : branch+'cTagUp',
+            'CJET_DOWN'    : branch+'cTagDo',
+            'BMISTAG_UP'   : branch+'lTagUp',
+            'BMISTAG_DOWN' : branch+'lTagDo',
+            'ESF_UP'       : branch+'elEffUp',
+            'ESF_DOWN'     : branch+'elEffDo',
+            'MEFF_UP'      : branch+'muEffUp',
+            'MEFF_DOWN'    : branch+'muEffDo',
             }
 
 def mcWeightVariations() :
