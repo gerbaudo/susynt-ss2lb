@@ -261,16 +261,16 @@ hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lept
         wv.fakeElFracDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FRAC_DO ) * in;
         wv.fakeMuFracUp = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FRAC_UP ) * in;
         wv.fakeMuFracDo = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FRAC_DO ) * in;
-        wv.fakeMuFrKin1 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_1) * in ;
-        wv.fakeMuFrKin2 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_1) * in ;
-        wv.fakeMuFrKin3 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_2) * in ;
-        wv.fakeMuFrKin4 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_2) * in ;
-        wv.fakeMuFrKin5 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_3) * in ;
-        wv.fakeElFrKin1 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_3) * in ;
-        wv.fakeElFrKin2 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_4) * in ;
-        wv.fakeElFrKin3 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_4) * in ;
-        wv.fakeElFrKin4 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_5) * in ;
-        wv.fakeElFrKin5 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_5) * in ;
+        wv.fakeMuFrKin1 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_1) * in;
+        wv.fakeMuFrKin2 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_2) * in;
+        wv.fakeMuFrKin3 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_3) * in;
+        wv.fakeMuFrKin4 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_4) * in;
+        wv.fakeMuFrKin5 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_MU_FR_KIN_5) * in;
+        wv.fakeElFrKin1 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_1) * in;
+        wv.fakeElFrKin2 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_2) * in;
+        wv.fakeElFrKin3 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_3) * in;
+        wv.fakeElFrKin4 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_4) * in;
+        wv.fakeElFrKin5 = m_matrix->getTotalFake(l0, l1, ri, Systematic::SYS_EL_FR_KIN_5) * in;
     }
     return wv;
 }
