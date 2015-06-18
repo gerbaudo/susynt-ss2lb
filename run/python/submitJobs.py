@@ -132,10 +132,11 @@ def get_batch_script(dset, options):
     jobname = dsname
     script_template = get_template_script(exe)
     batch_script = batchdir+'/'+dsname+'.sh'
-    out_rootfile = os.path.basename(outdir+'/'+dsname+'.root')
-    generic_out_rootfile = out_rootfile.replace('.root', '*.root')
+    out_rootfile = outdir+'/'+dsname+'.root'
+    local_out_rootfile = os.path.basename(out_rootfile)
+    generic_local_out_rootfile = local_out_rootfile.replace('.root', '*.root')
     out_logfile  = logdir+'/'+dsname+'.log'
-    exe_options = options.other_opt
+    exe_options = options.other_opt if options.other_opt else ''
     exe_options += " --event-list %s"%(cachedir+'/'+dsname+'.root') if options.use_cache else ''
 
     if options.do_not_overwrite and os.path.exists(batch_script):
@@ -149,12 +150,12 @@ def get_batch_script(dset, options):
         line = line.replace('%(jobname)s', jobname)
         line = line.replace('%(queue)s', queue)
         line = line.replace('%(logfile)s', out_logfile)
-        line = line.replace('%(local_outfilename)s', out_rootfile)
+        line = line.replace('%(local_outfilename)s', local_out_rootfile)
         line = line.replace('%(outfilename)s', out_rootfile)
         line = line.replace('%(opt)s', exe_options)
         line = line.replace('%(samplename)s', dsname)
         # special treatment for multiple output files
-        line = line.replace('%(local_other_rootfiles)s', generic_out_rootfile)
+        line = line.replace('%(local_other_rootfiles)s', generic_local_out_rootfile)
         line = line.replace('%(out_dir)s', outdir)
         out_file.write(line)
     out_file.close()
