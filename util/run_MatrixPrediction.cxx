@@ -25,8 +25,7 @@ void usage(const char *exeName, const char *defaultMatrixFile) {
       <<"\t"<<"-n [--num-event]   nEvt (default -1, all)"<<endl
       <<"\t"<<"-k [--num-skip]    nSkip (default 0)"     <<endl
       <<"\t"<<"-i [--input]       (file, list, or dir)"  <<endl
-      <<"\t"<<"-o [--output]      output file"           <<endl
-      <<"\t"<<"-t [--tuple-out] fname.root (out ntuple file)"<<endl
+      <<"\t"<<"-o [--output]      output file (required)"<<endl
       <<"\t"<<"-s [--sample]      samplename"            <<endl
       <<"\t"<<"-S [--systematics] : store also syst variations"<<endl
       <<"\t"<<"-e [--etapt]       : use eta-pt (default pt only)"<<endl
@@ -44,7 +43,6 @@ int main(int argc, char** argv)
   string sample;
   string input;
   string output;
-  bool writeTuple = false;
   bool etapt = false;
   bool systematics = false;
   string matrixFile(hlfv::getRootCoreDir()+"/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root");
@@ -61,7 +59,6 @@ int main(int argc, char** argv)
     else if(sw=="-o"||sw=="--output"     ) { output = argv[++optind]; }
     else if(sw=="-s"||sw=="--sample"     ) { sample = argv[++optind]; }
     else if(sw=="-S"||sw=="--systematics") { systematics = true; }
-    else if(sw=="-t"||sw=="--tuple-out")   { writeTuple = true; output = argv[++optind]; }
     else if(sw=="-h"||sw=="--help"       ) { usage(argv[0], matrixFile.c_str()); return 0; }
     else cout<<"Unknown switch "<<sw<<endl;
     optind++;
@@ -75,9 +72,12 @@ int main(int argc, char** argv)
       <<"  input   "<<input     <<endl
       <<"  output  "<<output    <<endl
       <<"  systematics "<<systematics<<endl
-      <<"  writeTuple  "<<writeTuple <<endl
       <<endl;
 
+  if(!output.length()){
+      cout<<"--output is a required option"<<endl;
+      return 1;
+  }
   TChain* chain = new TChain("susyNt");
   bool verbose(dbg>0);
   ChainHelper::addInput(chain, input, verbose);
