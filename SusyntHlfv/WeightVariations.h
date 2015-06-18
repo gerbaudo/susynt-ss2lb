@@ -39,6 +39,16 @@ namespace hlfv
       fakeMuFakeUp = fakeMuFakeDo = 1.0;
       fakeElFracUp = fakeElFracDo = 1.0;
       fakeMuFracUp = fakeMuFracDo = 1.0;
+      fakeMuFrKin1 = 1.0;
+      fakeMuFrKin2 = 1.0;
+      fakeMuFrKin3 = 1.0;
+      fakeMuFrKin4 = 1.0;
+      fakeMuFrKin5 = 1.0;
+      fakeElFrKin1 = 1.0;
+      fakeElFrKin2 = 1.0;
+      fakeElFrKin3 = 1.0;
+      fakeElFrKin4 = 1.0;
+      fakeElFrKin5 = 1.0;
       return *this;
     }
     /// HistFitter wants 'up' above 1, 'do' below 1
@@ -81,6 +91,16 @@ namespace hlfv
     double fakeMuFakeUp, fakeMuFakeDo;
     double fakeElFracUp, fakeElFracDo;
     double fakeMuFracUp, fakeMuFracDo;
+    double fakeMuFrKin1;
+    double fakeMuFrKin2;
+    double fakeMuFrKin3;
+    double fakeMuFrKin4;
+    double fakeMuFrKin5;
+    double fakeElFrKin1;
+    double fakeElFrKin2;
+    double fakeElFrKin3;
+    double fakeElFrKin4;
+    double fakeElFrKin5;
   };
 
 } // hlfv
