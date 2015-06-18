@@ -45,12 +45,12 @@ def histogram(variable, histoname, title=None, nx=None, xmin=None, xmax=None, ny
         'm_jj'           :{'title':';m_{jj} [GeV]; entries/bin',               'nx':50, 'xmin':  0.0, 'xmax':+1000},
         }
     attrs_2d = {
-        'mcoll_vs_pt1'     :{'title':'; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':80, 'ymin':0.0, 'ymax':400.0},
-        'pt0_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; p_{T,l0} [GeV]',            'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':48, 'ymin':0.0, 'ymax':240.0},
-        'met_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; MET [GeV]',                 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':24, 'ymin':0.0, 'ymax':240.0},
-        'dphil0l1_vs_pt1'  :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, l1) [rad]',  'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
-        'dphil0met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
-        'dphil1met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l1, met) [rad]', 'nx':48, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
+        'mcoll_vs_pt1'     :{'title':'; p_{T,l1} [GeV]; m_{coll,l0,l1} [GeV]',      'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':400, 'ymin':0.0, 'ymax':400.0},
+        'pt0_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; p_{T,l0} [GeV]',            'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':240, 'ymin':0.0, 'ymax':240.0},
+        'met_vs_pt1'       :{'title':'; p_{T,l1} [GeV]; MET [GeV]',                 'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':24, 'ymin':0.0, 'ymax':240.0},
+        'dphil0l1_vs_pt1'  :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, l1) [rad]',  'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
+        'dphil0met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l0, met) [rad]', 'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
+        'dphil1met_vs_pt1' :{'title':'; p_{T,l1} [GeV]; #Delta#phi(l1, met) [rad]', 'nx':240, 'xmin':0.0, 'xmax':240.0, 'ny':40, 'ymin':0.0, 'ymax':4.0},
         'pt_eta' : {'title':';p_{T} [GeV]; #eta',
                     'nx':len(fakeu.ptBinEdges())-1,  'binsx':fakeu.ptBinEdges(),
                     'ny':len(fakeu.etaBinEdges())-1, 'binsy':fakeu.etaBinEdges(),}
