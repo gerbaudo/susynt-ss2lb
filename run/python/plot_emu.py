@@ -608,7 +608,7 @@ def regions_to_plot(include='.*', exclude=None, regions=''):
     #  ]
     selected_regions = selection_formulas().keys()
     if regions:
-        regions = regions.split(',') if ',' in regions else [regions] # if it's a comma-sep string, convert it to list
+        regions = regions if type(regions)==list else regions.split(',') if ',' in regions else [regions] # if it's a comma-sep string, convert it to list
         selected_regions = [r for r in selected_regions if r in regions]
     selected_regions = utils.filterWithRegexp(selected_regions, include)
     selected_regions = utils.excludeWithRegexp(selected_regions, exclude) if exclude else selected_regions
