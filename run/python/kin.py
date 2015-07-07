@@ -106,7 +106,7 @@ def computeRazor(l0, l1, met, throw_on_neg_sqrt=False):
 #___________________________________________________________
 def selection_formulas():
     "return a dictionary with the criteria for several selection regions"
-    pt_req = 'l0_pt>45.0 and l1_pt>12.0 '
+    pt_req = 'l0_pt>35.0 and l1_pt>12.0 '
     pt_req += ' and abs(l0_eta)<2.4 and abs(l1_eta)<2.4' # tmp to be dropped, fixed upstream in ee8b767
     common_req_sr = (pt_req+
                      ' and n_cl_jets==0 and n_b_jets==0'+
@@ -193,8 +193,8 @@ def selection_formulas():
     formulas['cr_ttbar_mue_os'] = ('l0_is_mu and l1_is_el and '+common_req_crttbar)
 
     common_req_sr_jets = ('is_opp_sign'+
-                          ' and l0_pt>45.0 and l1_pt>12.0'+
-                          ' and n_jets>0 and n_b_jets==0'+
+                          ' and l0_pt>35.0 and l1_pt>12.0'+
+                          ' and n_cl_jets>0 and n_b_jets==0'+
                           ' and dphi_l1_met<0.5'+
                           ' and dphi_l0_l1>1.0 '+
                           ' and dphi_l0_met>1.0'+
