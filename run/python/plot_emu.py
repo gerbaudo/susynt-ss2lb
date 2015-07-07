@@ -787,6 +787,10 @@ def guess_available_selections_from_histofiles(inputDir, plot_group, verbose):
     available_root_files = [f for f in os.listdir(inputDir) if sys in f and grp in f]
     pre = commonPrefix(available_root_files)
     suf = commonSuffix(available_root_files)
+    def abbreviate_suffix(s):
+        if s[1] in ['.','_']:
+            return s[1:]
+    suf = abbreviate_suffix(suf)
     if verbose:
         print "guess_available_selections_from_histofiles: pre '{0}', suf '{1}'".format(pre, suf)
     available_selections = [r.replace(pre, '').replace(suf, '') for r in available_root_files]
