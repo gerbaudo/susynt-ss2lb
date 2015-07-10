@@ -172,10 +172,10 @@ def selection_formulas():
     formulas['sr_mue_ss_vbf'] = (formulas['sr_mue_ss'].replace('n_jets==0', 'n_jets==2')+' and deta_jj>3.5 and n_b_jets==0')
     # formulas for Aielet
     common_req_cr = ('is_opp_sign and'
-                     ' l0_pt>45.0 and l1_pt>12.0 and'
+                     ' l0_pt>35.0 and l1_pt>12.0 and'
                      ' dphi_l1_met < 0.7 and '
-                     ' (dphi_l0_l1 < 2.3 or dphi_l0_met < 2.5 ) and'
-                     ' n_jets==0')
+                     ' (dphi_l0_l1 < 2.3 or dphi_l0_met < 2.5 or (l0_pt-l1_pt)<7.0) and'
+                     ' n_cl_jets==0 and n_b_jets==0')
     common_req_cr40 = common_req_cr.replace('l0_pt>45.0', 'l0_pt>40.0')
     common_req_crttbar = ('is_opp_sign and'
                           ' l0_pt>45.0 and l1_pt>12.0 and'
@@ -185,8 +185,8 @@ def selection_formulas():
                           ' n_b_jets>=1 and'
                           ' n_f_jets==0')
 
-    formulas['cr_emu_os'      ] = ('l0_is_el and l1_is_mu and '+common_req_cr)
-    formulas['cr_mue_os'      ] = ('l0_is_mu and l1_is_el and '+common_req_cr)
+    formulas['cr_emu_os'      ] = ('is_emu and '+common_req_cr)
+    formulas['cr_mue_os'      ] = ('is_mue and '+common_req_cr)
     formulas['cr_40_emu_os'   ] = ('l0_is_el and l1_is_mu and '+common_req_cr40)
     formulas['cr_40_mue_os'   ] = ('l0_is_mu and l1_is_el and '+common_req_cr40)
     formulas['cr_ttbar_emu_os'] = ('l0_is_el and l1_is_mu and '+common_req_crttbar)
