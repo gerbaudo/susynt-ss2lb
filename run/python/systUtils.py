@@ -40,7 +40,17 @@ def fakeSystWeightLeaves() :
             'EL_FRAC_DOWN': branch+'fakeElFracDo',
             'EL_FRAC_UP'  : branch+'fakeElFracUp',
             'MU_FRAC_DOWN': branch+'fakeMuFracDo',
-            'MU_FRAC_UP'  : branch+'fakeMuFracUp'
+            'MU_FRAC_UP'  : branch+'fakeMuFracUp',
+            # 'MU_FR_KIN_1' : branch+'fakeMuFrKin1',
+            # 'MU_FR_KIN_2' : branch+'fakeMuFrKin2',
+            # 'MU_FR_KIN_3' : branch+'fakeMuFrKin3',
+            # 'MU_FR_KIN_4' : branch+'fakeMuFrKin4',
+            # 'MU_FR_KIN_5' : branch+'fakeMuFrKin5',
+            # 'EL_FR_KIN_1' : branch+'fakeElFrKin1',
+            # 'EL_FR_KIN_2' : branch+'fakeElFrKin2',
+            # 'EL_FR_KIN_3' : branch+'fakeElFrKin3',
+            # 'EL_FR_KIN_4' : branch+'fakeElFrKin4',
+            # 'EL_FR_KIN_5' : branch+'fakeElFrKin5'
             }
 def fakeSystVariations() :
     return fakeSystWeightLeaves().keys()
@@ -80,6 +90,8 @@ def mcWeightLeaves() :
             'ESF_DOWN'     : branch+'elEffDo',
             'MEFF_UP'      : branch+'muEffUp',
             'MEFF_DOWN'    : branch+'muEffDo',
+            'PU_UP'        : branch+'pileupUp',
+            'PU_DOWN'      : branch+'pileupDo'
             }
 
 def mcWeightVariations() :
