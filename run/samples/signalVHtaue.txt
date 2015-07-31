@@ -1,0 +1,2 @@
+group.phys-susy.mc12_8TeV.189895.Pythia8EvtGen_AU2CTEQ6L1_ZH125_taue.SusyNt.e3057_s1773_s1776_r4485_r4540_p1512_n0155b
+group.phys-susy.mc12_8TeV.189896.Pythia8EvtGen_AU2CTEQ6L1_WH125_taue.SusyNt.e3057_s1773_s1776_r4485_r4540_p1512_n0155b

@@ -1,0 +1,1 @@
+group.phys-susy.mc12_8TeV.189894.PowHegPythia8EvtGen_AU2CT10_ggH125_taue.SusyNt.e3057_s1773_s1776_r4485_r4540_p1512_n0155b
