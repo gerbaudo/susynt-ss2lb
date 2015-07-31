@@ -152,8 +152,7 @@ def runFill(opts) :
     groups = dataset.DatasetGroup.build_groups_from_files_in_dir(opts.samples_dir)
     if not skip_charge_flip : groups.append(dataset.DatasetGroup.build_qflip_from_simulated_samples(groups))
     groups.append(first([g for g in groups if g.is_data]).clone_data_as_fake())
-    if opts.group : groups = [g for g in groups if g.name==opts.group]
-    if opts.exclude_group : groups = [g for g in groups if g.name!=opts.group]
+    groups = parse_group_option(opts, groups)
     if verbose : print '\n'.join("group {0} : {1} samples".format(g.name, len(g.datasets)) for g in groups)
     if debug :
         print '\n'.join("group {0} : {1} samples: {2}".format(g.name,
@@ -800,6 +799,36 @@ def guess_available_selections_from_histofiles(inputDir, plot_group, verbose):
                           " failed to guess anything from '{0}'"
                           "\nTry using --region".format(inputDir))
     return selections
+
+def parse_group_option(options=None, groups=[]):
+    "Given a list of Group objects, filter them according to options.group and options.exclude_group"
+    def is_regex(expr=''):
+        regex_common_operators = '.^$*+?'
+        return any(o in expr for o in regex_common_operators)
+    def is_list(expr=''):
+        return ',' in expr
+    if options.group:
+        group_opt = options.group
+        if is_regex(group_opt):
+            groups = utils.filterWithRegexp(groups, group_opt, lambda g: g.name)
+        elif is_list(group_opt):
+            group_list = group_opt.strip('[]').split(',')
+            groups = [g for g in groups if g.name in group_list]
+        else: # assume this is a single group
+            groups = [g for g in groups if g.name==group_opt]
+    if options.exclude_group:
+        group_opt = options.exclude_group
+        if is_regex(group_opt):
+            print 'excludeWithRegexp ',group_opt
+            groups = utils.excludeWithRegexp(groups, group_opt, lambda g: g.name)
+        elif is_list(group_opt):
+            group_list = group_opt.strip('[]').split(',')
+            groups = [g for g in groups if g.name not in group_list]
+        else: # assume this is a single group
+            groups = [g for g in groups if g.name!=group_opt]
+    if options.verbose:
+        print "parse_group_option: selected ",list(g.name for g in groups)
+    return groups
 
 #___________________________________________________________
 
