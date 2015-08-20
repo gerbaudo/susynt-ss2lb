@@ -39,28 +39,27 @@ struct FourMom {
 // cint is not able to parse 'complex' code; see
 // http://root.cern.ch/drupal/content/interacting-shared-libraries-rootcint
     FourMom& set4mom(const Lepton &l) {
-        const bool unbiased(true);
         px=l.Px(); py=l.Py(); pz=l.Pz(); E=l.E();
         charge = l.q;
-        d0Signif = l.d0Sig(unbiased);
-        z0SinTheta = l.z0SinTheta(unbiased);
-        ptCone = l.ptcone30;
+        d0Signif = l.d0Sig();
+        z0SinTheta = l.z0SinTheta();
+        // ptCone = l.ptcone30;
         return *this;
     }
     FourMom& set4mom(const Jet &j)    { px=j.Px(); py=j.Py(); pz=j.Pz(); E=j.E(); return *this; }
     FourMom& setMu(const Lepton &l) {
         isMu=true; isEl = isJet = false;
-        if(const Muon* m = dynamic_cast<const Muon*>(&l)) etCone = m->etcone30;
-        trigFlags = l.trigFlags;
+        // if(const Muon* m = dynamic_cast<const Muon*>(&l)) etCone = m->etcone30;
+        // trigFlags = l.trigFlags;
         return set4mom(l);
     }
     FourMom& setEl(const Lepton &l) {
         isEl=true; isMu = isJet = false;
-        if(const Electron *e = dynamic_cast<const Electron*>(&l)){
-            etCone = e->topoEtcone30Corr;
-            isTightPp = e->tightPP;
-        }
-        trigFlags = l.trigFlags;
+        // if(const Electron *e = dynamic_cast<const Electron*>(&l)){
+        //     etCone = e->topoEtcone30Corr;
+        //     isTightPp = e->tightPP;
+        // }
+        // trigFlags = l.trigFlags;
         return set4mom(l);
     }
     FourMom& setIsTight(bool v) { isTight = v; return *this; }
@@ -71,10 +70,10 @@ struct FourMom {
     FourMom& setMet(const Met &m)   { isJet=isMu=isEl=false; px=m.lv().Px(); py=m.lv().Py(); E=m.lv().E(); return *this; }
     /// metcorr used for lhfv
     FourMom& setMetCorr(const Met &m) {
-        double met_x = m.lv().Px() - m.softTerm_etx;
-        double met_y = m.lv().Py() - m.softTerm_ety;
-        TVector2 metCorr(met_x, met_y);
-        isJet=isMu=isEl=false; px=metCorr.Px(); py=metCorr.Py(); E=metCorr.Mod();
+        // double met_x = m.lv().Px() - m.softTerm_etx;
+        // double met_y = m.lv().Py() - m.softTerm_ety;
+        // TVector2 metCorr(met_x, met_y);
+        // isJet=isMu=isEl=false; px=metCorr.Px(); py=metCorr.Py(); E=metCorr.Mod();
         return *this;
     }
 #endif // end ifndef CINT
@@ -96,7 +95,7 @@ struct EventParameters {
     EventParameters& setQflipWeight(const double &w) { qflipWeight=w; return *this; }
     EventParameters& setEvent(const unsigned int &e) { eventNumber=e; return *this; }
     EventParameters& setRun(const unsigned int &r) { runNumber=r; return *this; }
-    EventParameters& setTriggerBits(const long long &trigFlags) { triggerBits.Set(MAX_NUM_BITS_FOR_TRIGGER_WORD, &trigFlags); return *this; }
+    EventParameters& setTriggerBits(const long long &trigFlags) { return *this; } // TODO triggerBits.Set(MAX_NUM_BITS_FOR_TRIGGER_WORD, &trigFlags); }
 #endif
 };
 
