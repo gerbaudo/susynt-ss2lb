@@ -11,7 +11,6 @@
 #include "SusyNtuple/string_utils.h"
 
 #include "TChain.h"
-#include "Cintex/Cintex.h"
 
 
 #include <cstdlib>
@@ -43,7 +42,6 @@ void print_usage(const char *exeName) {
 }
 //----------------------------------------------------------
 int main(int argc, char** argv) {
-    ROOT::Cintex::Cintex::Enable();
     int num_events = -1;
     int nSkip = 0;
     bool savefake=false;
