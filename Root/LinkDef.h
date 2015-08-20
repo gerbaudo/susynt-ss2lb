@@ -2,7 +2,6 @@
 #include "susynt-ss2lb/FakeTuplizer.h"
 #include "susynt-ss2lb/TupleMakerObjects.h"
 #include "susynt-ss2lb/WeightVariations.h"
-#include "susynt-ss2lb/MatrixPrediction.h"
 #include "susynt-ss2lb/LeptonTruthType.h"
 /* #include "susynt-ss2lb/kinematic.h" */
 
@@ -16,7 +15,6 @@
 #pragma link C++ namespace hlfv;
 #pragma link C++ class hlfv::Selector+;
 #pragma link C++ class hlfv::FakeTuplizer+;
-#pragma link C++ class hlfv::MatrixPrediction+;
 #pragma link C++ struct hlfv::FourMom+;
 #pragma link C++ struct hlfv::LeptonTruthType+;
 #pragma link C++ struct hlfv::EventParameters+;
