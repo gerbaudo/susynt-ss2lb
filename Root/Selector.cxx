@@ -12,7 +12,6 @@
 // #include "susynt-ss2lb/utils.h"
 
 #include "SusyNtuple/MCWeighter.h"
-#include "SusyNtuple/DilTrigLogic.h"
 #include "SusyNtuple/string_utils.h"
 
 #include "TString.h"
@@ -37,7 +36,6 @@ using hlfv::DileptonVariables;
 
 //-----------------------------------------
 Selector::Selector() :
-  m_trigObj(NULL),
   m_mcWeighter(NULL),
   m_useExistingList(false),
   m_computeSystematics(false),
@@ -46,14 +44,13 @@ Selector::Selector() :
   m_outTupleFile(""),
   m_saveBaselineNonPrompt(false)
 {
-  setAnaType(Ana_2LepWH);
+  nttools().setAnaType(Susy::AnalysisType::Ana_2LepWH);
   setSelectTaus(true);
 }
 //-----------------------------------------
 void Selector::Begin(TTree* /*tree*/)
 {
   SusyNtAna::Begin(0);
-  initDilTrigLogic();
   initSystematicsList();
   if(m_writeTuple) initTupleWriters();
 }
@@ -76,7 +73,7 @@ Bool_t Selector::Process(Long64_t entry)
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
     m_counter.increment(weightComponents.product(), "input");
     bool removeLepsFromIso(false);
-    selectObjects(NtSys_NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    selectObjects(Susy::NtSys::NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
     removeForwardMuons(); // do this before computing the event flags (can affect the 2l test)
     EventFlags eventFlags = computeEventFlags();
     if(m_saveBaselineNonPrompt) eventFlags.eq2slep = eventFlags.eq2blep;
@@ -89,17 +86,16 @@ Bool_t Selector::Process(Long64_t entry)
             const JetVector&  jets= m_signalJets2Lep;
             const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
             if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
-                const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
+                const JetVector cljets; // TODO (Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
                 DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
                 assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
                 if(isNominal){
                     incrementObjectCounters(vars, weightComponents, m_counter);
                     incrementObjectSplitCounters(vars, weightComponents);
                 }
-                bool is_data(!nt.evt()->isMC), is_mc(!is_data);
+                bool is_data(!nt.evt()->isMC);
                 bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
                 bool is_e_mu(eventIsEmu(l));
-                bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
                 bool is_same_sign(eventIsSameSign(l));
                 bool is_event_to_be_saved = (vars.numTaus==0 &&
                                              (is_data || two_mc_prompt) &&
@@ -114,14 +110,14 @@ Bool_t Selector::Process(Long64_t entry)
                     if(m_writeTuple) {
                         TupleMaker &tupleMaker = getTupleMaker(sys);
                         double weight(weightComponents.product());
-                        unsigned int run(nt.evt()->run), event(nt.evt()->event), nVtx(nt.evt()->nVtx);
+                        unsigned int run(nt.evt()->run), event(nt.evt()->eventNumber), nVtx(nt.evt()->nVtx);
                         bool isMc = nt.evt()->isMC;
                         const Lepton &l0 = *l[0];
                         const Lepton &l1 = *l[1];
                         LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
                         LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
-                        bool l0IsTight(SusyNtTools::isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
-                        bool l1IsTight(SusyNtTools::isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                        bool l0IsTight(nttools().isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                        bool l1IsTight(nttools().isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
                         bool computeWeightVariations = (m_computeSystematics && sys==Systematic::CENTRAL);
                         WeightVariations wv = (computeWeightVariations ?
                                                computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
@@ -159,34 +155,13 @@ void Selector::Terminate()
     cout<<"--- mue ---"<<endl;
     m_counterMue.printTableRaw     (cout);
     m_counterMue.printTableWeighted(cout);
-    if(m_trigObj) delete m_trigObj;
     if(m_mcWeighter) delete m_mcWeighter;
-}
-//-----------------------------------------
-bool Selector::initDilTrigLogic()
-{
-  string period = "Moriond";
-  bool useReweightUtils = false;
-  m_trigObj = new DilTrigLogic(period, useReweightUtils);
-//  if(m_useMCTrig) m_trigObj->useMCTrigger);
-  return (m_trigObj!=NULL);
 }
 //-----------------------------------------
 bool Selector::initMcWeighter(TTree *tree)
 {
     bool success=false;
-    if(tree){
-        string xsecDir = gSystem->ExpandPathName("$ROOTCOREBIN/data/SUSYTools/mc12_8TeV/");
-        m_mcWeighter = new MCWeighter(tree, xsecDir);
-        bool isPmssmSample(susy::utils::contains(sampleName(), "Herwigpp_UEEE3_CTEQ6L1_DGnoSL_TB10"));
-        m_mcWeighter->parseAdditionalXsecFile("${ROOTCOREBIN}/data/susynt-ss2lb/LFV.txt", m_dbg);
-        if(isPmssmSample) m_mcWeighter->setLabelBinCounter("Initial").clearAndRebuildSumwMap(m_tree);
-
-        if(m_dbg) cout<<"Selector: MCWeighter has been initialized"<<endl;
-    } else {
-        cout<<"Selector::initMcWeighter: error, invalid input tree, cannot initialize Mcweighter"<<endl;
-    }
-    return success;
+    // TODO drop
 }
 //-----------------------------------------
 bool Selector::initEventList(TTree *tree)
@@ -248,12 +223,13 @@ void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
     if(ntobj.evt()->isMC) {
         weightComponents.gen = ntobj.evt()->w;
         weightComponents.pileup = ntobj.evt()->wPileup;
+        // TODO
         // for now just nom since we're handling the syst variation when filling trees
-        const MCWeighter::WeightSys wSys = MCWeighter::Sys_NOM;
-        weightComponents.susynt = weighter.getMCWeight(ntobj.evt(), LUMI_A_L, wSys);
-        // getMCWeight provides gen * pu * xsec * lumi / sumw, so norm is xsec * lumi / sumw = susynt/(gen*pu)
-        float genpu(weightComponents.gen*weightComponents.pileup);
-        weightComponents.norm = (genpu != 0.0 ? weightComponents.susynt/genpu : 1.0);
+        // const MCWeighter::WeightSys wSys = MCWeighter::Sys_NOM;
+        // weightComponents.susynt = 1.0; // TODO weighter.getMCWeight(ntobj.evt(), LUMI_A_L, wSys);
+        // // getMCWeight provides gen * pu * xsec * lumi / sumw, so norm is xsec * lumi / sumw = susynt/(gen*pu)
+        // float genpu(weightComponents.gen*weightComponents.pileup);
+        // weightComponents.norm = (genpu != 0.0 ? weightComponents.susynt/genpu : 1.0);
     }
 }
 //-----------------------------------------
@@ -266,14 +242,12 @@ bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
     bool success=false;
     WeightComponents &wc = weightcomponents;
     if(leptons.size()>1) {
-        vars.hasFiredTrig = m_trigObj->passDilEvtTrig  (leptons, m_met->Et, nt.evt());
-        vars.hasTrigMatch = m_trigObj->passDilTrigMatch(leptons, m_met->Et, nt.evt());
         const Lepton &l0 = *(leptons[0]);
         const Lepton &l1 = *(leptons[1]);
         if(nt.evt()->isMC) {
-            wc.lepSf   = computeDileptonEfficiencySf(l0, l1, sys);
-            wc.trigger = computeDileptonTriggerWeight(leptons, sys);
-            wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
+            // wc.lepSf   = computeDileptonEfficiencySf(l0, l1, sys);
+            // wc.trigger = computeDileptonTriggerWeight(leptons, sys);
+            // wc.btag    = computeBtagWeight(jets, nt.evt(), sys);
         }
         success = true;
     } else {
@@ -303,12 +277,12 @@ void Selector::setDebug(int dbg)
 hlfv::EventFlags Selector::computeEventFlags()
 {
     EventFlags f;
-    int flag = nt.evt()->cutFlags[NtSys_NOM];
+    int flag = nt.evt()->cutFlags[Susy::NtSys::NOM];
     const LeptonVector &bleps = m_baseLeptons;
     const JetVector     &jets = m_baseJets;
     const JetVector    &pjets = m_preJets;
     const Susy::Met      *met = m_met;
-    uint run = nt.evt()->run, event(nt.evt()->event);
+    uint run = nt.evt()->run, event(nt.evt()->eventNumber);
     bool mc = nt.evt()->isMC;
     float mllMin(20);
     bool has2lep(bleps.size()>1 && bleps[0] && bleps[1]);
@@ -316,13 +290,13 @@ hlfv::EventFlags Selector::computeEventFlags()
     const int killHfor(4); // inheriting hardcoded magic values from HforToolD3PD.cxx
     bool pass_hfor(nt.evt()->hfor != killHfor);
     if(pass_hfor)                         f.hfor        = true;
-    if(passGRL        (flag           ))  f.grl         = true;
-    if(passLarErr     (flag           ))  f.larErr      = true;
-    if(passTileErr    (flag           ))  f.tileErr     = true;
-    if(passTTCVeto    (flag           ))  f.ttcVeto     = true;
-    if(passGoodVtx    (flag           ))  f.goodVtx     = true;
-    if(passTileTripCut(flag           ))  f.tileTrip    = true;
-    if(passLAr        (flag           ))  f.lAr         = true;
+    if(nttool().passGRL        (flag  ))  f.grl         = true;
+    if(nttool().passLarErr     (flag  ))  f.larErr      = true;
+    if(nttool().passTileErr    (flag  ))  f.tileErr     = true;
+    if(nttool().passTTCVeto    (flag  ))  f.ttcVeto     = true;
+    if(nttool().passGoodVtx    (flag  ))  f.goodVtx     = true;
+    if(nttool().passTileTripCut(flag  ))  f.tileTrip    = true;
+    if(nttool().passLAr        (flag  ))  f.lAr         = true;
     if(!hasBadJet     (jets           ))  f.badJet      = true;
     if(passDeadRegions(pjets,met,run,mc)) f.deadRegions = true;
     if(!hasBadMuon    (m_preMuons     ))  f.badMuon     = true;
@@ -389,38 +363,20 @@ void Selector::incrementObjectSplitCounters(const hlfv::DileptonVariables &v, co
 double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys)
 {
     double trigW = 1.0;
-    if(leptons.size()==2){
-        hlfv::Systematic::Value adjustedSys = hlfv::isTriggerSyst(sys) ? sys : Systematic::CENTRAL;
-        trigW = m_trigObj->getTriggerWeight(leptons, nt.evt()->isMC, m_met->Et,
-                                            m_signalJets2Lep.size(),
-                                            nt.evt()->nVtx, hlfv::sys2ntsys(adjustedSys));
-        bool twIsInvalid(isnan(trigW) || trigW<0.0);
-        if(twIsInvalid){
-            if(m_dbg) cout<<"SusySelection::getTriggerWeight: invalid weight "<<trigW<<", using 0.0"<<endl;
-            trigW = (twIsInvalid ? 0.0 : trigW);
-        }
-        assert(!twIsInvalid); // is this still necessary? DG-2014-06-24
-    } else {
-        cout<<"computeDileptonTriggerWeight: warning, not a dilepton, leptons.size() : "<<leptons.size()<<endl;
-    }
+// TODO
     return trigW;
 }
 //-----------------------------------------
 double Selector::computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys)
 {
-    JetVector taggableJets = SusyNtTools::getBTagSFJets2Lep(jets);
-    return SusyNtTools::bTagSF(evt, taggableJets, evt->mcChannel, hlfv::sys2ntbsys(sys));
+    // TODO
+    return 1.0;
 }
 //-----------------------------------------
 double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys)
 {
     float effFactor = 1.0;
-    float sf(lep.effSF), delta(0.0);
-    if     (lep.isEle() && sys==hlfv::Systematic::ESFUP   ) delta = (+lep.errEffSF);
-    else if(lep.isEle() && sys==hlfv::Systematic::ESFDOWN ) delta = (-lep.errEffSF);
-    else if(lep.isMu()  && sys==hlfv::Systematic::MEFFUP  ) delta = (+lep.errEffSF);
-    else if(lep.isMu()  && sys==hlfv::Systematic::MEFFDOWN) delta = (-lep.errEffSF);
-    effFactor = (sf + delta);
+    // TODO
     return effFactor;
 }
 //-----------------------------------------

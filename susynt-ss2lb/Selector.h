@@ -15,7 +15,6 @@
 #include <string>
 
 // fw decl
-class DilTrigLogic;
 class MCWeighter;
 class JVFUncertaintyTool;
 namespace Susy{ class Event; }
@@ -159,8 +158,6 @@ public:
     static bool eventIsSameSign(const LeptonVector &leptons);
 
 protected:
-    /// initialize the 2L trig logic
-    bool initDilTrigLogic();
     /// initialize weighter used for normalization
     bool initMcWeighter(TTree *tree);
    /// convention: we're using an event list if its filename was specified
@@ -190,8 +187,7 @@ protected:
        hack, but that's what we have for now. DG 2015-03-13
      */
     void removeForwardMuons();
-    DilTrigLogic*       m_trigObj;      ///< trigger logic class
-    MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
+    MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization // TODO delete (now upstream)
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress
     hlfv::CutFlowCounter m_counter; ///< counters for cutflow
     hlfv::CutFlowCounter m_counterEmu; ///< counters for cutflow (after channel split, only emu)

@@ -22,7 +22,6 @@ FakeTuplizer::FakeTuplizer() :
 void FakeTuplizer::Begin(TTree* /*tree*/)
 {
   SusyNtAna::Begin(0);
-  initDilTrigLogic();
   initTuples();
 }
 //-----------------------------------------
@@ -49,7 +48,7 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
         const JetVector&   bj = m_baseJets; // why are we using basejets and not m_signalJets2Lep?
         const LeptonVector& l = m_signalLeptons;
         if(l.size()==2 && eventIsEmu(l)) { // several vars cannot be computed if we don't have 2 lep
-            const JetVector cljets(Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, nttools().getAnaType()));
+            const JetVector cljets; // TODO (Selector::filterJets(m_signalJets2Lep, m_jvfTool, sys, nttools().getAnaType()));
             DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, m_signalJets2Lep, m_signalTaus);
             assignNonStaticWeightComponents(l, bj, sys, vars, weightComponents);
             incrementObjectSplitCounters(vars, weightComponents);
