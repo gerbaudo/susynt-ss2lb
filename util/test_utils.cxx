@@ -5,7 +5,7 @@
   Sep 2014
 */
 
-#include "SusyntHlfv/utils.h"
+#include "susynt-ss2lb/utils.h"
 
 #include <iostream>
 #include <string>

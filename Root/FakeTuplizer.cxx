@@ -1,7 +1,7 @@
-#include "SusyntHlfv/FakeTuplizer.h"
-#include "SusyntHlfv/WeightComponents.h"
-#include "SusyntHlfv/EventFlags.h"
-#include "SusyntHlfv/DileptonVariables.h"
+#include "susynt-ss2lb/FakeTuplizer.h"
+#include "susynt-ss2lb/WeightComponents.h"
+#include "susynt-ss2lb/EventFlags.h"
+#include "susynt-ss2lb/DileptonVariables.h"
 
 
 using namespace std;

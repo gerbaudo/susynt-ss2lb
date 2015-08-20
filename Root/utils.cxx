@@ -1,4 +1,4 @@
-#include "SusyntHlfv/utils.h"
+#include "susynt-ss2lb/utils.h"
 
 #include <algorithm>    // std::copy
 #include <cstdlib> // strtol

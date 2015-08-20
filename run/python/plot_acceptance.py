@@ -45,7 +45,7 @@ def run_with_chain(tree, n_max_entries=-1):
     period, useRewUtils = 'Moriond', False
     trig_logic = r.DilTrigLogic(period, useRewUtils)
     mcweighter = r.MCWeighter(tree)
-    mcweighter.parseAdditionalXsecFile('${ROOTCOREBIN}/data/SusyntHlfv/LFV.txt', verbose)
+    mcweighter.parseAdditionalXsecFile('${ROOTCOREBIN}/data/susynt-ss2lb/LFV.txt', verbose)
     n_entries_to_print = 4
     sys = ntutils.SusyNtSys.NtSys_NOM
     tauId = ntutils.TauID

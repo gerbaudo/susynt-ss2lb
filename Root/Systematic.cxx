@@ -1,4 +1,4 @@
-#include "SusyntHlfv/Systematic.h"
+#include "susynt-ss2lb/Systematic.h"
 
 #include <cassert>
 

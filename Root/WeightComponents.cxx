@@ -1,4 +1,4 @@
-#include "SusyntHlfv/WeightComponents.h"
+#include "susynt-ss2lb/WeightComponents.h"
 
 #include <sstream>      // std::ostringstream
 

@@ -1,4 +1,4 @@
-#include "SusyntHlfv/LeptonTruthType.h"
+#include "susynt-ss2lb/LeptonTruthType.h"
 
 #include "SusyNtuple/SusyNt.h"
 

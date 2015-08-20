@@ -1,4 +1,4 @@
-#include "SusyntHlfv/ProgressPrinter.h"
+#include "susynt-ss2lb/ProgressPrinter.h"
 
 #include <ctime>   // time_t, time
 #include <iomanip> // setw 

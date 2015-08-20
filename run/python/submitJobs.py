@@ -1,11 +1,11 @@
 #!/bin/env python
 
-# Submit the SusyntHlfv
+# Submit the susynt-ss2lb
 #
 #
 # davide.gerbaudo@gmail.com
 # Jan 2013 -- first version (within SusyTest0)
-# Jun 2014 -- rewrite (within SusyntHlfv)
+# Jun 2014 -- rewrite (within susynt-ss2lb)
 
 import optparse
 import os

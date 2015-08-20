@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-#include "SusyntHlfv/Systematic.h"
+#include "susynt-ss2lb/Systematic.h"
 #include "SusyNtuple/SusyDefs.h"
 
 using std::cout;

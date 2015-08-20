@@ -2,11 +2,11 @@
 #ifndef HLVF_SELECTOR_H
 #define HLVF_SELECTOR_H
 
-#include "SusyntHlfv/ProgressPrinter.h"
-#include "SusyntHlfv/CutFlowCounter.h"
-#include "SusyntHlfv/Systematic.h"
-#include "SusyntHlfv/TupleMaker.h"
-#include "SusyntHlfv/WeightVariations.h"
+#include "susynt-ss2lb/ProgressPrinter.h"
+#include "susynt-ss2lb/CutFlowCounter.h"
+#include "susynt-ss2lb/Systematic.h"
+#include "susynt-ss2lb/TupleMaker.h"
+#include "susynt-ss2lb/WeightVariations.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"

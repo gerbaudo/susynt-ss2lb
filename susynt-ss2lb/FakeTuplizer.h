@@ -2,8 +2,8 @@
 #ifndef HLVF_FAKETUPLIZER_H
 #define HLVF_FAKETUPLIZER_H
 
-#include "SusyntHlfv/Selector.h"
-#include "SusyntHlfv/TupleMaker.h"
+#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss2lb/TupleMaker.h"
 
 namespace hlfv{
 

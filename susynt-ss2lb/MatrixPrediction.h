@@ -3,7 +3,7 @@
 #define SusyAna_MatrixPrediction_h
 
 
-#include "SusyntHlfv/Selector.h"
+#include "susynt-ss2lb/Selector.h"
 #include "DileptonMatrixMethod/DileptonMatrixMethod.h"
 
 #include <string>

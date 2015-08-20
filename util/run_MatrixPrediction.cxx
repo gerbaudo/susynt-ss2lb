@@ -5,9 +5,9 @@
 #include "TChain.h"
 #include "Cintex/Cintex.h"
 
-#include "SusyntHlfv/MatrixPrediction.h"
+#include "susynt-ss2lb/MatrixPrediction.h"
 #include "SusyNtuple/ChainHelper.h"
-#include "SusyntHlfv/utils.h"
+#include "susynt-ss2lb/utils.h"
 
 using namespace std;
 

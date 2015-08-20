@@ -1,10 +1,10 @@
-#include "SusyntHlfv/MatrixPrediction.h"
+#include "susynt-ss2lb/MatrixPrediction.h"
 
-#include "SusyntHlfv/WeightComponents.h"
-#include "SusyntHlfv/EventFlags.h"
-#include "SusyntHlfv/DileptonVariables.h"
-#include "SusyntHlfv/WeightVariations.h"
-#include "SusyntHlfv/utils.h"
+#include "susynt-ss2lb/WeightComponents.h"
+#include "susynt-ss2lb/EventFlags.h"
+#include "susynt-ss2lb/DileptonVariables.h"
+#include "susynt-ss2lb/WeightVariations.h"
+#include "susynt-ss2lb/utils.h"
 
 #include "DileptonMatrixMethod/Systematic.h"
 #include "SusyNtuple/SusyDefs.h"

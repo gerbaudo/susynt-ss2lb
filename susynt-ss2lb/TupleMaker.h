@@ -2,8 +2,8 @@
 #ifndef HLVF_TUPLEMAKER_H
 #define HLVF_TUPLEMAKER_H
 
-#include "SusyntHlfv/TupleMakerObjects.h"
-#include "SusyntHlfv/WeightVariations.h"
+#include "susynt-ss2lb/TupleMakerObjects.h"
+#include "susynt-ss2lb/WeightVariations.h"
 
 #include <string>
 #include <vector>

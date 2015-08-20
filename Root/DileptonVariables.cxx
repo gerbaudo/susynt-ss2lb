@@ -1,7 +1,7 @@
-#include "SusyntHlfv/DileptonVariables.h"
+#include "susynt-ss2lb/DileptonVariables.h"
 
-#include "SusyntHlfv/Selector.h"
-#include "SusyntHlfv/LeptonTruthType.h"
+#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss2lb/LeptonTruthType.h"
 
 #include "SusyNtuple/SusyNt.h" // Lepton, Jet, Met, and all that
 #include "SusyNtuple/SusyDefs.h" // LeptonVector, JetVector and all that

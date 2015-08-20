@@ -1,15 +1,15 @@
-#include "SusyntHlfv/Selector.h"
-#include "SusyntHlfv/WeightComponents.h"
-#include "SusyntHlfv/EventFlags.h"
-#include "SusyntHlfv/DileptonVariables.h"
-#include "SusyntHlfv/LeptonTruthType.h"
-#include "SusyntHlfv/NtUtils.h"
-#include "SusyntHlfv/utils.h"
+#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss2lb/WeightComponents.h"
+#include "susynt-ss2lb/EventFlags.h"
+#include "susynt-ss2lb/DileptonVariables.h"
+#include "susynt-ss2lb/LeptonTruthType.h"
+#include "susynt-ss2lb/NtUtils.h"
+#include "susynt-ss2lb/utils.h"
 
-// #include "SusyntHlfv/EventFlags.h"
-// #include "SusyntHlfv/criteria.h"
-// #include "SusyntHlfv/kinematic.h"
-// #include "SusyntHlfv/utils.h"
+// #include "susynt-ss2lb/EventFlags.h"
+// #include "susynt-ss2lb/criteria.h"
+// #include "susynt-ss2lb/kinematic.h"
+// #include "susynt-ss2lb/utils.h"
 
 #include "SusyNtuple/MCWeighter.h"
 #include "SusyNtuple/DilTrigLogic.h"
@@ -197,7 +197,7 @@ bool Selector::initMcWeighter(TTree *tree)
         string xsecDir = gSystem->ExpandPathName("$ROOTCOREBIN/data/SUSYTools/mc12_8TeV/");
         m_mcWeighter = new MCWeighter(tree, xsecDir);
         bool isPmssmSample(susy::utils::contains(sampleName(), "Herwigpp_UEEE3_CTEQ6L1_DGnoSL_TB10"));
-        m_mcWeighter->parseAdditionalXsecFile("${ROOTCOREBIN}/data/SusyntHlfv/LFV.txt", m_dbg);
+        m_mcWeighter->parseAdditionalXsecFile("${ROOTCOREBIN}/data/susynt-ss2lb/LFV.txt", m_dbg);
         if(isPmssmSample) m_mcWeighter->setLabelBinCounter("Initial").clearAndRebuildSumwMap(m_tree);
 
         if(m_dbg) cout<<"Selector: MCWeighter has been initialized"<<endl;

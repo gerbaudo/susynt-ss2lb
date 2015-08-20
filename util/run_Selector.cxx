@@ -6,7 +6,7 @@
    June 2014
 */
 
-#include "SusyntHlfv/Selector.h"
+#include "susynt-ss2lb/Selector.h"
 #include "SusyNtuple/ChainHelper.h"
 #include "SusyNtuple/string_utils.h"
 

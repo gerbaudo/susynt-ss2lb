@@ -7,7 +7,7 @@
 */
 
 
-#include "SusyntHlfv/CutFlowCounter.h"
+#include "susynt-ss2lb/CutFlowCounter.h"
 
 #include <iostream>
 using namespace std;

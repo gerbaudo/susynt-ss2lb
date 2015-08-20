@@ -1,10 +1,10 @@
-#include "SusyntHlfv/Selector.h"
-#include "SusyntHlfv/FakeTuplizer.h"
-#include "SusyntHlfv/TupleMakerObjects.h"
-#include "SusyntHlfv/WeightVariations.h"
-#include "SusyntHlfv/MatrixPrediction.h"
-#include "SusyntHlfv/LeptonTruthType.h"
-/* #include "SusyntHlfv/kinematic.h" */
+#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss2lb/FakeTuplizer.h"
+#include "susynt-ss2lb/TupleMakerObjects.h"
+#include "susynt-ss2lb/WeightVariations.h"
+#include "susynt-ss2lb/MatrixPrediction.h"
+#include "susynt-ss2lb/LeptonTruthType.h"
+/* #include "susynt-ss2lb/kinematic.h" */
 
 #ifdef __CINT__
 

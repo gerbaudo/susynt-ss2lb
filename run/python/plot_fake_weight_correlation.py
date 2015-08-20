@@ -14,7 +14,7 @@ import glob
 def main():
     test_first_1k_events = True
     print_events_as_txt = False # needed to evaluate the matrix on stdin
-    base_dir = '/gdata/atlas/gerbaudo/hlfv/take0/SusyntHlfv/run/out/matrix_prediction'
+    base_dir = '/gdata/atlas/gerbaudo/hlfv/take0/susynt-ss2lb/run/out/matrix_prediction'
     dir1 = base_dir+'/Jul_26/'
     dir2 = base_dir+'/May_20/'
     tree_name = 'hlfv_tuple'

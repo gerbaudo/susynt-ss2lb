@@ -1,4 +1,4 @@
-#include "SusyntHlfv/EventFlags.h"
+#include "susynt-ss2lb/EventFlags.h"
 
 #include <sstream>      // std::ostringstream
 
