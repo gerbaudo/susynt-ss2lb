@@ -2,6 +2,7 @@
 #ifndef SUSYNTHLVF_SYSTEMATICS_H
 #define SUSYNTHLVF_SYSTEMATICS_H
 
+#include "SusyNtuple/SusyNtSys.h"
 #include "SusyNtuple/SusyDefs.h"
 #include <string>
 
@@ -158,7 +159,7 @@ const std::string SystematicNames[] = {
 /// whether s is a valid enum value
 inline bool isValid(const Systematic::Value &s) { return s>=Systematic::CENTRAL && s<=Systematic::FakeTauBGSyst; }
 /// whether s is a valid enum value
-inline bool isValid(const SusyNtSys &s)  { return s>=NtSys_NOM  && s< NtSys_N; }
+inline bool isValid(const Susy::NtSys::SusyNtSys &s)  { return s>=Susy::NtSys::NOM  && s< Susy::NtSys::SYS_UNKNOWN; }
 /// whether it's a trigger-related systs
 /**
    Used to decide whether one needs to call the trigger tool
@@ -167,12 +168,10 @@ bool isTriggerSyst(const Systematic::Value &s);
 /// string representation
 inline std::string syst2str(const Systematic::Value &s) { return isValid(s) ? SystematicNames[s] : "unknown"; }
 /// string representation
-inline std::string syst2str(const SusyNtSys &s)  { return isValid(s) ? SusyNtSystNames[s] : "unknown"; }
+inline std::string syst2str(const Susy::NtSys::SusyNtSys &s)  { return isValid(s) ? Susy::NtSys::SusyNtSysNames[s] : "unknown"; }
 /// convert Systematic to SusyNtSys
-SusyNtSys sys2ntsys(const Systematic::Value &s);
+Susy::NtSys::SusyNtSys sys2ntsys(const Systematic::Value &s);
 /// convert SusyNtSys to Systematic; assert(false) if invalid
-Systematic::Value ntsys2sys(const SusyNtSys &s);
-/// convert Systematic to SusyDef::BTagSys; return nominal if not a btag-related sys
-BTagSys sys2ntbsys(const Systematic::Value &s);
+Systematic::Value ntsys2sys(const Susy::NtSys::SusyNtSys &s);
 } // hlfv
 #endif

@@ -15,7 +15,7 @@ bool hlfv::isTriggerSyst(const Systematic::Value &s)
             s==Systematic::TTRIGSFDOWN  );
 }
 //-----------------------------------------
-Systematic::Value hlfv::ntsys2sys(const SusyNtSys &s)
+Systematic::Value hlfv::ntsys2sys(const Susy::NtSys::SusyNtSys &s)
 {
     Systematic::Value r = Systematic::CENTRAL;
     switch(s) {
@@ -54,7 +54,7 @@ Systematic::Value hlfv::ntsys2sys(const SusyNtSys &s)
     return r;
 }
 //-----------------------------------------
-SusyNtSys hlfv::sys2ntsys(const Systematic::Value &s)
+Susy::NtSys::SusyNtSys hlfv::sys2ntsys(const Systematic::Value &s)
 {
     // Here we assume that NtSys_N <= N(Systematic); in general this
     // is true because we have other syst (eg. fakes) in addition to
@@ -64,20 +64,8 @@ SusyNtSys hlfv::sys2ntsys(const Systematic::Value &s)
     // have, for example:
     // NtSys_EES_MAT_UP=4    and    Systematic::EESMATUP=14.
     int r=0;
-    while(r<NtSys_N) { if(s==ntsys2sys(static_cast<SusyNtSys>(r))) break; else r++;}
-    return static_cast<SusyNtSys>(r);
-}
-//-----------------------------------------
-BTagSys hlfv::sys2ntbsys(const Systematic::Value &sys)
-{
-    BTagSys bsys(sys==Systematic::BJETUP      ? BTag_BJet_UP :
-                 sys==Systematic::BJETDOWN    ? BTag_BJet_DN :
-                 sys==Systematic::CJETUP      ? BTag_CJet_UP :
-                 sys==Systematic::CJETDOWN    ? BTag_CJet_DN :
-                 sys==Systematic::BMISTAGUP   ? BTag_LJet_UP :
-                 sys==Systematic::BMISTAGDOWN ? BTag_LJet_DN :
-                 BTag_NOM);
-    return bsys;
+    while(r<Susy::NtSys::SYS_UNKNOWN) { if(s==ntsys2sys(static_cast<Susy::NtSys::SusyNtSys>(r))) break; else r++;}
+    return static_cast<Susy::NtSys::SusyNtSys>(r);
 }
 //-----------------------------------------
 
