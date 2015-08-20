@@ -15,7 +15,6 @@
 #include <string>
 
 // fw decl
-class chargeFlip;
 class DilTrigLogic;
 class MCWeighter;
 class JVFUncertaintyTool;
@@ -131,12 +130,6 @@ protected:
        Need access to several internal variables, so cannot be static
      */
     double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
-    /// probability that an OS dilepton pair is reconstructed as a SS one
-    /**
-       We use opposite-sign simulated events to estimate the same-sign
-       ones that are due to an electron charge-flip.
-     */
-    double computeQflipWeight(const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met);
     /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
     float computeCorrectedEtCone(const Lepton *l);
     /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
@@ -164,15 +157,8 @@ public:
     static bool eventIsOppositeSign(const LeptonVector &leptons);
     /// two same-sign leptons
     static bool eventIsSameSign(const LeptonVector &leptons);
-    /// the charge flip map used for this analysis (see ChargeFlip/data/README)
-    static std::string chargeFlipFilename() {
-        return "${ROOTCOREBIN}/data/ChargeFlip/chargeflip_map_12nov2014_scale_with_mc_last_ptbin.root";
-//        return "${ROOTCOREBIN}/data/ChargeFlip/d0_chargeflip_map.root";
-    }
 
 protected:
-    /// initialize the charge flip tool from WeakProduction/ChargeFlip
-    bool initChargeFlipTool();
     /// initialize the 2L trig logic
     bool initDilTrigLogic();
     /// initialize weighter used for normalization
@@ -204,7 +190,6 @@ protected:
        hack, but that's what we have for now. DG 2015-03-13
      */
     void removeForwardMuons();
-    chargeFlip*         m_qflipper;     ///< charge flip tool
     DilTrigLogic*       m_trigObj;      ///< trigger logic class
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization
     hlfv::ProgressPrinter m_printer; ///< tool to print the progress

@@ -7,7 +7,6 @@ Quickstart
 git clone git@github.com:gerbaudo/susynt-ss2lb.git
 git clone git@github.com:gerbaudo/SusyNtuple.git
 git clone git@github.com:gerbaudo/DileptonMatrixMethod.git
-svn co svn+ssh://svn.cern.ch/reps/atlasphys/Physics/SUSY/Analyses/WeakProduction/ChargeFlip/trunk ChargeFlip
 # options might not be needed on your setup
 localSetupROOT --rootVersion 5.34.18-x86_64-slc6-gcc4.7
 # numpy is needed for some of the scripts

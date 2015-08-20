@@ -15,8 +15,6 @@
 #include "SusyNtuple/DilTrigLogic.h"
 #include "SusyNtuple/string_utils.h"
 
-#include "ChargeFlip/chargeFlip.h"
-
 #include "TString.h"
 #include "TSystem.h"
 #include "TVector2.h"
@@ -39,7 +37,6 @@ using hlfv::DileptonVariables;
 
 //-----------------------------------------
 Selector::Selector() :
-  m_qflipper(NULL),
   m_trigObj(NULL),
   m_mcWeighter(NULL),
   m_useExistingList(false),
@@ -56,7 +53,6 @@ Selector::Selector() :
 void Selector::Begin(TTree* /*tree*/)
 {
   SusyNtAna::Begin(0);
-  initChargeFlipTool();
   initDilTrigLogic();
   initSystematicsList();
   if(m_writeTuple) initTupleWriters();
@@ -92,7 +88,6 @@ Bool_t Selector::Process(Long64_t entry)
             const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
             const JetVector&  jets= m_signalJets2Lep;
             const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
-#warning todo re-enable qflippable
             if(l.size()==2) { // several vars cannot be computed if we don't have 2 lep
                 const JetVector cljets(Selector::filterJets(jets, m_jvfTool, sys, m_anaType));
                 DileptonVariables vars = computeDileptonVariables(l, m_met, cljets, jets, m_signalTaus);
@@ -105,7 +100,6 @@ Bool_t Selector::Process(Long64_t entry)
                 bool two_mc_prompt = m_saveBaselineNonPrompt ? true : vars.hasTwoPromptLeptons;
                 bool is_e_mu(eventIsEmu(l));
                 bool has_some_electron = (l[0]->isEle() || l[1]->isEle());
-                bool is_qflippable = (is_mc && has_some_electron && eventIsOppositeSign(l));
                 bool is_same_sign(eventIsSameSign(l));
                 bool is_event_to_be_saved = (vars.numTaus==0 &&
                                              (is_data || two_mc_prompt) &&
@@ -114,7 +108,7 @@ Bool_t Selector::Process(Long64_t entry)
                                              vars.hasTrigMatch &&
                                              abs(vars.eta0)<2.4 &&
                                              abs(vars.eta1)<2.4 &&
-                                             (is_e_mu || is_same_sign || is_qflippable));
+                                             (is_e_mu || is_same_sign));
                 if(is_event_to_be_saved){
                     if(usingEventList() && isNominal && !m_useExistingList) m_eventList.addEvent(entry);
                     if(m_writeTuple) {
@@ -134,7 +128,6 @@ Bool_t Selector::Process(Long64_t entry)
                                                WeightVariations());
                         tupleMaker
                             .setTriggerBits(nt.evt()->trigFlags)
-                            .setQflipWeight(computeQflipWeight(l0, l1, *m_met))
                             .setWeightVariations(wv)
                             .setNumFjets(vars.numForwardJets)
                             .setNumBjets(vars.numBtagJets)
@@ -166,19 +159,8 @@ void Selector::Terminate()
     cout<<"--- mue ---"<<endl;
     m_counterMue.printTableRaw     (cout);
     m_counterMue.printTableWeighted(cout);
-    //if(m_qflipper) delete m_qflipper; // for some reason this causes a coredump; to be investigated
     if(m_trigObj) delete m_trigObj;
     if(m_mcWeighter) delete m_mcWeighter;
-}
-//-----------------------------------------
-bool Selector::initChargeFlipTool()
-{
-    string qflipMapFilename = gSystem->ExpandPathName(Selector::chargeFlipFilename().c_str());
-    m_qflipper = new chargeFlip(qflipMapFilename);
-    if(m_dbg) m_qflipper->printSettings();
-    bool has_configured_map = (m_qflipper!=NULL &&
-                               static_cast<bool>(m_qflipper->getMap()));
-    return has_configured_map;
 }
 //-----------------------------------------
 bool Selector::initDilTrigLogic()
@@ -428,31 +410,6 @@ double Selector::computeBtagWeight(const JetVector& jets, const Susy::Event* evt
 {
     JetVector taggableJets = SusyNtTools::getBTagSFJets2Lep(jets);
     return SusyNtTools::bTagSF(evt, taggableJets, evt->mcChannel, hlfv::sys2ntbsys(sys));
-}
-//-----------------------------------------
-double Selector::computeQflipWeight(const Susy::Lepton &l0, const Susy::Lepton &l1, const Susy::Met &met)
-{
-    double prob=0.0;
-    bool isOppositeSign(l0.q*l1.q<0);
-    bool isSimulation(nt.evt()->isMC);
-    bool hasAtLeastOneElectron(l0.isEle() || l1.isEle());
-    if(isOppositeSign && isSimulation && hasAtLeastOneElectron) {
-        int pdg0(hlfv::pdgIdFromLep(l0)), pdg1(hlfv::pdgIdFromLep(l1));
-        // in principle the TLorentzVector can be smeared by qflip (irrelevant to 1st order)
-        TLorentzVector smearedLv0(l0), smearedLv1(l1);
-        TVector2 smearedMet(met.lv().Px(), met.lv().Py());
-        int systematic=0; // for now we don't care about the qflip syst variation; see chargeFlip.h
-        m_qflipper->setSeed(nt.evt()->event);
-        double flipProb = m_qflipper->OS2SS(pdg0, &smearedLv0, pdg1, &smearedLv1, &smearedMet, systematic);
-        double overlapFrac = m_qflipper->overlapFrac().first;
-        prob = flipProb*overlapFrac;
-        // cout<<"for"
-        //     <<" l0 "<<(l0.isEle()?"el":"mu")<<" ("<<l0.Pt()<<", "<<l0.Eta()<<")"
-        //     <<" l1 "<<(l1.isEle()?"el":"mu")<<" ("<<l1.Pt()<<", "<<l1.Eta()<<")"
-        //     <<" qflip = "<<flipProb<<" * "<<overlapFrac<<" = "<<prob
-        //     <<endl;
-   }
-    return prob;
 }
 //-----------------------------------------
 double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys)
