@@ -12,7 +12,6 @@ git clone git@github.com:gerbaudo/susynt-ss3l.git
 setupATLAS
 source bash/setup_area.sh
 source bash/setup_release.sh
-
 # numpy is needed for some of the scripts
 localSetupSFT --cmtConfig=x86_64-slc6-gcc48-opt pyanalysis/1.4_python2.7
 
