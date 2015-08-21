@@ -289,23 +289,24 @@ hlfv::EventFlags Selector::computeEventFlags()
     float mll(has2lep ? (*bleps[0] + *bleps[1]).M() : 0.0);
     const int killHfor(4); // inheriting hardcoded magic values from HforToolD3PD.cxx
     bool pass_hfor(nt.evt()->hfor != killHfor);
-    if(pass_hfor)                         f.hfor        = true;
-    if(nttool().passGRL        (flag  ))  f.grl         = true;
-    if(nttool().passLarErr     (flag  ))  f.larErr      = true;
-    if(nttool().passTileErr    (flag  ))  f.tileErr     = true;
-    if(nttool().passTTCVeto    (flag  ))  f.ttcVeto     = true;
-    if(nttool().passGoodVtx    (flag  ))  f.goodVtx     = true;
-    if(nttool().passTileTripCut(flag  ))  f.tileTrip    = true;
-    if(nttool().passLAr        (flag  ))  f.lAr         = true;
-    if(!hasBadJet     (jets           ))  f.badJet      = true;
-    if(passDeadRegions(pjets,met,run,mc)) f.deadRegions = true;
-    if(!hasBadMuon    (m_preMuons     ))  f.badMuon     = true;
-    if(!hasCosmicMuon (m_baseMuons    ))  f.cosmicMuon  = true;
-    if(bleps.size() >= 2               )  f.ge2blep     = true;
-    if(bleps.size() == 2               )  f.eq2blep     = true;
-    if(mll>mllMin                      )  f.mllMin      = true;
-    if(m_signalLeptons.size()==2)         f.eq2slep     = true;
-    if(m_signalTaus.size()==0          )  f.tauVeto     = true;
+    SusyNtTools &nt = nttools();
+    if(pass_hfor                           )  f.hfor        = true;
+    if(nt.passGRL        (flag            ))  f.grl         = true;
+    if(nt.passLarErr     (flag            ))  f.larErr      = true;
+    if(nt.passTileErr    (flag            ))  f.tileErr     = true;
+    if(nt.passTTCVeto    (flag            ))  f.ttcVeto     = true;
+    if(nt.passGoodVtx    (flag            ))  f.goodVtx     = true;
+    if(nt.passTileTripCut(flag            ))  f.tileTrip    = true;
+    if(nt.passLAr        (flag            ))  f.lAr         = true;
+    if(!nt.hasBadJet     (jets            ))  f.badJet      = true;
+    if(nt.passDeadRegions(pjets,met,run,mc))  f.deadRegions = true;
+    if(!nt.hasBadMuon    (m_preMuons      ))  f.badMuon     = true;
+    if(!nt.hasCosmicMuon (m_baseMuons     ))  f.cosmicMuon  = true;
+    if(bleps.size() >= 2                   )  f.ge2blep     = true;
+    if(bleps.size() == 2                   )  f.eq2blep     = true;
+    if(mll>mllMin                          )  f.mllMin      = true;
+    if(m_signalLeptons.size()==2           )  f.eq2slep     = true;
+    if(m_signalTaus.size()==0              )  f.tauVeto     = true;
     return f;
 }
 //-----------------------------------------
@@ -414,7 +415,7 @@ JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfToo
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(SusyNtTools::isCentralLightJet(jets[i], jvfTool, hlfv::sys2ntsys(sys), anaType))
+        if(nttools().m_jetSelector.isCentralLightJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -424,7 +425,7 @@ JetVector Selector::filterForwardJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(SusyNtTools::isForwardJet(jets[i]))
+        if(nttools().m_jetSelector.isForwardJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -434,7 +435,7 @@ JetVector Selector::filterBtagJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(SusyNtTools::isCentralBJet(jets[i]))
+        if(nttools().m_jetSelector.isCentralBJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -448,10 +449,10 @@ float Selector::computeCorrectedEtCone(const Lepton *l)
         bool isMC(nt.evt()->isMC);
         if(l->isEle()) {
             if(const Electron* e = static_cast<const Electron*>(l))
-                correctedEtCone = SusyNtTools::elEtTopoConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+                correctedEtCone = nttools().elEtTopoConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
         } else if(l->isMu()) {
             if(const Muon* m = static_cast<const Muon*>(l))
-                correctedEtCone = SusyNtTools::muEtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+                correctedEtCone = nttools().muEtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
         }
     }
     return correctedEtCone;
@@ -465,10 +466,10 @@ float Selector::computeCorrectedPtCone(const Lepton *l)
         bool isMC(nt.evt()->isMC);
         if(l->isEle()) {
             if(const Electron* e = static_cast<const Electron*>(l))
-                correctedPtCone = SusyNtTools::elPtConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+                correctedPtCone = nttools().elPtConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
         } else if(l->isMu()) {
             if(const Muon* m = static_cast<const Muon*>(l))
-                correctedPtCone = SusyNtTools::muPtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+                correctedPtCone = nttools().muPtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
         }
     }
     return correctedPtCone;
@@ -529,7 +530,7 @@ hlfv::TupleMaker& Selector::getTupleMaker(const Systematic::Value s)
 bool Selector::initTupleWriters()
 {
     bool success = false;
-    if(!susy::utils::endswith(m_outTupleFile, ".root")){
+    if(!Susy::utils::endswith(m_outTupleFile, ".root")){
         cout<<"You must provide a root output file for the ntuple"<<endl;
     } else {
         string filenameNom = m_outTupleFile;

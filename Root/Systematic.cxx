@@ -19,37 +19,14 @@ Systematic::Value hlfv::ntsys2sys(const Susy::NtSys::SusyNtSys &s)
 {
     Systematic::Value r = Systematic::CENTRAL;
     switch(s) {
-    case NtSys_NOM             :  r =  Systematic::CENTRAL      ; break;
-    case NtSys_EES_Z_UP        :  r =  Systematic::EESZUP       ; break;
-    case NtSys_EES_Z_DN        :  r =  Systematic::EESZDOWN     ; break;
-    case NtSys_EES_MAT_UP      :  r =  Systematic::EESMATUP     ; break;
-    case NtSys_EES_MAT_DN      :  r =  Systematic::EESMATDOWN   ; break;
-    case NtSys_EES_PS_UP       :  r =  Systematic::EESPSUP      ; break;
-    case NtSys_EES_PS_DN       :  r =  Systematic::EESPSDOWN    ; break; 
-    case NtSys_EES_LOW_UP      :  r =  Systematic::EESLOWUP     ; break;
-    case NtSys_EES_LOW_DN      :  r =  Systematic::EESLOWDOWN   ; break;
-    case NtSys_EER_UP          :  r =  Systematic::EERUP        ; break;
-    case NtSys_EER_DN          :  r =  Systematic::EERDOWN      ; break; 
-    case NtSys_MS_UP           :  r =  Systematic::MESUP        ; break;
-    case NtSys_MS_DN           :  r =  Systematic::MESDOWN      ; break;
-    case NtSys_ID_UP           :  r =  Systematic::MIDUP        ; break;
-    case NtSys_ID_DN           :  r =  Systematic::MIDDOWN      ; break;
-    case NtSys_JES_UP          :  r =  Systematic::JESUP        ; break;
-    case NtSys_JES_DN          :  r =  Systematic::JESDOWN      ; break;
-    case NtSys_JER             :  r =  Systematic::JER          ; break;
-    case NtSys_SCALEST_UP      :  r =  Systematic::SCALESTUP    ; break;
-    case NtSys_SCALEST_DN      :  r =  Systematic::SCALESTDOWN  ; break;
-    case NtSys_RESOST          :  r =  Systematic::RESOST       ; break;
-    case NtSys_TRIGSF_EL_UP    :  r =  Systematic::ETRIGREWUP   ; break;
-    case NtSys_TRIGSF_EL_DN    :  r =  Systematic::ETRIGREWDOWN ; break;
-    case NtSys_TRIGSF_MU_UP    :  r =  Systematic::MTRIGREWUP   ; break;
-    case NtSys_TRIGSF_MU_DN    :  r =  Systematic::MTRIGREWDOWN ; break;
-    case NtSys_TES_UP          :  r =  Systematic::TESUP        ; break;
-    case NtSys_TES_DN          :  r =  Systematic::TESDOWN      ; break;
-    case NtSys_JVF_UP          :  r =  Systematic::JVFUP        ; break;
-    case NtSys_JVF_DN          :  r =  Systematic::JVFDOWN      ; break;        
-    case NtSys_N               : assert(false)         ; break; // perhaps throw an exception instead
-        // no default, so that the compiler will warn us of un-handled cases
+    case Susy::NtSys::NOM             :  r =  Systematic::CENTRAL      ; break;
+    case Susy::NtSys::TRIGSF_EL_UP    :  r =  Systematic::ETRIGREWUP   ; break;
+    case Susy::NtSys::TRIGSF_EL_DN    :  r =  Systematic::ETRIGREWDOWN ; break;
+    case Susy::NtSys::TRIGSF_MU_UP    :  r =  Systematic::MTRIGREWUP   ; break;
+    case Susy::NtSys::TRIGSF_MU_DN    :  r =  Systematic::MTRIGREWDOWN ; break;
+    case Susy::NtSys::SYS_UNKNOWN     :  assert(false); break; // perhaps throw an exception instead
+    // no default, so that the compiler will warn us of un-handled cases
+    default: assert(false); // temporarily (2015-08-21) suppress warnings
     }
     return r;
 }

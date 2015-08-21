@@ -57,8 +57,8 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
     v.metPhi = met->phi;
 
     v.numCentralLightJets = cljets.size();
-    v.numBtagJets = Selector::filterBtagJets(alljets).size();
-    v.numForwardJets = Selector::filterForwardJets(alljets).size();
+    // v.numBtagJets = Selector::filterBtagJets(alljets).size();
+    // v.numForwardJets = Selector::filterForwardJets(alljets).size();
     v.numTaus = taus.size();
 
     if(cljets.size()>0) { const Susy::Jet& j = (*cljets[0]); v.j0pt = j.Pt(); v.j0eta = j.Eta(); v.j0phi = j.Phi(); }

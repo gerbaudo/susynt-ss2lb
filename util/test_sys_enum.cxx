@@ -15,12 +15,13 @@ using std::cout;
 using std::endl;
 using std::string;
 using hlfv::Systematic;
+using Susy::NtSys::SusyNtSys;
 
 int main(int argc, char** argv)
 {
     size_t failing=0;
     cout<<"\tSusyNtSys\tswh::Systematic"<<endl;
-    for(int i=0; i<NtSys_N; ++i){
+    for(int i=0; i<Susy::NtSys::SYS_UNKNOWN; ++i){
         SusyNtSys sNt = static_cast<SusyNtSys>(i);
         Systematic::Value sWh = hlfv::ntsys2sys(sNt);
         SusyNtSys sNt2 = hlfv::sys2ntsys(sWh);
