@@ -1,4 +1,4 @@
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/utils.h"
 
 #include <algorithm>    // std::copy
 #include <cstdlib> // strtol
@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-namespace hlfv
+namespace ss3l
 {
 //----------------------------------------------------------
 std::string basedir(const std::string &path)
@@ -114,4 +114,4 @@ std::string vfloat2str(const std::vector<float> &v)
   return oss.str();
 }
 //----------------------------------------------------------
-} // hlfv
+} // ss3l

@@ -1,11 +1,11 @@
 // emacs -*- C++ -*-
-#ifndef HLFV_EVENTFLAGS_H
-#define HLFV_EVENTFLAGS_H
+#ifndef SS3L_EVENTFLAGS_H
+#define SS3L_EVENTFLAGS_H
 
 #include <string>
 #include <iostream>
 
-namespace hlfv
+namespace ss3l
 {
 ///  A holder to pass around the event-level flags; true = pass (including vetoes)
 /**
@@ -37,6 +37,6 @@ struct EventFlags {
     std::string str_what_fails() const;
 };
 
-} // namespace hlfv
+} // namespace ss3l
 
 #endif // end include guard

@@ -1,8 +1,8 @@
-#include "susynt-ss2lb/WeightComponents.h"
+#include "susynt-ss3l/WeightComponents.h"
 
 #include <sstream>      // std::ostringstream
 
-using hlfv::WeightComponents;
+using ss3l::WeightComponents;
 using namespace std;
 
 //-----------------------------------------

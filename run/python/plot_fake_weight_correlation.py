@@ -14,10 +14,10 @@ import glob
 def main():
     test_first_1k_events = True
     print_events_as_txt = False # needed to evaluate the matrix on stdin
-    base_dir = '/gdata/atlas/gerbaudo/hlfv/take0/susynt-ss2lb/run/out/matrix_prediction'
+    base_dir = '/gdata/atlas/gerbaudo/ss3l/take0/susynt-ss3l/run/out/matrix_prediction'
     dir1 = base_dir+'/Jul_26/'
     dir2 = base_dir+'/May_20/'
-    tree_name = 'hlfv_tuple'
+    tree_name = 'ss3l_tuple'
     chain1 = r.TChain(tree_name)
     for f in sorted(glob.glob(dir1+'/*.root*')) : chain1.Add(f)
     chain2 = r.TChain(tree_name)

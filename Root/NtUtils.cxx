@@ -1,10 +1,10 @@
-#include "susynt-ss2lb/NtUtils.h"
+#include "susynt-ss3l/NtUtils.h"
 
 #include "SusyNtuple/SusyNt.h"
 
 using Susy::Lepton;
 
-namespace hlfv
+namespace ss3l
 {
 //-----------------------------------------
 int pdgIdFromLep(const Lepton &l)
@@ -15,4 +15,4 @@ int pdgIdFromLep(const Lepton &l)
 }
 //-----------------------------------------
 
-} // hlfv
+} // ss3l

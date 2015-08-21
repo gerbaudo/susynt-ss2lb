@@ -5,7 +5,7 @@
   Sep 2014
 */
 
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/utils.h"
 
 #include <iostream>
 #include <string>
@@ -16,7 +16,7 @@ using std::endl;
 using std::string;
 using std::vector;
 
-using namespace hlfv;
+using namespace ss3l;
 
 int main(int argc, char** argv)
 {

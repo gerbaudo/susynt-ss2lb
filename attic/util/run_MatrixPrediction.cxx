@@ -5,9 +5,9 @@
 #include "TChain.h"
 #include "Cintex/Cintex.h"
 
-#include "susynt-ss2lb/MatrixPrediction.h"
+#include "susynt-ss3l/MatrixPrediction.h"
 #include "SusyNtuple/ChainHelper.h"
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/utils.h"
 
 using namespace std;
 
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
   string output;
   bool etapt = false;
   bool systematics = false;
-  string matrixFile(hlfv::getRootCoreDir()+"/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root");
+  string matrixFile(ss3l::getRootCoreDir()+"/data/DileptonMatrixMethod/FakeMatrix_Jul_26.root");
   int optind(1);
   while ((optind < argc)) {
     std::string sw = argv[optind];
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
   nEvt = (nEvt<0 ? nEntries : nEvt);
   if(dbg) chain->ls();
 
-  hlfv::MatrixPrediction fakePred;
+  ss3l::MatrixPrediction fakePred;
   fakePred.setMatrixFilename(matrixFile);
   fakePred.setDebug(dbg);
   fakePred.useComputeSystematics(systematics);

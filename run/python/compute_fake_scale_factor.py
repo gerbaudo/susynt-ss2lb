@@ -99,7 +99,7 @@ def main():
         histosPerSource = bookHistosPerSource(vars, leptonSources, region=region)
         histosPerGroupPerSource = bookHistosPerSamplePerSource(vars, group_names, leptonSources, region=region)
         for group in groups:
-            tree_name = 'hlfv_tuple'
+            tree_name = 'ss3l_tuple'
             chain = IndexedChain(tree_name)
             for ds in group.datasets:
                 fname = os.path.join(inputDir, ds.name+'.root')
@@ -219,7 +219,7 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
         if lepton=='el' and not isConversion : normFactor = 1.6
         if lepton=='mu' :                      normFactor = 0.87
     num_processed_entries = 0
-    sourceReal = r.hlfv.LeptonTruthType.Prompt
+    sourceReal = r.ss3l.LeptonTruthType.Prompt
     for iEvent, event in enumerate(chain) :
         num_processed_entries += 1
         pars = event.pars
@@ -279,7 +279,7 @@ def fillHistos(chain, histosThisGroup, histosPerSource, histosThisGroupPerSource
         pass_sel = eval(sel_expr)
         if pass_sel and not cut_is_cached : chain.add_entry_to_list(cut, iEvent)
         # if tag.isMu and isRightProbe and isSameSign : # test 1 : no jet req
-        # if tag.isMu and tag.isTight and isRightProbe and isSameSign : # test 2 : reproduce counts from hlfv
+        # if tag.isMu and tag.isTight and isRightProbe and isSameSign : # test 2 : reproduce counts from ss3l
         def fillHistosBySource(probe):
             leptonSource = enum2source(probe)
             # if leptonSource=='Unknown':

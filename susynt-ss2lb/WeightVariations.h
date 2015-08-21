@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace hlfv
+namespace ss3l
 {
 
 /// A simple struct to pass around the systematic variations of the event weight
@@ -103,6 +103,6 @@ namespace hlfv
     double fakeElFrKin5;
   };
 
-} // hlfv
+} // ss3l
 
 #endif // HLVF_WEIGHTVARIATIONS_H

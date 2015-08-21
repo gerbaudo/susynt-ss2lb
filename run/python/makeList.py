@@ -4,7 +4,7 @@
 #
 # davide.gerbaudo@gmail.com
 # Jan 2013 -- first version (within SusyTest0)
-# Jun 2014 -- rewrite (within susynt-ss2lb)
+# Jun 2014 -- rewrite (within susynt-ss3l)
 
 import optparse
 import os

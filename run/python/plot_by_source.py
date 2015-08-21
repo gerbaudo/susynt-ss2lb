@@ -151,7 +151,7 @@ def runFill(opts):
             submit_batch_fill_job_per_group(group, opts)
     else:
         for group in groups:
-            tree_name = 'hlfv_tuple'
+            tree_name = 'ss3l_tuple'
             chain = IndexedChain(tree_name)
             for ds in group.datasets:
                 chain.Add(os.path.join(inputDir, ds.name+'.root'))

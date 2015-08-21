@@ -10,7 +10,7 @@
 #include <iostream>
 #include <vector>
 
-namespace hlfv
+namespace ss3l
 {
 using Susy::Lepton;
 using Susy::Electron;
@@ -99,6 +99,6 @@ struct EventParameters {
 #endif
 };
 
-} // namespace hlfv
+} // namespace ss3l
 
 #endif // end include guard

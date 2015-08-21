@@ -6,13 +6,13 @@
 #include "SusyNtuple/SusyDefs.h"
 #include <string>
 
-namespace hlfv {
+namespace ss3l {
 
-///   List of possible systematic uncertainties for the hlfv study
+///   List of possible systematic uncertainties for the ss3l study
 /**
    Essentially a copy of what we used for susy::wh, with a few additional
    helper functions to handle names and to convert between
-   hlfv::Systematic <-> SusyNtSys
+   ss3l::Systematic <-> SusyNtSys
 
    Note to self: enclose enum in a struct to avoid collisions; see
    explanation on
@@ -173,5 +173,5 @@ inline std::string syst2str(const Susy::NtSys::SusyNtSys &s)  { return isValid(s
 Susy::NtSys::SusyNtSys sys2ntsys(const Systematic::Value &s);
 /// convert SusyNtSys to Systematic; assert(false) if invalid
 Systematic::Value ntsys2sys(const Susy::NtSys::SusyNtSys &s);
-} // hlfv
+} // ss3l
 #endif

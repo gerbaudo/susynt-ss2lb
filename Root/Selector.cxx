@@ -1,15 +1,15 @@
-#include "susynt-ss2lb/Selector.h"
-#include "susynt-ss2lb/WeightComponents.h"
-#include "susynt-ss2lb/EventFlags.h"
-#include "susynt-ss2lb/DileptonVariables.h"
-#include "susynt-ss2lb/LeptonTruthType.h"
-#include "susynt-ss2lb/NtUtils.h"
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/Selector.h"
+#include "susynt-ss3l/WeightComponents.h"
+#include "susynt-ss3l/EventFlags.h"
+#include "susynt-ss3l/DileptonVariables.h"
+#include "susynt-ss3l/LeptonTruthType.h"
+#include "susynt-ss3l/NtUtils.h"
+#include "susynt-ss3l/utils.h"
 
-// #include "susynt-ss2lb/EventFlags.h"
-// #include "susynt-ss2lb/criteria.h"
-// #include "susynt-ss2lb/kinematic.h"
-// #include "susynt-ss2lb/utils.h"
+// #include "susynt-ss3l/EventFlags.h"
+// #include "susynt-ss3l/criteria.h"
+// #include "susynt-ss3l/kinematic.h"
+// #include "susynt-ss3l/utils.h"
 
 #include "SusyNtuple/MCWeighter.h"
 #include "SusyNtuple/string_utils.h"
@@ -27,12 +27,12 @@
 #include <sstream>      // std::ostringstream
 
 using namespace std;
-using hlfv::Selector;
-using hlfv::WeightComponents;
-using hlfv::WeightVariations;
-using hlfv::EventFlags;
-using hlfv::Systematic;
-using hlfv::DileptonVariables;
+using ss3l::Selector;
+using ss3l::WeightComponents;
+using ss3l::WeightVariations;
+using ss3l::EventFlags;
+using ss3l::Systematic;
+using ss3l::DileptonVariables;
 
 //-----------------------------------------
 Selector::Selector() :
@@ -81,7 +81,7 @@ Bool_t Selector::Process(Long64_t entry)
         for(size_t iSys=0; iSys<m_systematicsToProcess.size(); ++iSys){
             const Systematic::Value sys = m_systematicsToProcess[iSys];
             bool isNominal = sys==Systematic::CENTRAL;
-            selectObjects(hlfv::sys2ntsys(sys), removeLepsFromIso, TauID_medium);
+            selectObjects(ss3l::sys2ntsys(sys), removeLepsFromIso, TauID_medium);
             const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
             const JetVector&  jets= m_signalJets2Lep;
             const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
@@ -114,8 +114,8 @@ Bool_t Selector::Process(Long64_t entry)
                         bool isMc = nt.evt()->isMC;
                         const Lepton &l0 = *l[0];
                         const Lepton &l1 = *l[1];
-                        LeptonTruthType::Value l0Source = (isMc ? hlfv::getLeptonSource(l0) : LeptonTruthType::Unknown);
-                        LeptonTruthType::Value l1Source = (isMc ? hlfv::getLeptonSource(l1) : LeptonTruthType::Unknown);
+                        LeptonTruthType::Value l0Source = (isMc ? ss3l::getLeptonSource(l0) : LeptonTruthType::Unknown);
+                        LeptonTruthType::Value l1Source = (isMc ? ss3l::getLeptonSource(l1) : LeptonTruthType::Unknown);
                         bool l0IsTight(nttools().isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
                         bool l1IsTight(nttools().isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
                         bool computeWeightVariations = (m_computeSystematics && sys==Systematic::CENTRAL);
@@ -218,7 +218,7 @@ void Selector::removeForwardMuons()
 //-----------------------------------------
 void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
                                             /*const*/ MCWeighter &weighter,
-                                            hlfv::WeightComponents &weightComponents)
+                                            ss3l::WeightComponents &weightComponents)
 {
     if(ntobj.evt()->isMC) {
         weightComponents.gen = ntobj.evt()->w;
@@ -235,9 +235,9 @@ void Selector::assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
 //-----------------------------------------
 bool Selector::assignNonStaticWeightComponents(const LeptonVector& leptons,
                                                const JetVector& jets,
-                                               const hlfv::Systematic::Value sys,
-                                               hlfv::DileptonVariables &vars,
-                                               hlfv::WeightComponents &weightcomponents)
+                                               const ss3l::Systematic::Value sys,
+                                               ss3l::DileptonVariables &vars,
+                                               ss3l::WeightComponents &weightcomponents)
 {
     bool success=false;
     WeightComponents &wc = weightcomponents;
@@ -262,7 +262,7 @@ Selector& Selector::setEventListFilename(const std::string filename)
 {
     m_eventListFilename = filename;
     if(usingEventList()) {
-        m_eventList.setListName("hlfv_event_list");
+        m_eventList.setListName("ss3l_event_list");
         m_eventList.setCacheFilename(filename);
     }
     return *this;
@@ -274,7 +274,7 @@ void Selector::setDebug(int dbg)
     m_eventList.setVerbose(dbg>0);
 }
 //-----------------------------------------
-hlfv::EventFlags Selector::computeEventFlags()
+ss3l::EventFlags Selector::computeEventFlags()
 {
     EventFlags f;
     int flag = nt.evt()->cutFlags[Susy::NtSys::NOM];
@@ -310,7 +310,7 @@ hlfv::EventFlags Selector::computeEventFlags()
     return f;
 }
 //-----------------------------------------
-bool Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w)
+bool Selector::incrementEventCounters(const ss3l::EventFlags &f, const ss3l::WeightComponents &w)
 {
     double weight = w.product();
     if(f.hfor       ) m_counter.increment(weight, "hfor"       ); else return false;
@@ -333,7 +333,7 @@ bool Selector::incrementEventCounters(const hlfv::EventFlags &f, const hlfv::Wei
     return true;
 }
 //-----------------------------------------
-void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
+void Selector::incrementObjectCounters(const ss3l::DileptonVariables &v, const ss3l::WeightComponents &w,
                                        CutFlowCounter &counter)
 {
     double weight = w.product();
@@ -353,7 +353,7 @@ void Selector::incrementObjectCounters(const hlfv::DileptonVariables &v, const h
     if(bool passDphiL1Met=true)  counter.increment(weight, "dphi-l1met"   ); else return;
 }
 //-----------------------------------------
-void Selector::incrementObjectSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w)
+void Selector::incrementObjectSplitCounters(const ss3l::DileptonVariables &v, const ss3l::WeightComponents &w)
 {
     if(v.isEmu() || v.isMue()) {
         CutFlowCounter &counter = (v.isEmu() ? m_counterEmu : m_counterMue);
@@ -361,27 +361,27 @@ void Selector::incrementObjectSplitCounters(const hlfv::DileptonVariables &v, co
     }
 }
 //-----------------------------------------
-double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys)
+double Selector::computeDileptonTriggerWeight(const LeptonVector &leptons, const ss3l::Systematic::Value sys)
 {
     double trigW = 1.0;
 // TODO
     return trigW;
 }
 //-----------------------------------------
-double Selector::computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys)
+double Selector::computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const ss3l::Systematic::Value sys)
 {
     // TODO
     return 1.0;
 }
 //-----------------------------------------
-double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys)
+double Selector::computeLeptonEfficiencySf(const Susy::Lepton &lep, const ss3l::Systematic::Value sys)
 {
     float effFactor = 1.0;
     // TODO
     return effFactor;
 }
 //-----------------------------------------
-double Selector::computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const hlfv::Systematic::Value sys)
+double Selector::computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const ss3l::Systematic::Value sys)
 {
     return (computeLeptonEfficiencySf(l0, sys)*
             computeLeptonEfficiencySf(l1, sys));
@@ -410,7 +410,7 @@ bool Selector::eventIsSameSign(const LeptonVector &leptons)
 }
 //-----------------------------------------
 JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
-                               const hlfv::Systematic::Value sys,
+                               const ss3l::Systematic::Value sys,
                                AnalysisType anaType)
 {
     JetVector outjets;
@@ -478,19 +478,19 @@ float Selector::computeCorrectedPtCone(const Lepton *l)
 WeightVariations Selector::computeSystematicWeightVariations(const Susy::Event &event,
                                                              const LeptonVector& leptons,
                                                              const JetVector& jets,
-                                                             const hlfv::Systematic::Value sys,
-                                                             const hlfv::WeightComponents &nominalWeightComponents)
+                                                             const ss3l::Systematic::Value sys,
+                                                             const ss3l::WeightComponents &nominalWeightComponents)
 {
     WeightVariations wv;
-    hlfv::DileptonVariables dummyVars; // just used to retrieve the output from assignNonStaticWeightComponents (lepSf, trig, btag)
-    hlfv::WeightComponents dummyWeightComps; // same as above
+    ss3l::DileptonVariables dummyVars; // just used to retrieve the output from assignNonStaticWeightComponents (lepSf, trig, btag)
+    ss3l::WeightComponents dummyWeightComps; // same as above
     // just shorter names
     const LeptonVector &l = leptons;
     const JetVector    &j = jets;
     const Lepton      &l0 = *l[0];
     const Lepton      &l1 = *l[1];
-    hlfv::WeightComponents &dwc = dummyWeightComps;
-    const hlfv::WeightComponents &nwc = nominalWeightComponents;
+    ss3l::WeightComponents &dwc = dummyWeightComps;
+    const ss3l::WeightComponents &nwc = nominalWeightComponents;
     dwc.trigger = computeDileptonTriggerWeight(l, Systematic::ETRIGREWUP  ); wv.elTrigUp = nwc.relativeTrig (dwc);
     dwc.trigger = computeDileptonTriggerWeight(l, Systematic::ETRIGREWDOWN); wv.elTrigDo = nwc.relativeTrig (dwc);
     dwc.trigger = computeDileptonTriggerWeight(l, Systematic::MTRIGREWUP  ); wv.muTrigUp = nwc.relativeTrig (dwc);
@@ -511,7 +511,7 @@ WeightVariations Selector::computeSystematicWeightVariations(const Susy::Event &
     return wv;
 }
 //----------------------------------------------------------
-hlfv::TupleMaker& Selector::getTupleMaker(const Systematic::Value s)
+ss3l::TupleMaker& Selector::getTupleMaker(const Systematic::Value s)
 {
     if(s==Systematic::CENTRAL) return m_tupleMaker;
     else{
@@ -534,14 +534,14 @@ bool Selector::initTupleWriters()
         cout<<"You must provide a root output file for the ntuple"<<endl;
     } else {
         string filenameNom = m_outTupleFile;
-        string treename = "hlfv_tuple";
+        string treename = "ss3l_tuple";
         success = m_tupleMaker.init(filenameNom, treename);
         if(success) cout<<"initialized ntuple file "<<m_tupleMaker.filename()<<endl;
         size_t nominalOffset=1;
         for(size_t iSys=nominalOffset; iSys<m_systematicsToProcess.size(); ++iSys) {
             const Systematic::Value sys = m_systematicsToProcess[iSys];
             string filename(filenameNom);
-            // hlfv::replace(filename, string(".root"), string("_"+syst2str(sys)+".root")); // why doesn't it work?? todo
+            // ss3l::replace(filename, string(".root"), string("_"+syst2str(sys)+".root")); // why doesn't it work?? todo
             filename = TString(filenameNom.c_str()).ReplaceAll(TString(".root"),
                                                                TString("_"+syst2str(sys)+".root")).Data();
             TupleMaker *tm = new TupleMaker("", "");

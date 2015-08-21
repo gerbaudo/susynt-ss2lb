@@ -1,13 +1,13 @@
 /**
 
-   Unit test and example usage for hlfv::CutFlowCounter
+   Unit test and example usage for ss3l::CutFlowCounter
 
    davide.gerbaudo@gmail.com
    June 2014
 */
 
 
-#include "susynt-ss2lb/CutFlowCounter.h"
+#include "susynt-ss3l/CutFlowCounter.h"
 
 #include <iostream>
 using namespace std;
@@ -15,7 +15,7 @@ using namespace std;
 //----------------------------------------------------------
 int main(int argc, char** argv) {
     
-    hlfv::CutFlowCounter counter;
+    ss3l::CutFlowCounter counter;
     counter.setDebug(true);
 
     for(size_t i=0; i<10; ++i){

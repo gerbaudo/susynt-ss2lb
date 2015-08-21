@@ -1,7 +1,7 @@
-#include "susynt-ss2lb/DileptonVariables.h"
+#include "susynt-ss3l/DileptonVariables.h"
 
-#include "susynt-ss2lb/Selector.h"
-#include "susynt-ss2lb/LeptonTruthType.h"
+#include "susynt-ss3l/Selector.h"
+#include "susynt-ss3l/LeptonTruthType.h"
 
 #include "SusyNtuple/SusyNt.h" // Lepton, Jet, Met, and all that
 #include "SusyNtuple/SusyDefs.h" // LeptonVector, JetVector and all that
@@ -14,11 +14,11 @@
 #include <math.h> // cos, fabs
 #include <cassert>
 
-using hlfv::DileptonVariables;
-using hlfv::Selector;
+using ss3l::DileptonVariables;
+using ss3l::Selector;
 
 //-----------------------------------------
-DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, const Susy::Met *met,
+DileptonVariables ss3l::computeDileptonVariables(const LeptonVector &leptons, const Susy::Met *met,
                                                  const JetVector &cljets, const JetVector &alljets,
                                                  const TauVector &taus)
 {
@@ -31,7 +31,7 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
     assert(isEl0!=isMu0 && isEl1!=isMu1); // assuming we're only dealing with electrons or muons
     v.isMu0 = isMu0;
     v.isMu1 = isMu1;
-    v.hasTwoPromptLeptons = (hlfv::isMcPromptLepton(l0) && hlfv::isMcPromptLepton(l1));
+    v.hasTwoPromptLeptons = (ss3l::isMcPromptLepton(l0) && ss3l::isMcPromptLepton(l1));
     v.q0 = l0.q;
     v.q1 = l1.q;
     v.pt0 = l0.Pt();
@@ -42,16 +42,16 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
     v.phi1 = l1.Phi();
     TLorentzVector ll(l0+l1);
     v.mll = ll.M();
-    v.mcoll01 = hlfv::computeCollinearMzLepTau(l0, l1, met->lv());
-    v.mcoll10 = hlfv::computeCollinearMzLepTau(l1, l0, met->lv());
-    v.mcoll   = hlfv::computeCollinearMzTauTau(l0, l1, met->lv());
+    v.mcoll01 = ss3l::computeCollinearMzLepTau(l0, l1, met->lv());
+    v.mcoll10 = ss3l::computeCollinearMzLepTau(l1, l0, met->lv());
+    v.mcoll   = ss3l::computeCollinearMzTauTau(l0, l1, met->lv());
     v.detall = fabs(l0.Eta() - l1.Eta());
     LeptonVector lepts;
     lepts.push_back(&l0);
     lepts.push_back(&l1);
     v.metrel = SusyNtTools::getMetRel(met, lepts, cljets);
-    v.mt0 = hlfv::transverseMass(l0, met->lv());
-    v.mt1 = hlfv::transverseMass(l1, met->lv());
+    v.mt0 = ss3l::transverseMass(l0, met->lv());
+    v.mt1 = ss3l::transverseMass(l1, met->lv());
     v.mtllmet = transverseMass(ll, met->lv());
     v.met = met->Et;
     v.metPhi = met->phi;
@@ -68,7 +68,7 @@ DileptonVariables hlfv::computeDileptonVariables(const LeptonVector &leptons, co
     return v;
 }
 //-----------------------------------------
-float hlfv::transverseMass(const TLorentzVector &lep, const TLorentzVector &met)
+float ss3l::transverseMass(const TLorentzVector &lep, const TLorentzVector &met)
 {
   return std::sqrt(2.0 * lep.Pt() * met.Et() *(1-cos(lep.DeltaPhi(met))) );
 }
@@ -85,7 +85,7 @@ float DileptonVariables::deltaPhiL1Met() const
                                      .DeltaPhi(TVector2(1.0, 0.0).Rotate(metPhi))));
 }
 //-----------------------------------------
-float hlfv::computeCollinearMzLepTau(const TLorentzVector &l0,
+float ss3l::computeCollinearMzLepTau(const TLorentzVector &l0,
                                      const TLorentzVector &l1,
                                      const TLorentzVector &met)
 {
@@ -94,7 +94,7 @@ float hlfv::computeCollinearMzLepTau(const TLorentzVector &l0,
                      (cosh(l0.Eta() - l1.Eta()) - cos(l0.DeltaPhi(l1))));
 }
 //-----------------------------------------
-float hlfv::computeCollinearMzTauTau(const TLorentzVector &l0,
+float ss3l::computeCollinearMzTauTau(const TLorentzVector &l0,
                                      const TLorentzVector &l1,
                                      const TLorentzVector &met)
 {
@@ -111,7 +111,7 @@ float hlfv::computeCollinearMzTauTau(const TLorentzVector &l0,
 }
 //-----------------------------------------
 //-----------------------------------------
-bool hlfv::isMcPromptLepton(const Susy::Lepton &l)
+bool ss3l::isMcPromptLepton(const Susy::Lepton &l)
 {
     bool is_prompt = l.truthType == LeptonTruthType::Prompt;
     bool is_qflip = (l.isEle() && static_cast<const Electron&>(l).isChargeFlip);

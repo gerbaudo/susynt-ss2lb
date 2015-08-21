@@ -1,6 +1,6 @@
 #!/bin/env python
 
-# plot the signal acceptance for our hlfv signal
+# plot the signal acceptance for our ss3l signal
 #
 # davide.gerbaudo@gmail.com
 # July 2014
@@ -17,7 +17,7 @@ def main():
     ntutils.load_packages()
     ntutils.generate_dicts()
     ntutils.import_SUSYDefs_enums()
-    input_dir = '/gdata/atlas/gerbaudo/trashbin/hlfv_signal_shikma/'
+    input_dir = '/gdata/atlas/gerbaudo/trashbin/ss3l_signal_shikma/'
     input_files = {
         'ggHtauEl' : "%s/HiggsTauMu_ggH.root"%input_dir,
         'ggHtauMu' : "%s/HiggsTauEl_ggH.root"%input_dir,
@@ -45,7 +45,7 @@ def run_with_chain(tree, n_max_entries=-1):
     period, useRewUtils = 'Moriond', False
     trig_logic = r.DilTrigLogic(period, useRewUtils)
     mcweighter = r.MCWeighter(tree)
-    mcweighter.parseAdditionalXsecFile('${ROOTCOREBIN}/data/susynt-ss2lb/LFV.txt', verbose)
+    mcweighter.parseAdditionalXsecFile('${ROOTCOREBIN}/data/susynt-ss3l/LFV.txt', verbose)
     n_entries_to_print = 4
     sys = ntutils.SusyNtSys.NtSys_NOM
     tauId = ntutils.TauID

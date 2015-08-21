@@ -181,7 +181,7 @@ def runFill(opts) :
             for systematic in systematics:
                 # note to self: here you will want to use a modified Sample.setHftInputDir
                 # for now we just have the fake syst that are in the nominal tree
-                tree_name = 'hlfv_tuple'
+                tree_name = 'ss3l_tuple'
                 chain = IndexedChain(tree_name)
                 input_dir = opts.input_fake if group.name=='fake' else opts.input_other
                 for ds in group.datasets:

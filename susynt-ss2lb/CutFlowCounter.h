@@ -7,7 +7,7 @@
 #include <vector>
 
 
-namespace hlfv
+namespace ss3l
 {
 
 /// A counter to keep track of the event counts in the cutflow.
@@ -52,6 +52,6 @@ private:
     bool m_debug; ///< toggle to print debugging info
 };
 
-} // hlfv
+} // ss3l
 
 #endif // HLVF_CUTFLOWCOUNTER_H

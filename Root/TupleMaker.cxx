@@ -1,4 +1,4 @@
-#include "susynt-ss2lb/TupleMaker.h"
+#include "susynt-ss3l/TupleMaker.h"
 
 #include "SusyNtuple/SusyNt.h"
 
@@ -12,9 +12,9 @@
 #include <iterator> // back_inserter
 #include <sstream>
 
-using hlfv::TupleMaker;
-using hlfv::FourMom;
-using hlfv::WeightVariations;
+using ss3l::TupleMaker;
+using ss3l::FourMom;
+using ss3l::WeightVariations;
 using Susy::Lepton;
 using Susy::Jet;
 using std::cout;

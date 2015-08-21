@@ -1,6 +1,6 @@
 // emacs -*- C++ -*-
-#ifndef SUSYNTHLFV_UTILS_H
-#define SUSYNTHLFV_UTILS_H
+#ifndef SUSYNTSS3L_UTILS_H
+#define SUSYNTSS3L_UTILS_H
 /*
   SusyNt utility functions
 
@@ -13,7 +13,7 @@ namespace Susy
 class Lepton;
 }
 
-namespace hlfv
+namespace ss3l
 {
 /// pdg id for Susy::Lepton
 struct LeptonPdg{

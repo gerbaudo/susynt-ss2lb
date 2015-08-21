@@ -2,11 +2,11 @@
 #ifndef HLVF_SELECTOR_H
 #define HLVF_SELECTOR_H
 
-#include "susynt-ss2lb/ProgressPrinter.h"
-#include "susynt-ss2lb/CutFlowCounter.h"
-#include "susynt-ss2lb/Systematic.h"
-#include "susynt-ss2lb/TupleMaker.h"
-#include "susynt-ss2lb/WeightVariations.h"
+#include "susynt-ss3l/ProgressPrinter.h"
+#include "susynt-ss3l/CutFlowCounter.h"
+#include "susynt-ss3l/Systematic.h"
+#include "susynt-ss3l/TupleMaker.h"
+#include "susynt-ss3l/WeightVariations.h"
 
 #include "SusyNtuple/SusyNtAna.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -19,17 +19,17 @@ class MCWeighter;
 class JVFUncertaintyTool;
 namespace Susy{ class Event; }
 
-namespace hlfv{
+namespace ss3l{
 
 class WeightComponents;
 class EventFlags;
 class DileptonVariables;
 
-/// TSelector implementing the HLFV event selection
+/// TSelector implementing the SS3L event selection
 /**
    This TSelector reads in the SusyNtuple events and selects the ones
    passing the selection criteria we used for the Higgs lepton flavor
-   violation (HLFV) study. It can also write out our analysis
+   violation (SS3L) study. It can also write out our analysis
    ntuples. For an example of its usage, see util/run_Selector.cxx.
 
    davide.gerbaudo@gmail.com
@@ -76,7 +76,7 @@ protected:
      */
     static void assignStaticWeightComponents(/*const*/ Susy::SusyNtObject &ntobj,
                                              /*const*/ MCWeighter &weighter,
-                                             hlfv::WeightComponents &weightComponents);
+                                             ss3l::WeightComponents &weightComponents);
     /// assign the weight components that depend on the object-level variables
     /**
        The output values are assigned to vars and weightcomponents;
@@ -86,70 +86,70 @@ protected:
     */
     bool assignNonStaticWeightComponents(const LeptonVector& leptons,
                                          const JetVector& jets,
-                                         const hlfv::Systematic::Value sys,
-                                         hlfv::DileptonVariables &vars,
-                                         hlfv::WeightComponents &weightcomponents);
+                                         const ss3l::Systematic::Value sys,
+                                         ss3l::DileptonVariables &vars,
+                                         ss3l::WeightComponents &weightcomponents);
     /// compute both static and non-static weight systematic variations
    /**
       Mostly calls several times assignNonStaticWeightComponents
     */
-    hlfv::WeightVariations computeSystematicWeightVariations(const Susy::Event &event,
+    ss3l::WeightVariations computeSystematicWeightVariations(const Susy::Event &event,
                                                              const LeptonVector& leptons,
                                                              const JetVector& jets,
-                                                             const hlfv::Systematic::Value sys,
-                                                             const hlfv::WeightComponents &nominalWeightComponents);
+                                                             const ss3l::Systematic::Value sys,
+                                                             const ss3l::WeightComponents &nominalWeightComponents);
     /// compute the event-level flags
     /**
        Note that some of these quantities actually depend on the
        baseline objects, so you need to call it after selectObjects().
      */
-    hlfv::EventFlags computeEventFlags();
+    ss3l::EventFlags computeEventFlags();
     /// incremement the event-level counters; return true if pass all event requirements
-    bool incrementEventCounters(const hlfv::EventFlags &f, const hlfv::WeightComponents &w);
+    bool incrementEventCounters(const ss3l::EventFlags &f, const ss3l::WeightComponents &w);
     /// incremement the object-level counters
     /**
        Increment the counters for selection criteria that depend on
        objects. Because here we keep several counters (inclusive, emu,
        mue), we also pass the counter as an input argument.
     */
-    void incrementObjectCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w,
+    void incrementObjectCounters(const ss3l::DileptonVariables &v, const ss3l::WeightComponents &w,
                                  CutFlowCounter &counter);
     /// incremement the event counters after the emu/mue splitting
     /**
        Wraps incrementObjectCounters for the emu/mue specific cases.
      */
-    void incrementObjectSplitCounters(const hlfv::DileptonVariables &v, const hlfv::WeightComponents &w);
+    void incrementObjectSplitCounters(const ss3l::DileptonVariables &v, const ss3l::WeightComponents &w);
     /// dilepton trigger weight
     /**
        Need access to several internal variables, so cannot be static
      */
-    double computeDileptonTriggerWeight(const LeptonVector &leptons, const hlfv::Systematic::Value sys);
+    double computeDileptonTriggerWeight(const LeptonVector &leptons, const ss3l::Systematic::Value sys);
     /// btag scale factor
     /**
        Need access to several internal variables, so cannot be static
      */
-    double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const hlfv::Systematic::Value sys);
+    double computeBtagWeight(const JetVector& jets, const Susy::Event* evt, const ss3l::Systematic::Value sys);
     /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
     float computeCorrectedEtCone(const Lepton *l);
     /// used to recompute the corrected iso when storing to ntuple (should refactor upstream SusyNtTools)
     float computeCorrectedPtCone(const Lepton *l);
     /// tuplemaker for a given systematic
-    hlfv::TupleMaker& getTupleMaker(const Systematic::Value s);
+    ss3l::TupleMaker& getTupleMaker(const Systematic::Value s);
     /// fill m_systematicsToProcess
     size_t initSystematicsList();
 public:
     /// select the jets we are interested in (central, high-pt)
     /*static*/ JetVector filterJets(const JetVector &jets, JVFUncertaintyTool* jvfTool,
-                                    const hlfv::Systematic::Value sys,
+                                    const ss3l::Systematic::Value sys,
                                     AnalysisType anaType);
     /// select forward jets
     /*static*/ JetVector filterForwardJets(const JetVector &jets);
     /// select b jets
     /*static*/ JetVector filterBtagJets(const JetVector &jets);
     /// lepton efficiency data/simulation scale factor
-    static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const hlfv::Systematic::Value sys);
+    static double computeLeptonEfficiencySf(const Susy::Lepton &lep, const ss3l::Systematic::Value sys);
     /// same as computeLeptonEfficiencySf, but for two leptons
-    static double computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const hlfv::Systematic::Value sys);
+    static double computeDileptonEfficiencySf(const Susy::Lepton &l0, const Susy::Lepton &l1, const ss3l::Systematic::Value sys);
     /// exactly one electron and one muon
     static bool eventIsEmu(const LeptonVector &leptons);
     /// two opposite-sign leptons
@@ -188,23 +188,23 @@ protected:
      */
     void removeForwardMuons();
     MCWeighter*         m_mcWeighter;   ///< tool to determine the normalization // TODO delete (now upstream)
-    hlfv::ProgressPrinter m_printer; ///< tool to print the progress
-    hlfv::CutFlowCounter m_counter; ///< counters for cutflow
-    hlfv::CutFlowCounter m_counterEmu; ///< counters for cutflow (after channel split, only emu)
-    hlfv::CutFlowCounter m_counterMue; ///< counters for cutflow (after channel split, only mue)
+    ss3l::ProgressPrinter m_printer; ///< tool to print the progress
+    ss3l::CutFlowCounter m_counter; ///< counters for cutflow
+    ss3l::CutFlowCounter m_counterEmu; ///< counters for cutflow (after channel split, only emu)
+    ss3l::CutFlowCounter m_counterMue; ///< counters for cutflow (after channel split, only mue)
     std::string m_eventListFilename; ///< name of the file with the eventlist (empty string means don't use this feature)
     bool m_useExistingList;        ///< to keep track of whether there is already an event list
     Susy::EventlistHandler m_eventList; ///< the actual event list
     bool m_computeSystematics; ///< whether the syst (weights for now) should be filled
-    hlfv::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
-    std::vector<hlfv::TupleMaker*> m_systTupleMakers; ///< same as m_tupleMaker, but one for each object syst
-    std::vector<hlfv::Systematic::Value> m_systematicsToProcess; ///< object systematics requiring a call to selectObjects()
+    ss3l::TupleMaker m_tupleMaker; ///< writer of our analysis nutples
+    std::vector<ss3l::TupleMaker*> m_systTupleMakers; ///< same as m_tupleMaker, but one for each object syst
+    std::vector<ss3l::Systematic::Value> m_systematicsToProcess; ///< object systematics requiring a call to selectObjects()
     bool m_writeTuple; ///< whether we want to write the output ntuple
     std::string m_outTupleFile; ///< name of the file where the nutple will be written
     bool m_saveBaselineNonPrompt; ///< consider baseline and nonprompt in addition to signal leptons
     ClassDef(Selector, 2);
 };
 
-} // hlfv
+} // ss3l
 
 #endif // HLVF_SELECTOR_H

@@ -2,7 +2,7 @@
 # therefore it does not support full make syntax and features
 # edit with care
 
-PACKAGE          = susynt-ss2lb
+PACKAGE          = susynt-ss3l
 PACKAGE_PRELOAD  = Tree
 PACKAGE_CXXFLAGS = 
 PACKAGE_LDFLAGS  = 

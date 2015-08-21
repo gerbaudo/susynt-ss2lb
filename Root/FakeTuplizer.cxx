@@ -1,15 +1,15 @@
-#include "susynt-ss2lb/FakeTuplizer.h"
-#include "susynt-ss2lb/WeightComponents.h"
-#include "susynt-ss2lb/EventFlags.h"
-#include "susynt-ss2lb/DileptonVariables.h"
+#include "susynt-ss3l/FakeTuplizer.h"
+#include "susynt-ss3l/WeightComponents.h"
+#include "susynt-ss3l/EventFlags.h"
+#include "susynt-ss3l/DileptonVariables.h"
 
 using namespace std;
-using hlfv::FakeTuplizer;
-using hlfv::Selector;
-using hlfv::WeightComponents;
-using hlfv::EventFlags;
-using hlfv::Systematic;
-using hlfv::DileptonVariables;
+using ss3l::FakeTuplizer;
+using ss3l::Selector;
+using ss3l::WeightComponents;
+using ss3l::EventFlags;
+using ss3l::Systematic;
+using ss3l::DileptonVariables;
 
 //-----------------------------------------
 FakeTuplizer::FakeTuplizer() :
