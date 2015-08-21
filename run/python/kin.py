@@ -3,7 +3,7 @@
 #
 # davide.gerbaudo@gmail.com
 # Jan 2014, original version from SusyTest0
-# Oct 2014, modified version for susynt-ss2lb
+# Oct 2014, modified version for susynt-ss3l
 
 import array
 import math

@@ -1,12 +1,12 @@
 /**
 
-   Main executable for hlfv::Selector
+   Main executable for ss3l::Selector
 
    davide.gerbaudo@gmail.com
    June 2014
 */
 
-#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss3l/Selector.h"
 #include "SusyNtuple/ChainHelper.h"
 #include "SusyNtuple/string_utils.h"
 
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     num_events = (num_events<0 ? tot_num_events : num_events);
     if(debug) chain->ls();
 
-    hlfv::Selector selector;
+    ss3l::Selector selector;
     selector.setDebug(debug);
     selector.useComputeSystematics(systematics);
     if(savefake) selector.selectBaselineNonPromptLeptons();

@@ -1,9 +1,9 @@
-#include "susynt-ss2lb/ProgressPrinter.h"
+#include "susynt-ss3l/ProgressPrinter.h"
 
 #include <ctime>   // time_t, time
 #include <iomanip> // setw 
 
-using hlfv::ProgressPrinter;
+using ss3l::ProgressPrinter;
 //-----------------------------------------
 void ProgressPrinter::countAndPrint(std::ostream& oo)
 {

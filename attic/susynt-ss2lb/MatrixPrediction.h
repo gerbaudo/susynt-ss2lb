@@ -3,7 +3,7 @@
 #define SusyAna_MatrixPrediction_h
 
 
-#include "susynt-ss2lb/Selector.h"
+#include "susynt-ss3l/Selector.h"
 #include "DileptonMatrixMethod/DileptonMatrixMethod.h"
 
 #include <string>
@@ -14,7 +14,7 @@ class Lepton;
 }
 }
 
-namespace hlfv
+namespace ss3l
 {
 
 const int nFakeSys = 21;
@@ -87,7 +87,7 @@ static std::string FAKESYSNames[nFakeSys] =
     bool m_allconfigured;
     bool initMatrixTool();
     /// compute all the weight variations for the fake systematics
-    hlfv::WeightVariations computeSystematicWeights(const susy::fake::Lepton &l0, const susy::fake::Lepton &l1, size_t regionIndex);
+    ss3l::WeightVariations computeSystematicWeights(const susy::fake::Lepton &l0, const susy::fake::Lepton &l1, size_t regionIndex);
 };
-} // hlfv
+} // ss3l
 #endif

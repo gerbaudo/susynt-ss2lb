@@ -2,8 +2,8 @@
 #ifndef HLVF_TUPLEMAKER_H
 #define HLVF_TUPLEMAKER_H
 
-#include "susynt-ss2lb/TupleMakerObjects.h"
-#include "susynt-ss2lb/WeightVariations.h"
+#include "susynt-ss3l/TupleMakerObjects.h"
+#include "susynt-ss3l/WeightVariations.h"
 
 #include <string>
 #include <vector>
@@ -20,7 +20,7 @@ class Met;
 typedef std::vector<Susy::Lepton*> LeptonVector;
 typedef std::vector<Susy::Jet*>    JetVector;
 
-namespace hlfv
+namespace ss3l
 {
 /// A class to save the information from SusyNt to a simpler ntuple.
 /**
@@ -80,7 +80,7 @@ public:
     TupleMaker& setL0PtConeCorr(float v) { l0_.setPtConeCorr(v); return *this; }
     TupleMaker& setL1PtConeCorr(float v) { l1_.setPtConeCorr(v); return *this; }
     TupleMaker& setQflipWeight(const double &v) { eventPars_.setQflipWeight(v); return *this; }
-    TupleMaker& setWeightVariations(const hlfv::WeightVariations &w) { weightVariations_ = w; return *this; }
+    TupleMaker& setWeightVariations(const ss3l::WeightVariations &w) { weightVariations_ = w; return *this; }
     TupleMaker& setTriggerBits(const long long &trigFlags) { eventPars_.setTriggerBits(trigFlags); return *this; }
     std::string filename() const;
     std::string treename() const;
@@ -95,12 +95,12 @@ private:
 private:
     TFile *file_;
     TTree *tree_;
-    hlfv::FourMom l0_, l1_, met_;
+    ss3l::FourMom l0_, l1_, met_;
     std::vector<FourMom> jets_, lowptLepts_;
     EventParameters eventPars_;
-    hlfv::WeightVariations weightVariations_;
+    ss3l::WeightVariations weightVariations_;
 }; // end TupleMaker
 
-} // namespace hlfv
+} // namespace ss3l
 
 #endif // end include guard

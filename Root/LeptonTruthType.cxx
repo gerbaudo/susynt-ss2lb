@@ -1,11 +1,11 @@
-#include "susynt-ss2lb/LeptonTruthType.h"
+#include "susynt-ss3l/LeptonTruthType.h"
 
 #include "SusyNtuple/SusyNt.h"
 
 using Susy::Lepton;
-using hlfv::LeptonTruthType;
+using ss3l::LeptonTruthType;
 
-namespace hlfv
+namespace ss3l
 {
 //------------------------------------------------------------------------------
 LeptonTruthType::Value int2source(const int &v)
@@ -46,4 +46,4 @@ LeptonTruthType::Value getLeptonSource(const Susy::Lepton &l)
 }
 //------------------------------------------------------------------------------
 
-} // hlfv
+} // ss3l

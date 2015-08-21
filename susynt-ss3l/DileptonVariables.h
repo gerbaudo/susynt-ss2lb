@@ -17,9 +17,9 @@ typedef std::vector<Susy::Lepton*> LeptonVector;
 typedef std::vector<Susy::Jet*> JetVector;
 typedef std::vector<Susy::Tau*> TauVector;
 
-namespace hlfv
+namespace ss3l
 {
-  /// Kinematic variables for the hlfv study
+  /// Kinematic variables for the ss3l study
   /**
      The highest-pt lepton is stored as l0, and the second one as l1.
      Only works with electrons and muons (not taus).
@@ -107,6 +107,6 @@ namespace hlfv
    */
   bool isMcPromptLepton(const Susy::Lepton &l);
 
-} // hlfv
+} // ss3l
 
 #endif

@@ -1,12 +1,12 @@
-#include "susynt-ss2lb/CutFlowCounter.h"
+#include "susynt-ss3l/CutFlowCounter.h"
 
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/utils.h"
 
 #include <algorithm>
 #include <iomanip>
 #include <stdio.h>
 
-using hlfv::CutFlowCounter;
+using ss3l::CutFlowCounter;
 
 using std::cout;
 using std::endl;
@@ -93,7 +93,7 @@ bool CutFlowCounter::hasCut(const std::string &cutname)
        m_cut_names[best_guess]==cutname){
         has_cut=true;
     } else {
-        has_cut=hlfv::contains(m_cut_names, cutname);
+        has_cut=ss3l::contains(m_cut_names, cutname);
     }
     return has_cut;
 }

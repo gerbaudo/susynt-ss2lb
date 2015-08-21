@@ -8,13 +8,13 @@
 #include <iostream>
 #include <string>
 
-#include "susynt-ss2lb/Systematic.h"
+#include "susynt-ss3l/Systematic.h"
 #include "SusyNtuple/SusyDefs.h"
 
 using std::cout;
 using std::endl;
 using std::string;
-using hlfv::Systematic;
+using ss3l::Systematic;
 using Susy::NtSys::SusyNtSys;
 
 int main(int argc, char** argv)
@@ -23,12 +23,12 @@ int main(int argc, char** argv)
     cout<<"\tSusyNtSys\tswh::Systematic"<<endl;
     for(int i=0; i<Susy::NtSys::SYS_UNKNOWN; ++i){
         SusyNtSys sNt = static_cast<SusyNtSys>(i);
-        Systematic::Value sWh = hlfv::ntsys2sys(sNt);
-        SusyNtSys sNt2 = hlfv::sys2ntsys(sWh);
+        Systematic::Value sWh = ss3l::ntsys2sys(sNt);
+        SusyNtSys sNt2 = ss3l::sys2ntsys(sWh);
         if(sNt!=sNt2) failing++;
         cout<<"["<<i<<"]"
-            <<" : "<<hlfv::syst2str(sNt)
-            <<"\t -> "<<hlfv::syst2str(sWh)
+            <<" : "<<ss3l::syst2str(sNt)
+            <<"\t -> "<<ss3l::syst2str(sWh)
             <<" ; "<<sNt<<" : "<<sNt2
             <<(sNt==sNt2 ? "" : "\t <<<<<<<")
             <<endl;

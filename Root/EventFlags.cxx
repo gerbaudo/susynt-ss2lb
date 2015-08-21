@@ -1,8 +1,8 @@
-#include "susynt-ss2lb/EventFlags.h"
+#include "susynt-ss3l/EventFlags.h"
 
 #include <sstream>      // std::ostringstream
 
-using hlfv::EventFlags;
+using ss3l::EventFlags;
 
 //-----------------------------------------
 std::string EventFlags::str() const

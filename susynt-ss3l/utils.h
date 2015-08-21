@@ -1,6 +1,6 @@
 // emacs -*- C++ -*-
-#ifndef SUSYNTHLFV_UTILS_H
-#define SUSYNTHLFV_UTILS_H
+#ifndef SUSYNTSS3L_UTILS_H
+#define SUSYNTSS3L_UTILS_H
 /*
   Generic utility functions
 
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace hlfv
+namespace ss3l
 {
 bool dirExists(const std::string &dirname);
 /// mkdir if it is not already there. Return dir path; return empty string if there was a problem

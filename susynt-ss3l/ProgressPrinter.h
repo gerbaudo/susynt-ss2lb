@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace hlfv
+namespace ss3l
 {
   /// A simple struct to print a timestamped line with the number of processed events.
   /**
@@ -30,6 +30,6 @@ namespace hlfv
     bool m_quiet;
     void countAndPrint(std::ostream& oo);
   };
-} // hlfv
+} // ss3l
 
 #endif

@@ -2,10 +2,10 @@
 #ifndef HLVF_FAKETUPLIZER_H
 #define HLVF_FAKETUPLIZER_H
 
-#include "susynt-ss2lb/Selector.h"
-#include "susynt-ss2lb/TupleMaker.h"
+#include "susynt-ss3l/Selector.h"
+#include "susynt-ss3l/TupleMaker.h"
 
-namespace hlfv{
+namespace ss3l{
 
 /// Select emu events and save the ntuple to be used to compute the fake matrix
 /**
@@ -30,7 +30,7 @@ protected:
 private:
     std::string tupleFilenameFromSamplename(const std::string &sampleName, const std::string &suffix) const;
 protected:
-    hlfv::TupleMaker m_tupleMakerEmu; ///< writer of the nutples for the emu inclusive selection
+    ss3l::TupleMaker m_tupleMakerEmu; ///< writer of the nutples for the emu inclusive selection
     std::string m_outTupleFileEmu; ///< name of the file where the nutple will be written
 //--    // DG-2014-07-23 These will come later, with the other regions
 //--    LeptonVector m_probes;            // Probe lepton vector
@@ -40,6 +40,6 @@ private:
     ClassDef(FakeTuplizer, 1);
 };
 
-} // hlfv
+} // ss3l
 
 #endif // HLVF_FAKETUPLIZER_H

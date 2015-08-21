@@ -1,10 +1,10 @@
-#include "susynt-ss2lb/MatrixPrediction.h"
+#include "susynt-ss3l/MatrixPrediction.h"
 
-#include "susynt-ss2lb/WeightComponents.h"
-#include "susynt-ss2lb/EventFlags.h"
-#include "susynt-ss2lb/DileptonVariables.h"
-#include "susynt-ss2lb/WeightVariations.h"
-#include "susynt-ss2lb/utils.h"
+#include "susynt-ss3l/WeightComponents.h"
+#include "susynt-ss3l/EventFlags.h"
+#include "susynt-ss3l/DileptonVariables.h"
+#include "susynt-ss3l/WeightVariations.h"
+#include "susynt-ss3l/utils.h"
 
 #include "DileptonMatrixMethod/Systematic.h"
 #include "SusyNtuple/SusyDefs.h"
@@ -15,12 +15,12 @@
 using namespace std;
 using namespace Susy;
 namespace sf = susy::fake;
-using hlfv::MatrixPrediction;
-using hlfv::Selector;
-using hlfv::WeightComponents;
-using hlfv::WeightVariations;
-using hlfv::EventFlags;
-using hlfv::DileptonVariables;
+using ss3l::MatrixPrediction;
+using ss3l::Selector;
+using ss3l::WeightComponents;
+using ss3l::WeightVariations;
+using ss3l::EventFlags;
+using ss3l::DileptonVariables;
 using sf::Parametrization;
 
 
@@ -194,7 +194,7 @@ float MatrixPrediction::getRFWeight(const LeptonVector &baseLeps,
 //----------------------------------------------------------
 MatrixPrediction& MatrixPrediction::setMatrixFilename(const std::string filename)
 {
-    if(!hlfv::fileExists(filename))
+    if(!ss3l::fileExists(filename))
     if(true)
     cout<<"MatrixPrediction::setMatrixFilename: invalid file '"<<filename<<"'"<<endl
         <<"\t"<<"something will go wrong"<<endl;
@@ -241,7 +241,7 @@ std::string MatrixPrediction::eventDetails(bool passSrSs, const Susy::Event &eve
   return oss.str();
 }
 //----------------------------------------------------------
-hlfv::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lepton &l0, const sf::Lepton &l1, size_t regionIndex)
+ss3l::WeightVariations MatrixPrediction::computeSystematicWeights(const sf::Lepton &l0, const sf::Lepton &l1, size_t regionIndex)
 {
     using sf::Systematic;
     WeightVariations wv;

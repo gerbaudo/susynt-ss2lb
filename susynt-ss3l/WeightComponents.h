@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace hlfv
+namespace ss3l
 {
 
 /// A simple struct to pass around the event weight and all its components
@@ -43,6 +43,6 @@ struct WeightComponents {
     std::string str() const; ///< string representation of the weight factors
 };
 
-} // hlfv
+} // ss3l
 
 #endif // HLVF_WEIGHTCOMPONENTS_H

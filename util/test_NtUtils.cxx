@@ -5,7 +5,7 @@
   Dec 2014
 */
 
-#include "susynt-ss2lb/NtUtils.h"
+#include "susynt-ss3l/NtUtils.h"
 #include "SusyNtuple/SusyNt.h"
 
 #include <iostream>
@@ -20,7 +20,7 @@ using Susy::Electron;
 using Susy::Lepton;
 using Susy::Muon;
 
-using namespace hlfv;
+using namespace ss3l;
 
 struct validate_enum_value{
     bool operator()(int value, int expected, const char* msg){

@@ -1,6 +1,6 @@
 // emacs -*- C++ -*-
-#ifndef HLFV_LEPTONTRUTHTYPE_H
-#define HLFV_LEPTONTRUTHTYPE_H
+#ifndef SS3L_LEPTONTRUTHTYPE_H
+#define SS3L_LEPTONTRUTHTYPE_H
 
 #include <string>
 
@@ -8,7 +8,7 @@ namespace Susy {
 class Lepton;
 }
 
-namespace hlfv {
+namespace ss3l {
 
 /// Possible lepton sources from simulation truth
 /**
@@ -56,5 +56,5 @@ std::string source2string(const LeptonTruthType::Value &v);
 /// helper functions
 LeptonTruthType::Value getLeptonSource(const Susy::Lepton &l);
 
-} // hlfv
+} // ss3l
 #endif

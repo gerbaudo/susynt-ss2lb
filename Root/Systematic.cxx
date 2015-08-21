@@ -1,11 +1,11 @@
-#include "susynt-ss2lb/Systematic.h"
+#include "susynt-ss3l/Systematic.h"
 
 #include <cassert>
 
-using hlfv::Systematic;
+using ss3l::Systematic;
 
 //-----------------------------------------
-bool hlfv::isTriggerSyst(const Systematic::Value &s)
+bool ss3l::isTriggerSyst(const Systematic::Value &s)
 {
     return (s==Systematic::ETRIGREWUP   ||
             s==Systematic::ETRIGREWDOWN ||
@@ -15,7 +15,7 @@ bool hlfv::isTriggerSyst(const Systematic::Value &s)
             s==Systematic::TTRIGSFDOWN  );
 }
 //-----------------------------------------
-Systematic::Value hlfv::ntsys2sys(const Susy::NtSys::SusyNtSys &s)
+Systematic::Value ss3l::ntsys2sys(const Susy::NtSys::SusyNtSys &s)
 {
     Systematic::Value r = Systematic::CENTRAL;
     switch(s) {
@@ -31,7 +31,7 @@ Systematic::Value hlfv::ntsys2sys(const Susy::NtSys::SusyNtSys &s)
     return r;
 }
 //-----------------------------------------
-Susy::NtSys::SusyNtSys hlfv::sys2ntsys(const Systematic::Value &s)
+Susy::NtSys::SusyNtSys ss3l::sys2ntsys(const Systematic::Value &s)
 {
     // Here we assume that NtSys_N <= N(Systematic); in general this
     // is true because we have other syst (eg. fakes) in addition to
