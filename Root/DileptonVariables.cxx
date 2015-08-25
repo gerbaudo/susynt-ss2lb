@@ -5,6 +5,7 @@
 
 #include "SusyNtuple/SusyNt.h" // Lepton, Jet, Met, and all that
 #include "SusyNtuple/SusyDefs.h" // LeptonVector, JetVector and all that
+#include "SusyNtuple/KinematicTools.h"
 #include "SusyNtuple/SusyNtTools.h"
 
 #include "TLorentzVector.h"
@@ -49,7 +50,7 @@ DileptonVariables ss3l::computeDileptonVariables(const LeptonVector &leptons, co
     LeptonVector lepts;
     lepts.push_back(&l0);
     lepts.push_back(&l1);
-    v.metrel = SusyNtTools::getMetRel(met, lepts, cljets);
+    v.metrel = kin::getMetRel(met, lepts, cljets);
     v.mt0 = ss3l::transverseMass(l0, met->lv());
     v.mt1 = ss3l::transverseMass(l1, met->lv());
     v.mtllmet = transverseMass(ll, met->lv());

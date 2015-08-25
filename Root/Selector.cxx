@@ -58,7 +58,6 @@ void Selector::Begin(TTree* /*tree*/)
 void Selector::Init(TTree* tree)
 {
     SusyNtAna::Init(tree);
-    initMcWeighter(tree);
     // note: the event list must be initialized after sumw has been computed by mcweighter
     if(usingEventList()) initEventList(tree);
 }
@@ -72,8 +71,7 @@ Bool_t Selector::Process(Long64_t entry)
     WeightComponents weightComponents;
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
     m_counter.increment(weightComponents.product(), "input");
-    bool removeLepsFromIso(false);
-    selectObjects(Susy::NtSys::NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    selectObjects(Susy::NtSys::NOM, Susy::TauId::Medium); // always select with nominal? (to compute event flags)
     removeForwardMuons(); // do this before computing the event flags (can affect the 2l test)
     EventFlags eventFlags = computeEventFlags();
     if(m_saveBaselineNonPrompt) eventFlags.eq2slep = eventFlags.eq2blep;
@@ -81,7 +79,7 @@ Bool_t Selector::Process(Long64_t entry)
         for(size_t iSys=0; iSys<m_systematicsToProcess.size(); ++iSys){
             const Systematic::Value sys = m_systematicsToProcess[iSys];
             bool isNominal = sys==Systematic::CENTRAL;
-            selectObjects(ss3l::sys2ntsys(sys), removeLepsFromIso, TauID_medium);
+            selectObjects(ss3l::sys2ntsys(sys), Susy::TauId::Medium);
             const JetVector&   bj = m_baseJets; // these are just used to compute the btag weight
             const JetVector&  jets= m_signalJets2Lep;
             const LeptonVector& l = m_saveBaselineNonPrompt ? m_baseLeptons : m_signalLeptons;
@@ -110,14 +108,14 @@ Bool_t Selector::Process(Long64_t entry)
                     if(m_writeTuple) {
                         TupleMaker &tupleMaker = getTupleMaker(sys);
                         double weight(weightComponents.product());
-                        unsigned int run(nt.evt()->run), event(nt.evt()->eventNumber), nVtx(nt.evt()->nVtx);
+                        unsigned int run(nt.evt()->run), event(nt.evt()->eventNumber); //, nVtx(nt.evt()->nVtx);
                         bool isMc = nt.evt()->isMC;
                         const Lepton &l0 = *l[0];
                         const Lepton &l1 = *l[1];
                         LeptonTruthType::Value l0Source = (isMc ? ss3l::getLeptonSource(l0) : LeptonTruthType::Unknown);
                         LeptonTruthType::Value l1Source = (isMc ? ss3l::getLeptonSource(l1) : LeptonTruthType::Unknown);
-                        bool l0IsTight(nttools().isSignalLepton(&l0, m_baseElectrons, m_baseMuons, nVtx, isMc));
-                        bool l1IsTight(nttools().isSignalLepton(&l1, m_baseElectrons, m_baseMuons, nVtx, isMc));
+                        bool l0IsTight(nttools().isSignalLepton(&l0));
+                        bool l1IsTight(nttools().isSignalLepton(&l1));
                         bool computeWeightVariations = (m_computeSystematics && sys==Systematic::CENTRAL);
                         WeightVariations wv = (computeWeightVariations ?
                                                computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
@@ -156,12 +154,6 @@ void Selector::Terminate()
     m_counterMue.printTableRaw     (cout);
     m_counterMue.printTableWeighted(cout);
     if(m_mcWeighter) delete m_mcWeighter;
-}
-//-----------------------------------------
-bool Selector::initMcWeighter(TTree *tree)
-{
-    bool success=false;
-    // TODO drop
 }
 //-----------------------------------------
 bool Selector::initEventList(TTree *tree)
@@ -291,17 +283,14 @@ ss3l::EventFlags Selector::computeEventFlags()
     bool pass_hfor(nt.evt()->hfor != killHfor);
     SusyNtTools &nt = nttools();
     if(pass_hfor                           )  f.hfor        = true;
-    if(nt.passGRL        (flag            ))  f.grl         = true;
-    if(nt.passLarErr     (flag            ))  f.larErr      = true;
-    if(nt.passTileErr    (flag            ))  f.tileErr     = true;
-    if(nt.passTTCVeto    (flag            ))  f.ttcVeto     = true;
-    if(nt.passGoodVtx    (flag            ))  f.goodVtx     = true;
-    if(nt.passTileTripCut(flag            ))  f.tileTrip    = true;
-    if(nt.passLAr        (flag            ))  f.lAr         = true;
-    if(!nt.hasBadJet     (jets            ))  f.badJet      = true;
-    if(nt.passDeadRegions(pjets,met,run,mc))  f.deadRegions = true;
-    if(!nt.hasBadMuon    (m_preMuons      ))  f.badMuon     = true;
-    if(!nt.hasCosmicMuon (m_baseMuons     ))  f.cosmicMuon  = true;
+    if(nt.passGRL         (flag            ))  f.grl         = true;
+    if(nt.passLarErr      (flag            ))  f.larErr      = true;
+    if(nt.passTileErr     (flag            ))  f.tileErr     = true;
+    if(nt.passTTC         (flag            ))  f.ttcVeto     = true;
+    if(nt.passGoodVtx     (flag            ))  f.goodVtx     = true;
+    if(!nt.passJetCleaning(jets            ))  f.badJet      = true;
+    if(!nt.passBadMuon    (m_preMuons      ))  f.badMuon     = true;
+    if(!nt.passCosmicMuon (m_baseMuons     ))  f.cosmicMuon  = true;
     if(bleps.size() >= 2                   )  f.ge2blep     = true;
     if(bleps.size() == 2                   )  f.eq2blep     = true;
     if(mll>mllMin                          )  f.mllMin      = true;
@@ -444,34 +433,34 @@ JetVector Selector::filterBtagJets(const JetVector &jets)
 float Selector::computeCorrectedEtCone(const Lepton *l)
 {
     float correctedEtCone = 0.0;
-    if(l){
-        uint nVtx(nt.evt()->nVtx);
-        bool isMC(nt.evt()->isMC);
-        if(l->isEle()) {
-            if(const Electron* e = static_cast<const Electron*>(l))
-                correctedEtCone = nttools().elEtTopoConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
-        } else if(l->isMu()) {
-            if(const Muon* m = static_cast<const Muon*>(l))
-                correctedEtCone = nttools().muEtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
-        }
-    }
+    // if(l){
+    //     uint nVtx(nt.evt()->nVtx);
+    //     bool isMC(nt.evt()->isMC);
+    //     if(l->isEle()) {
+    //         if(const Electron* e = static_cast<const Electron*>(l))
+    //             correctedEtCone = nttools().elEtTopoConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+    //     } else if(l->isMu()) {
+    //         if(const Muon* m = static_cast<const Muon*>(l))
+    //             correctedEtCone = nttools().muEtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+    //     }
+    // }
     return correctedEtCone;
 }
 //----------------------------------------------------------
 float Selector::computeCorrectedPtCone(const Lepton *l)
 {
     float correctedPtCone = 0.0;
-    if(l){
-        uint nVtx(nt.evt()->nVtx);
-        bool isMC(nt.evt()->isMC);
-        if(l->isEle()) {
-            if(const Electron* e = static_cast<const Electron*>(l))
-                correctedPtCone = nttools().elPtConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
-        } else if(l->isMu()) {
-            if(const Muon* m = static_cast<const Muon*>(l))
-                correctedPtCone = nttools().muPtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
-        }
-    }
+    // if(l){
+    //     uint nVtx(nt.evt()->nVtx);
+    //     bool isMC(nt.evt()->isMC);
+    //     if(l->isEle()) {
+    //         if(const Electron* e = static_cast<const Electron*>(l))
+    //             correctedPtCone = nttools().elPtConeCorr(e, m_baseElectrons, m_baseMuons, nVtx, isMC);
+    //     } else if(l->isMu()) {
+    //         if(const Muon* m = static_cast<const Muon*>(l))
+    //             correctedPtCone = nttools().muPtConeCorr(m, m_baseElectrons, m_baseMuons, nVtx, isMC);
+    //     }
+    // }
     return correctedPtCone;
 }
 //----------------------------------------------------------

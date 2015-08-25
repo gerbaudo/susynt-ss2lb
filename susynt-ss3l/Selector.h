@@ -158,8 +158,6 @@ public:
     static bool eventIsSameSign(const LeptonVector &leptons);
 
 protected:
-    /// initialize weighter used for normalization
-    bool initMcWeighter(TTree *tree);
    /// convention: we're using an event list if its filename was specified
     bool usingEventList() const { return m_eventListFilename.size()>0; }
     /// initialize event list

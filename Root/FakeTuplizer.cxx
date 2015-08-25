@@ -3,6 +3,8 @@
 #include "susynt-ss3l/EventFlags.h"
 #include "susynt-ss3l/DileptonVariables.h"
 
+#include "SusyNtuple/TauId.h"
+
 using namespace std;
 using ss3l::FakeTuplizer;
 using ss3l::Selector;
@@ -39,8 +41,7 @@ Bool_t FakeTuplizer::Process(Long64_t entry)
     WeightComponents weightComponents;
     assignStaticWeightComponents(nt, *m_mcWeighter, weightComponents);
     m_counter.increment(weightComponents.product(), "input");
-    bool removeLepsFromIso(false);
-    selectObjects(Susy::NtSys::NOM, removeLepsFromIso, TauID_medium); // always select with nominal? (to compute event flags)
+    selectObjects(Susy::NtSys::NOM, Susy::TauId::Medium); // always select with nominal? (to compute event flags)
     EventFlags eventFlags = computeEventFlags();
     incrementEventCounters(eventFlags, weightComponents);
     if(eventFlags.passAllEventCriteria()) {
