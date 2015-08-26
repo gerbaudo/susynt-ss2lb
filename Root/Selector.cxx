@@ -284,10 +284,10 @@ ss3l::EventFlags Selector::computeEventFlags()
     SusyNtTools &nt = nttools();
     if(pass_hfor                           )  f.hfor        = true;
     if(nt.passGRL         (flag            ))  f.grl         = true;
+    if(nt.passGoodVtx     (flag            ))  f.goodVtx     = true;
     if(nt.passLarErr      (flag            ))  f.larErr      = true;
     if(nt.passTileErr     (flag            ))  f.tileErr     = true;
     if(nt.passTTC         (flag            ))  f.ttcVeto     = true;
-    if(nt.passGoodVtx     (flag            ))  f.goodVtx     = true;
     if(!nt.passJetCleaning(jets            ))  f.badJet      = true;
     if(!nt.passBadMuon    (m_preMuons      ))  f.badMuon     = true;
     if(!nt.passCosmicMuon (m_baseMuons     ))  f.cosmicMuon  = true;
@@ -304,10 +304,10 @@ bool Selector::incrementEventCounters(const ss3l::EventFlags &f, const ss3l::Wei
     double weight = w.product();
     if(f.hfor       ) m_counter.increment(weight, "hfor"       ); else return false;
     if(f.grl        ) m_counter.increment(weight, "grl"        ); else return false;
+    if(f.goodVtx    ) m_counter.increment(weight, "goodVtx"    ); else return false;
     if(f.larErr     ) m_counter.increment(weight, "larErr"     ); else return false;
     if(f.tileErr    ) m_counter.increment(weight, "tileErr"    ); else return false;
     if(f.ttcVeto    ) m_counter.increment(weight, "ttcVeto"    ); else return false;
-    if(f.goodVtx    ) m_counter.increment(weight, "goodVtx"    ); else return false;
     if(f.tileTrip   ) m_counter.increment(weight, "tileTrip"   ); else return false;
     if(f.lAr        ) m_counter.increment(weight, "lAr"        ); else return false;
     if(f.badJet     ) m_counter.increment(weight, "badJet"     ); else return false;

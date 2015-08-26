@@ -101,6 +101,10 @@ int main(int argc, char** argv)
         return (cutflags & ECut_GRL);
     };
 
+    *cutflow << CutName("pass good vertex") << [&](Superlink*) -> bool {
+        return (cutflags & ECut_GoodVtx);
+    };
+
     *cutflow << CutName("LAr error") << [&](Superlink*) -> bool {
         return (cutflags & ECut_LarErr);
     };
@@ -119,10 +123,6 @@ int main(int argc, char** argv)
 
     *cutflow << CutName("jet cleaning") << [&](Superlink*) -> bool {
         return (cutflags & ECut_BadJet);
-    };
-
-    *cutflow << CutName("pass good vertex") << [&](Superlink*) -> bool {
-        return (cutflags & ECut_GoodVtx);
     };
 
     *cutflow << CutName("pass cosmic veto") << [&](Superlink*) -> bool {
