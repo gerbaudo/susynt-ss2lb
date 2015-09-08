@@ -404,7 +404,7 @@ JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfToo
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().m_jetSelector.isCentralLightJet(jets[i]))
+        if(nttools().jetSelector().isCentralLightJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -414,7 +414,7 @@ JetVector Selector::filterForwardJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().m_jetSelector.isForwardJet(jets[i]))
+        if(nttools().jetSelector().isForwardJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -424,7 +424,7 @@ JetVector Selector::filterBtagJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().m_jetSelector.isCentralBJet(jets[i]))
+        if(nttools().jetSelector().isCentralBJet(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
