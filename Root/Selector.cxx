@@ -114,8 +114,8 @@ Bool_t Selector::Process(Long64_t entry)
                         const Lepton &l1 = *l[1];
                         LeptonTruthType::Value l0Source = (isMc ? ss3l::getLeptonSource(l0) : LeptonTruthType::Unknown);
                         LeptonTruthType::Value l1Source = (isMc ? ss3l::getLeptonSource(l1) : LeptonTruthType::Unknown);
-                        bool l0IsTight(nttools().isSignalLepton(&l0));
-                        bool l1IsTight(nttools().isSignalLepton(&l1));
+                        bool l0IsTight(nttools().isSignal(&l0));
+                        bool l1IsTight(nttools().isSignal(&l1));
                         bool computeWeightVariations = (m_computeSystematics && sys==Systematic::CENTRAL);
                         WeightVariations wv = (computeWeightVariations ?
                                                computeSystematicWeightVariations(*nt.evt(), l, bj, sys, weightComponents) :
@@ -404,7 +404,7 @@ JetVector Selector::filterJets(const JetVector &jets, JVFUncertaintyTool* jvfToo
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().jetSelector().isCentralLightJet(jets[i]))
+        if(nttools().jetSelector().isCentralLight(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -414,7 +414,7 @@ JetVector Selector::filterForwardJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().jetSelector().isForwardJet(jets[i]))
+        if(nttools().jetSelector().isForward(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
@@ -424,7 +424,7 @@ JetVector Selector::filterBtagJets(const JetVector &jets)
 {
     JetVector outjets;
     for(size_t i=0; i<jets.size(); ++i){
-        if(nttools().jetSelector().isCentralBJet(jets[i]))
+        if(nttools().jetSelector().isCentralB(jets[i]))
             outjets.push_back(jets[i]);
     }
     return outjets;
